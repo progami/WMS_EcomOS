@@ -257,11 +257,31 @@ export default function WarehouseReceivePage() {
   const fetchLastBatchDefaults = async (itemId: number, skuCode: string) => {
     try {
       const warehouseId = session?.user.warehouseId
-      if (!warehouseId) return
+      if (!warehouseId) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       // Get the last transaction for this SKU to fetch previous batch values
       const response = await fetch(`/api/transactions/ledger?warehouse=${warehouseId}&skuCode=${skuCode}&transactionType=RECEIVE&limit=1`)
-      if (!response.ok) return
+      if (!response.ok) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       const data = await response.json()
       if (data.transactions && data.transactions.length > 0) {
@@ -318,19 +338,59 @@ export default function WarehouseReceivePage() {
   const fetchWarehouseConfig = async (itemId: number, skuCode: string) => {
     try {
       const warehouseId = session?.user.warehouseId
-      if (!warehouseId) return
+      if (!warehouseId) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       // First get the SKU ID
       const skuResponse = await fetch(`/api/skus?search=${skuCode}`)
-      if (!skuResponse.ok) return
+      if (!skuResponse.ok) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       const skus = await skuResponse.json()
       const sku = skus.find((s: any) => s.skuCode === skuCode)
-      if (!sku) return
+      if (!sku) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       // Then get the warehouse config
       const configResponse = await fetch(`/api/warehouse-configs?warehouseId=${warehouseId}&skuId=${sku.id}`)
-      if (!configResponse.ok) return
+      if (!configResponse.ok) {
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
+        return
+      }
       
       const configs = await configResponse.json()
       if (configs.length > 0) {
