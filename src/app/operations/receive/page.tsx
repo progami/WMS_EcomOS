@@ -729,7 +729,7 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.cartons || ''}
+                          value={item.cartons === 0 ? '' : item.cartons}
                           onChange={async (e) => {
                             const value = e.target.value
                             const newCartons = value === '' ? 0 : parseInt(value) || 0
@@ -764,7 +764,7 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.storageCartonsPerPallet || ''}
+                          value={item.storageCartonsPerPallet === 0 ? '' : item.storageCartonsPerPallet}
                           onChange={(e) => {
                             const value = e.target.value
                             const newValue = value === '' ? 0 : parseInt(value) || 0
@@ -793,7 +793,7 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.shippingCartonsPerPallet || ''}
+                          value={item.shippingCartonsPerPallet === 0 ? '' : item.shippingCartonsPerPallet}
                           onChange={(e) => {
                             const value = e.target.value
                             updateItem(item.id, 'shippingCartonsPerPallet', value === '' ? 0 : parseInt(value) || 0)
@@ -811,7 +811,7 @@ export default function WarehouseReceivePage() {
                         <div className="space-y-1">
                           <input
                             type="number"
-                            value={item.pallets || ''}
+                            value={item.pallets === 0 ? '' : item.pallets}
                             onChange={(e) => {
                               const value = e.target.value
                               const newPallets = value === '' ? 0 : parseInt(value) || 0
