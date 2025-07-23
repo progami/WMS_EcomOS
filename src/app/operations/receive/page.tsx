@@ -48,7 +48,7 @@ export default function WarehouseReceivePage() {
       skuCode: '', 
       batchLot: '', 
       cartons: 0, 
-      pallets: 0, 
+      storagePalletsIn: 0, 
       calculatedPallets: 0,
       units: 0,
       unitsPerCarton: 1, // From SKU master data
@@ -107,7 +107,7 @@ export default function WarehouseReceivePage() {
         skuCode: '', 
         batchLot: '', 
         cartons: 0, 
-        pallets: 0, 
+        storagePalletsIn: 0, 
         calculatedPallets: 0,
         units: 0,
         unitsPerCarton: 1, // From SKU master data
@@ -234,7 +234,7 @@ export default function WarehouseReceivePage() {
           item.id === id ? { ...item, unitsPerCarton: selectedSku.unitsPerCarton } : item
         ))
       }
-      await fetchLastBatchDefaults(id, value)
+      await fetchSkuDefaults(id, value)
       await fetchNextBatchNumber(id, value)
     }
     
@@ -254,204 +254,53 @@ export default function WarehouseReceivePage() {
     }
   }
   
-  const fetchLastBatchDefaults = async (itemId: number, skuCode: string) => {
+  const fetchSkuDefaults = async (itemId: number, skuCode: string) => {
     try {
       const warehouseId = session?.user.warehouseId
-      if (!warehouseId) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
+      if (!warehouseId || !skuCode) {
+        setItems(prev => prev.map(item => item.id === itemId ? { ...item, configLoaded: true } : item))
         return
       }
-      
-      // Get the last transaction for this SKU to fetch previous batch values
-      const response = await fetch(`/api/transactions/ledger?warehouse=${warehouseId}&skuCode=${skuCode}&transactionType=RECEIVE&limit=1`)
-      if (!response.ok) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
+
+      const sku = skus.find(s => s.skuCode === skuCode)
+      if (!sku) {
+        setItems(prev => prev.map(item => item.id === itemId ? { ...item, configLoaded: true } : item))
         return
       }
-      
-      const data = await response.json()
-      if (data.transactions && data.transactions.length > 0) {
-        const lastTransaction = data.transactions[0]
-        
-        // Get the inventory balance for pallet configs
-        const balanceResponse = await fetch(`/api/inventory/balances?warehouseId=${warehouseId}&skuCode=${skuCode}`)
-        const balances = await balanceResponse.json()
-        const lastBatch = balances.find((b: any) => b.batchLot === lastTransaction.batchLot) || balances[0]
-        
-        setItems(prevItems => prevItems.map(item => {
-          if (item.id === itemId) {
-            // Calculate units per carton from last transaction if available
-            let unitsPerCarton = 1
-            if (lastTransaction.cartonsIn > 0 && lastTransaction.sku?.unitsPerCarton) {
-              // For now use SKU master until we have units stored per transaction
-              unitsPerCarton = lastTransaction.sku.unitsPerCarton
-            }
-            
-            return {
-              ...item,
-              unitsPerCarton,
-              storageCartonsPerPallet: lastBatch?.storageCartonsPerPallet || 1,
-              shippingCartonsPerPallet: lastBatch?.shippingCartonsPerPallet || 1,
-              configLoaded: true
-            }
-          }
-          return item
-        }))
-      } else {
-        // No previous transactions found, still mark as loaded with default values
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
+
+      const configResponse = await fetch(`/api/warehouse-configs?warehouseId=${warehouseId}&skuId=${sku.id}`)
+      let storageCartonsPerPallet = 1
+      let shippingCartonsPerPallet = 1
+
+      if (configResponse.ok) {
+        const configs = await configResponse.json()
+        if (configs.length > 0) {
+          storageCartonsPerPallet = configs[0].storageCartonsPerPallet || 1
+          shippingCartonsPerPallet = configs[0].shippingCartonsPerPallet || 1
+        }
       }
-    } catch (error) {
-      // On error, still mark as loaded with defaults
-      setItems(prevItems => prevItems.map(item => 
-        item.id === itemId ? { 
-          ...item, 
+
+      setItems(prev => prev.map(item =>
+        item.id === itemId ? {
+          ...item,
+          unitsPerCarton: sku.unitsPerCarton,
+          storageCartonsPerPallet,
+          shippingCartonsPerPallet,
           configLoaded: true,
-          storageCartonsPerPallet: 1,
-          shippingCartonsPerPallet: 1
         } : item
       ))
+    } catch (error) {
+      setItems(prev => prev.map(item => item.id === itemId ? { ...item, configLoaded: true } : item))
     }
   }
 
-  const fetchWarehouseConfig = async (itemId: number, skuCode: string) => {
-    try {
-      const warehouseId = session?.user.warehouseId
-      if (!warehouseId) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
-        return
-      }
-      
-      // First get the SKU ID
-      const skuResponse = await fetch(`/api/skus?search=${skuCode}`)
-      if (!skuResponse.ok) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
-        return
-      }
-      
-      const skus = await skuResponse.json()
-      const sku = skus.find((s: any) => s.skuCode === skuCode)
-      if (!sku) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
-        return
-      }
-      
-      // Then get the warehouse config
-      const configResponse = await fetch(`/api/warehouse-configs?warehouseId=${warehouseId}&skuId=${sku.id}`)
-      if (!configResponse.ok) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { 
-            ...item, 
-            configLoaded: true,
-            storageCartonsPerPallet: 1,
-            shippingCartonsPerPallet: 1
-          } : item
-        ))
-        return
-      }
-      
-      const configs = await configResponse.json()
-      if (configs.length > 0) {
-        const config = configs[0] // Get the most recent config
-        setItems(prevItems => prevItems.map(item => {
-          if (item.id === itemId) {
-            const storageCartonsPerPallet = config.storageCartonsPerPallet || 0
-            const shippingCartonsPerPallet = config.shippingCartonsPerPallet || 0
-            const calculatedPallets = item.cartons > 0 && storageCartonsPerPallet > 0
-              ? Math.ceil(item.cartons / storageCartonsPerPallet)
-              : 0
-            
-            return { 
-              ...item, 
-              storageCartonsPerPallet,
-              shippingCartonsPerPallet,
-              configLoaded: true,
-              calculatedPallets,
-              // Only auto-update pallets if user hasn't manually entered a value
-              pallets: item.pallets > 0 ? item.pallets : calculatedPallets,
-              palletVariance: item.pallets > 0 && item.pallets !== calculatedPallets
-            }
-          }
-          return item
-        }))
-      } else {
-        // No config found, but mark as loaded with defaults
-        setItems(prevItems => prevItems.map(item => {
-          if (item.id === itemId) {
-            return { 
-              ...item, 
-              storageCartonsPerPallet: 0,
-              shippingCartonsPerPallet: 0,
-              configLoaded: true,
-              calculatedPallets: 0,
-              pallets: 0,
-              palletVariance: false
-            }
-          }
-          return item
-        }))
-      }
-    } catch (error) {
-      // On error, still mark as loaded with defaults
-      setItems(prevItems => prevItems.map(item => 
-        item.id === itemId ? { 
-          ...item, 
-          configLoaded: true,
-          storageCartonsPerPallet: 1,
-          shippingCartonsPerPallet: 1
-        } : item
-      ))
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const formData = new FormData(e.target as HTMLFormElement)
     const receiptDate = formData.get('receiptDate') as string
-    const pickupDate = formData.get('pickupDate') as string
+    const pickupDate = formData.get('dropOffDate') as string
     
     // Validate date is not in future
     const receiptDateObj = new Date(receiptDate)
@@ -523,8 +372,8 @@ export default function WarehouseReceivePage() {
         toast.error(`Invalid cartons value for SKU ${item.skuCode}. Must be between 1 and 99,999`)
         return
       }
-      if (item.pallets && (!Number.isInteger(item.pallets) || item.pallets < 0 || item.pallets > 9999)) {
-        toast.error(`Invalid pallets value for SKU ${item.skuCode}. Must be between 0 and 9,999`)
+      if (item.storagePalletsIn && (!Number.isInteger(item.storagePalletsIn) || item.storagePalletsIn < 0 || item.storagePalletsIn > 9999)) {
+        toast.error(`Invalid storage pallets value for SKU ${item.skuCode}. Must be between 0 and 9,999`)
         return
       }
       if (item.units && (!Number.isInteger(item.units) || item.units < 0)) {
@@ -687,7 +536,7 @@ export default function WarehouseReceivePage() {
                 </label>
                 <input
                   type="date"
-                  name="pickupDate"
+                  name="dropOffDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().split('T')[0]}
                   required
@@ -771,7 +620,7 @@ export default function WarehouseReceivePage() {
                       Shipping Cartons/Pallet
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pallets
+                      Storage Pallets
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Units
@@ -839,10 +688,10 @@ export default function WarehouseReceivePage() {
                                   
                                   // Only auto-update actual pallets if user hasn't manually entered
                                   if (!currentItem.palletVariance) {
-                                    updatedItem.pallets = calculatedPallets
+                                    updatedItem.storagePalletsIn = calculatedPallets
                                   } else {
                                     // Recalculate variance
-                                    updatedItem.palletVariance = updatedItem.pallets !== calculatedPallets
+                                    updatedItem.palletVariance = updatedItem.storagePalletsIn !== calculatedPallets
                                   }
                                 }
                                 
@@ -879,9 +728,9 @@ export default function WarehouseReceivePage() {
                               updateItem(item.id, 'calculatedPallets', calculatedPallets)
                               // Check if we should update actual pallets
                               if (!item.palletVariance) {
-                                updateItem(item.id, 'pallets', calculatedPallets)
+                                updateItem(item.id, 'storagePalletsIn', calculatedPallets)
                               } else {
-                                updateItem(item.id, 'palletVariance', item.pallets !== calculatedPallets)
+                                updateItem(item.id, 'palletVariance', item.storagePalletsIn !== calculatedPallets)
                               }
                             }
                           }}
@@ -915,14 +764,14 @@ export default function WarehouseReceivePage() {
                         <div className="space-y-1">
                           <input
                             type="number"
-                            value={item.pallets === 0 ? '' : item.pallets}
+                            value={item.storagePalletsIn === 0 ? '' : item.storagePalletsIn}
                             onChange={(e) => {
                               const value = e.target.value
                               const newPallets = value === '' ? 0 : parseInt(value) || 0
                               const calculatedPallets = item.cartons > 0 && item.storageCartonsPerPallet > 0
                                 ? Math.ceil(item.cartons / item.storageCartonsPerPallet)
                                 : 0
-                              updateItem(item.id, 'pallets', newPallets)
+                              updateItem(item.id, 'storagePalletsIn', newPallets)
                               updateItem(item.id, 'calculatedPallets', calculatedPallets)
                               updateItem(item.id, 'palletVariance', newPallets !== calculatedPallets)
                             }}
@@ -930,14 +779,14 @@ export default function WarehouseReceivePage() {
                               item.palletVariance ? 'border-yellow-500 bg-yellow-50' : ''
                             }`}
                             min="0"
-                            title="Actual pallets (editable)"
+                            title="Actual storage pallets received (editable)"
                           />
                           {item.configLoaded && item.calculatedPallets > 0 && (
                             <div className="text-xs text-gray-500 text-right">
                               Calc: {item.calculatedPallets}
                               {item.palletVariance && (
                                 <span className="text-yellow-600 ml-1" title="Variance between actual and calculated">
-                                  (Δ {Math.abs(item.pallets - item.calculatedPallets)})
+                                  (Δ {Math.abs(item.storagePalletsIn - item.calculatedPallets)})
                                 </span>
                               )}
                             </div>
@@ -980,7 +829,7 @@ export default function WarehouseReceivePage() {
                     <td className="px-4 py-3 w-32"></td>
                     <td className="px-4 py-3 w-32"></td>
                     <td className="px-4 py-3 w-28 text-right font-semibold">
-                      {items.reduce((sum, item) => sum + item.pallets, 0)}
+                      {items.reduce((sum, item) => sum + item.storagePalletsIn, 0)}
                     </td>
                     <td className="px-4 py-3 w-28 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.units, 0).toLocaleString()}

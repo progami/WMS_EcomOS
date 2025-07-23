@@ -36,7 +36,7 @@ interface ShipItem {
   skuCode: string
   batchLot: string
   cartons: number
-  pallets: number
+  shippingPalletsOut: number
   calculatedPallets?: number
   units: number
   available: number
@@ -63,7 +63,7 @@ export default function WarehouseShipPage() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('')
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [items, setItems] = useState<ShipItem[]>([
-    { id: 1, skuCode: '', batchLot: '', cartons: 0, pallets: 0, units: 0, available: 0 }
+    { id: 1, skuCode: '', batchLot: '', cartons: 0, shippingPalletsOut: 0, units: 0, available: 0 }
   ])
   const [lastCarrier, setLastCarrier] = useState<string>('')
   const [proofOfPickupAttachment, setProofOfPickupAttachment] = useState<Attachment | null>(null)
@@ -74,7 +74,7 @@ export default function WarehouseShipPage() {
   const addItem = () => {
     setItems([
       ...items,
-      { id: Date.now(), skuCode: '', batchLot: '', cartons: 0, pallets: 0, units: 0, available: 0 }
+      { id: Date.now(), skuCode: '', batchLot: '', cartons: 0, shippingPalletsOut: 0, units: 0, available: 0 }
     ])
   }
 
@@ -141,7 +141,7 @@ export default function WarehouseShipPage() {
             if (updated.cartons > 0 && updated.shippingCartonsPerPallet) {
               const calculated = Math.ceil(updated.cartons / updated.shippingCartonsPerPallet)
               updated.calculatedPallets = calculated
-              updated.pallets = calculated // Auto-set initially
+              updated.shippingPalletsOut = calculated // Auto-set initially
               updated.palletVariance = false
             }
           } else {
@@ -179,10 +179,10 @@ export default function WarehouseShipPage() {
             updated.calculatedPallets = calculated
             // Only auto-update actual if no variance
             if (!updated.palletVariance) {
-              updated.pallets = calculated
+              updated.shippingPalletsOut = calculated
             } else {
               // Recalculate variance
-              updated.palletVariance = updated.pallets !== calculated
+              updated.palletVariance = updated.shippingPalletsOut !== calculated
             }
           }
         }
@@ -217,7 +217,7 @@ export default function WarehouseShipPage() {
               skuCode: planItem.skuCode,
               batchLot: '', // Will need to be selected
               cartons: planItem.suggestedCartons,
-              pallets: 0,
+              shippingPalletsOut: 0,
               units: 0,
               available: 0
             }))
@@ -366,8 +366,8 @@ export default function WarehouseShipPage() {
         toast.error(`Invalid cartons value for SKU ${item.skuCode}. Must be between 1 and 99,999`)
         return
       }
-      if (item.pallets && (!Number.isInteger(item.pallets) || item.pallets < 0 || item.pallets > 9999)) {
-        toast.error(`Invalid pallets value for SKU ${item.skuCode}. Must be between 0 and 9,999`)
+      if (item.shippingPalletsOut && (!Number.isInteger(item.shippingPalletsOut) || item.shippingPalletsOut < 0 || item.shippingPalletsOut > 9999)) {
+        toast.error(`Invalid shipping pallets value for SKU ${item.skuCode}. Must be between 0 and 9,999`)
         return
       }
       if (item.units && (!Number.isInteger(item.units) || item.units < 0)) {
@@ -444,7 +444,7 @@ export default function WarehouseShipPage() {
             }
           }),
           totalCartons: items.reduce((sum, item) => sum + item.cartons, 0),
-          totalPallets: items.reduce((sum, item) => sum + item.pallets, 0),
+          totalPallets: items.reduce((sum, item) => sum + item.shippingPalletsOut, 0),
           notes
         }
         setLastShipmentData(shipmentData)
@@ -663,7 +663,7 @@ export default function WarehouseShipPage() {
                       Shipping Config
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pallets
+                      Shipping Pallets
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Units
@@ -763,10 +763,10 @@ export default function WarehouseShipPage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.pallets}
+                          value={item.shippingPalletsOut}
                           onChange={(e) => {
                             const newPallets = parseInt(e.target.value) || 0
-                            updateItem(item.id, 'pallets', newPallets)
+                            updateItem(item.id, 'shippingPalletsOut', newPallets)
                             // Calculate variance if we have config
                             if (item.shippingCartonsPerPallet && item.shippingCartonsPerPallet > 0) {
                               const calculated = Math.ceil(item.cartons / item.shippingCartonsPerPallet)
@@ -785,14 +785,14 @@ export default function WarehouseShipPage() {
                           }`}
                           min="0"
                           step="1"
-                          title="Actual pallets shipped"
+                          title="Actual shipping pallets"
                         />
                         {item.shippingCartonsPerPallet && item.calculatedPallets !== undefined && (
                           <div className="text-xs text-gray-500 text-right mt-1">
                             Calc: {item.calculatedPallets}
                             {item.palletVariance && (
                               <span className="text-yellow-600 ml-1" title="Variance between actual and calculated">
-                                (Δ {Math.abs(item.pallets - (item.calculatedPallets || 0))})
+                                (Δ {Math.abs(item.shippingPalletsOut - (item.calculatedPallets || 0))})
                               </span>
                             )}
                           </div>
@@ -833,7 +833,7 @@ export default function WarehouseShipPage() {
                     </td>
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-semibold">
-                      {items.reduce((sum, item) => sum + item.pallets, 0)}
+                      {items.reduce((sum, item) => sum + item.shippingPalletsOut, 0)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.units, 0).toLocaleString()}
