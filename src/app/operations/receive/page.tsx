@@ -291,8 +291,27 @@ export default function WarehouseReceivePage() {
           }
           return item
         }))
+      } else {
+        // No previous transactions found, still mark as loaded with default values
+        setItems(prevItems => prevItems.map(item => 
+          item.id === itemId ? { 
+            ...item, 
+            configLoaded: true,
+            storageCartonsPerPallet: 1,
+            shippingCartonsPerPallet: 1
+          } : item
+        ))
       }
     } catch (error) {
+      // On error, still mark as loaded with defaults
+      setItems(prevItems => prevItems.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          configLoaded: true,
+          storageCartonsPerPallet: 1,
+          shippingCartonsPerPallet: 1
+        } : item
+      ))
     }
   }
 
@@ -355,6 +374,15 @@ export default function WarehouseReceivePage() {
         }))
       }
     } catch (error) {
+      // On error, still mark as loaded with defaults
+      setItems(prevItems => prevItems.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          configLoaded: true,
+          storageCartonsPerPallet: 1,
+          shippingCartonsPerPallet: 1
+        } : item
+      ))
     }
   }
 
