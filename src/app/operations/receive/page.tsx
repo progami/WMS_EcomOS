@@ -729,12 +729,13 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.cartons}
+                          value={item.cartons || ''}
                           onChange={async (e) => {
-                            const newCartons = parseInt(e.target.value) || 0
+                            const value = e.target.value
+                            const newCartons = value === '' ? 0 : parseInt(value) || 0
                             await updateItem(item.id, 'cartons', newCartons)
                             // Calculate pallets if config is loaded
-                            if (item.configLoaded && item.storageCartonsPerPallet > 0) {
+                            if (item.configLoaded && item.storageCartonsPerPallet > 0 && newCartons > 0) {
                               const calculatedPallets = Math.ceil(newCartons / item.storageCartonsPerPallet)
                               updateItem(item.id, 'calculatedPallets', calculatedPallets)
                               // Only auto-update actual pallets if user hasn't manually entered
@@ -763,9 +764,10 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.storageCartonsPerPallet}
+                          value={item.storageCartonsPerPallet || ''}
                           onChange={(e) => {
-                            const newValue = parseInt(e.target.value) || 0
+                            const value = e.target.value
+                            const newValue = value === '' ? 0 : parseInt(value) || 0
                             updateItem(item.id, 'storageCartonsPerPallet', newValue)
                             // Recalculate pallets
                             if (newValue > 0 && item.cartons > 0) {
@@ -791,8 +793,11 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3">
                         <input
                           type="number"
-                          value={item.shippingCartonsPerPallet}
-                          onChange={(e) => updateItem(item.id, 'shippingCartonsPerPallet', parseInt(e.target.value) || 0)}
+                          value={item.shippingCartonsPerPallet || ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            updateItem(item.id, 'shippingCartonsPerPallet', value === '' ? 0 : parseInt(value) || 0)
+                          }}
                           className={`w-full px-2 py-1 border rounded text-right focus:outline-none focus:ring-1 focus:ring-primary ${
                             item.configLoaded && item.shippingCartonsPerPallet > 0 ? 'bg-yellow-50' : ''
                           }`}
@@ -806,9 +811,10 @@ export default function WarehouseReceivePage() {
                         <div className="space-y-1">
                           <input
                             type="number"
-                            value={item.pallets}
+                            value={item.pallets || ''}
                             onChange={(e) => {
-                              const newPallets = parseInt(e.target.value) || 0
+                              const value = e.target.value
+                              const newPallets = value === '' ? 0 : parseInt(value) || 0
                               const calculatedPallets = item.cartons > 0 && item.storageCartonsPerPallet > 0
                                 ? Math.ceil(item.cartons / item.storageCartonsPerPallet)
                                 : 0
