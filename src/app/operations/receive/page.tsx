@@ -221,7 +221,7 @@ export default function WarehouseReceivePage() {
   }
 
   const updateItem = async (id: number, field: string, value: any) => {
-    setItems(items.map(item => 
+    setItems(prevItems => prevItems.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ))
     
@@ -230,7 +230,7 @@ export default function WarehouseReceivePage() {
       // Get units per carton from SKU master data
       const selectedSku = skus.find(sku => sku.skuCode === value)
       if (selectedSku) {
-        setItems(items.map(item => 
+        setItems(prevItems => prevItems.map(item => 
           item.id === id ? { ...item, unitsPerCarton: selectedSku.unitsPerCarton } : item
         ))
       }
@@ -240,14 +240,17 @@ export default function WarehouseReceivePage() {
     
     // If cartons changed, recalculate units
     if (field === 'cartons') {
-      const item = items.find(i => i.id === id)
-      if (item) {
-        const cartons = value
-        const units = cartons * item.unitsPerCarton
-        setItems(items.map(i => 
-          i.id === id ? { ...i, units } : i
-        ))
-      }
+      setItems(prevItems => {
+        const item = prevItems.find(i => i.id === id)
+        if (item) {
+          const cartons = value
+          const units = cartons * item.unitsPerCarton
+          return prevItems.map(i => 
+            i.id === id ? { ...i, units } : i
+          )
+        }
+        return prevItems
+      })
     }
   }
   
