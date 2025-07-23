@@ -694,7 +694,7 @@ export default function WarehouseReceivePage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {items.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-48">
                         <select
                           value={item.skuCode}
                           onChange={(e) => updateItem(item.id, 'skuCode', e.target.value)}
@@ -710,7 +710,7 @@ export default function WarehouseReceivePage() {
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-40">
                         <div className="relative">
                           <input
                             type="text"
@@ -729,7 +729,7 @@ export default function WarehouseReceivePage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-28">
                         <input
                           type="number"
                           value={item.cartons === 0 ? '' : item.cartons}
@@ -768,7 +768,7 @@ export default function WarehouseReceivePage() {
                           required
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-28">
                         <input
                           type="number"
                           value={item.unitsPerCarton}
@@ -777,7 +777,7 @@ export default function WarehouseReceivePage() {
                           title="Units per carton is defined by the SKU master data"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-32">
                         <input
                           type="number"
                           value={item.storageCartonsPerPallet === 0 ? '' : item.storageCartonsPerPallet}
@@ -801,12 +801,12 @@ export default function WarehouseReceivePage() {
                             item.configLoaded && item.storageCartonsPerPallet > 0 ? 'bg-yellow-50' : ''
                           }`}
                           min="1"
-                          placeholder={item.configLoaded ? "Enter value" : "Loading..."}
-                          title={item.configLoaded && item.storageCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
+                          placeholder={!item.skuCode ? "Select SKU first" : item.configLoaded ? "Enter value" : "Loading..."}
+                          title={!item.skuCode ? 'Select SKU first' : item.configLoaded && item.storageCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
                           required
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-32">
                         <input
                           type="number"
                           value={item.shippingCartonsPerPallet === 0 ? '' : item.shippingCartonsPerPallet}
@@ -818,12 +818,12 @@ export default function WarehouseReceivePage() {
                             item.configLoaded && item.shippingCartonsPerPallet > 0 ? 'bg-yellow-50' : ''
                           }`}
                           min="1"
-                          placeholder={item.configLoaded ? "Enter value" : "Loading..."}
-                          title={item.configLoaded && item.shippingCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
+                          placeholder={!item.skuCode ? "Select SKU first" : item.configLoaded ? "Enter value" : "Loading..."}
+                          title={!item.skuCode ? 'Select SKU first' : item.configLoaded && item.shippingCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
                           required
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-28">
                         <div className="space-y-1">
                           <input
                             type="number"
@@ -856,7 +856,7 @@ export default function WarehouseReceivePage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-28">
                         <input
                           type="number"
                           value={item.units}
@@ -866,7 +866,7 @@ export default function WarehouseReceivePage() {
                           title="Units are calculated based on cartons × units per carton"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 w-12">
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
@@ -881,23 +881,23 @@ export default function WarehouseReceivePage() {
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-4 py-3 w-48 text-right font-semibold">
                       SKU Total:
                     </td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-4 py-3 w-40"></td>
+                    <td className="px-4 py-3 w-28 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.cartons, 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-4 py-3 w-28"></td>
+                    <td className="px-4 py-3 w-32"></td>
+                    <td className="px-4 py-3 w-32"></td>
+                    <td className="px-4 py-3 w-28 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.pallets, 0)}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-4 py-3 w-28 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.units, 0).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3 w-12"></td>
                   </tr>
                 </tfoot>
               </table>
