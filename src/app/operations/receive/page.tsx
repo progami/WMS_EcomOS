@@ -592,7 +592,7 @@ export default function WarehouseReceivePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pickup Date
+                  Drop off Date
                 </label>
                 <input
                   type="date"
@@ -730,22 +730,35 @@ export default function WarehouseReceivePage() {
                         <input
                           type="number"
                           value={item.cartons === 0 ? '' : item.cartons}
-                          onChange={async (e) => {
+                          onChange={(e) => {
                             const value = e.target.value
                             const newCartons = value === '' ? 0 : parseInt(value) || 0
-                            await updateItem(item.id, 'cartons', newCartons)
-                            // Calculate pallets if config is loaded
-                            if (item.configLoaded && item.storageCartonsPerPallet > 0 && newCartons > 0) {
-                              const calculatedPallets = Math.ceil(newCartons / item.storageCartonsPerPallet)
-                              updateItem(item.id, 'calculatedPallets', calculatedPallets)
-                              // Only auto-update actual pallets if user hasn't manually entered
-                              if (!item.palletVariance) {
-                                updateItem(item.id, 'pallets', calculatedPallets)
-                              } else {
-                                // Recalculate variance
-                                updateItem(item.id, 'palletVariance', item.pallets !== calculatedPallets)
+                            
+                            setItems(prevItems => prevItems.map(currentItem => {
+                              if (currentItem.id === item.id) {
+                                const updatedItem = { ...currentItem, cartons: newCartons }
+                                
+                                // Update units based on cartons
+                                updatedItem.units = newCartons * currentItem.unitsPerCarton
+                                
+                                // Calculate pallets if config is loaded
+                                if (currentItem.configLoaded && currentItem.storageCartonsPerPallet > 0 && newCartons > 0) {
+                                  const calculatedPallets = Math.ceil(newCartons / currentItem.storageCartonsPerPallet)
+                                  updatedItem.calculatedPallets = calculatedPallets
+                                  
+                                  // Only auto-update actual pallets if user hasn't manually entered
+                                  if (!currentItem.palletVariance) {
+                                    updatedItem.pallets = calculatedPallets
+                                  } else {
+                                    // Recalculate variance
+                                    updatedItem.palletVariance = updatedItem.pallets !== calculatedPallets
+                                  }
+                                }
+                                
+                                return updatedItem
                               }
-                            }
+                              return currentItem
+                            }))
                           }}
                           className="w-full px-2 py-1 border rounded text-right focus:outline-none focus:ring-1 focus:ring-primary"
                           min="0"
@@ -865,20 +878,23 @@ export default function WarehouseReceivePage() {
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
-                    <td colSpan={2} className="px-4 py-3 text-right font-semibold">
-                      Total:
+                    <td className="px-4 py-3 text-right font-semibold">
+                      SKU Total:
                     </td>
+                    <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.cartons, 0).toLocaleString()}
                     </td>
-                    <td colSpan={2}></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.pallets, 0)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.units, 0).toLocaleString()}
                     </td>
-                    <td></td>
+                    <td className="px-4 py-3"></td>
                   </tr>
                 </tfoot>
               </table>

@@ -823,21 +823,22 @@ export default function WarehouseShipPage() {
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
-                    <td colSpan={2} className="px-4 py-3 text-right font-semibold">
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3 text-right font-semibold">
                       Total:
                     </td>
-                    <td></td>
+                    <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.cartons, 0).toLocaleString()}
                     </td>
-                    <td></td>
+                    <td className="px-4 py-3"></td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.pallets, 0)}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {items.reduce((sum, item) => sum + item.units, 0).toLocaleString()}
                     </td>
-                    <td></td>
+                    <td className="px-4 py-3"></td>
                   </tr>
                 </tfoot>
               </table>
