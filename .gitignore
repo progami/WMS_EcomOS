@@ -183,6 +183,11 @@ tests/playwright-results.xml
 tests/screenshots/*.png
 tests/screenshots/*.jpg
 tests/build/
+tests/performance-har
+tests/**/*.har
+*.har
+e2e-results*/
+e2e-results-latest/
 
 # Data exports
 data/
@@ -206,22 +211,26 @@ logs/*.log
 # Claude configuration
 CLAUDE.md
 wms-deployment-minimal.tar.gz
-# Screenshots
+# Screenshots and test artifacts
 *.png
+*.jpg
+*.jpeg
+test-output.log
+test-results.txt
+check-all-tests.sh
+verify-build.sh
+test-server.js
+cookies.txt
 
 # Deployment artifacts
 *.txt
-deploy-*.sh
-check-*.sh
-fix-*.sh
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!ecosystem*.json
-!next.config.json
-screenshot-*.js
-take-screenshot.js
+!requirements.txt
+!README.txt
+
+# Repomix
+repomix-output.xml
+.repomixignore
+
 # Test outputs
 e2e-results/
 playwright-report/
