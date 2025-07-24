@@ -32,12 +32,15 @@ export default function WarehouseReceivePage() {
   const [warehouses, setWarehouses] = useState<{id: string; name: string; code: string}[]>([])
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('')
   const [suppliers, setSuppliers] = useState<string[]>([])
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('')
-  const [shipName, setShipName] = useState('')
-  const [trackingNumber, setTrackingNumber] = useState('')
-  const [tcNumber, setTcNumber] = useState('')
-  const [ciNumber, setCiNumber] = useState('')
-  const [packingListNumber, setPackingListNumber] = useState('')
+  
+  // Dev environment defaults
+  const isDev = process.env.NODE_ENV === 'development'
+  const [selectedSupplier, setSelectedSupplier] = useState<string>(isDev ? 'Test Supplier Inc' : '')
+  const [shipName, setShipName] = useState(isDev ? 'MV Test Vessel' : '')
+  const [trackingNumber, setTrackingNumber] = useState(isDev ? 'TRK' + Date.now().toString().slice(-6) : '')
+  const [tcNumber, setTcNumber] = useState(isDev ? 'TC-2024-' + Math.floor(Math.random() * 1000) : '')
+  const [ciNumber, setCiNumber] = useState(isDev ? 'CI-2024-' + Math.floor(Math.random() * 1000) : '')
+  const [packingListNumber, setPackingListNumber] = useState(isDev ? 'PL-2024-' + Math.floor(Math.random() * 1000) : '')
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [packingListAttachment, setPackingListAttachment] = useState<Attachment | null>(null)
   const [commercialInvoiceAttachment, setCommercialInvoiceAttachment] = useState<Attachment | null>(null)
@@ -50,8 +53,8 @@ export default function WarehouseReceivePage() {
     { 
       id: 1, 
       skuCode: '', 
-      batchLot: '', 
-      cartons: 0, 
+      batchLot: isDev ? 'BATCH-' + new Date().toISOString().split('T')[0] : '', 
+      cartons: isDev ? 10 : 0, 
       storagePalletsIn: 0, 
       units: 0,
       unitsPerCarton: 1, // From SKU master data
@@ -1268,6 +1271,7 @@ export default function WarehouseReceivePage() {
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
               placeholder="Any additional notes or comments..."
+              defaultValue={isDev ? 'Development test entry - auto-filled for quick testing' : ''}
             />
           </div>
 
