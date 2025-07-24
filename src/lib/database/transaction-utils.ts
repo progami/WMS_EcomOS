@@ -13,13 +13,21 @@ export async function withTransaction<T>(
   options: TransactionOptions = {}
 ): Promise<T> {
   const defaultOptions: TransactionOptions = {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, // Changed from Serializable to avoid visibility issues
     maxWait: 5000,
     timeout: 10000,
     ...options
   };
 
-  return prisma.$transaction(fn, defaultOptions);
+  const result = await prisma.$transaction(fn, defaultOptions);
+  
+  // Force connection pool refresh after transaction
+  if (process.env.NODE_ENV === 'development') {
+    // In development, we need to ensure the connection pool sees the changes
+    await prisma.$queryRaw`SELECT 1`;
+  }
+  
+  return result;
 }
 
 export async function withLock<T>(
@@ -90,7 +98,7 @@ export async function updateInventoryWithLock(
     // Execute update function with transaction context
     return updateFn(balance[0], tx);
   }, {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     timeout: 30000
   });
 }
@@ -247,6 +255,13 @@ export async function updateInventoryBatch(
       return keyA.localeCompare(keyB);
     });
     
+    // Pre-fetch all SKUs to reduce queries
+    const skuIds = [...new Set(sortedUpdates.map(u => u.skuId))];
+    const skus = await tx.sku.findMany({
+      where: { id: { in: skuIds } }
+    });
+    const skuMap = new Map(skus.map(sku => [sku.id, sku]));
+    
     for (const update of sortedUpdates) {
       // Lock and get current balance
       const balances = await tx.$queryRaw<any[]>`
@@ -268,18 +283,38 @@ export async function updateInventoryBatch(
         );
       }
       
-      // Get SKU for units calculation
-      const sku = await tx.sku.findUnique({
-        where: { id: update.skuId }
-      });
+      // Get SKU from pre-fetched map
+      const sku = skuMap.get(update.skuId);
       
       if (!sku) {
         throw new Error(`SKU not found: ${update.skuId}`);
       }
       
       const newUnits = newCartons * sku.unitsPerCarton;
-      const cartonsPerPallet = balance?.storage_cartons_per_pallet || 50;
-      const newPallets = newCartons > 0 ? Math.ceil(newCartons / cartonsPerPallet) : 0;
+      
+      // Get the proper warehouse SKU configuration if not on balance record
+      let storageCartonsPerPallet = balance?.storage_cartons_per_pallet;
+      let shippingCartonsPerPallet = balance?.shipping_cartons_per_pallet;
+      
+      if (!storageCartonsPerPallet || !shippingCartonsPerPallet) {
+        const warehouseConfig = await tx.warehouseSkuConfig.findFirst({
+          where: {
+            warehouseId: update.warehouseId,
+            skuId: update.skuId,
+            effectiveDate: { lte: new Date() },
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date() } }
+            ]
+          },
+          orderBy: { effectiveDate: 'desc' }
+        });
+        
+        storageCartonsPerPallet = warehouseConfig?.storageCartonsPerPallet || balance?.storage_cartons_per_pallet || 50;
+        shippingCartonsPerPallet = warehouseConfig?.shippingCartonsPerPallet || balance?.shipping_cartons_per_pallet || 50;
+      }
+      
+      const newPallets = newCartons > 0 ? Math.ceil(newCartons / storageCartonsPerPallet) : 0;
       
       if (balance) {
         // Update existing balance
@@ -304,6 +339,8 @@ export async function updateInventoryBatch(
             currentCartons: newCartons,
             currentPallets: newPallets,
             currentUnits: newUnits,
+            storageCartonsPerPallet,
+            shippingCartonsPerPallet,
             lastTransactionDate: new Date()
           }
         });
@@ -313,7 +350,7 @@ export async function updateInventoryBatch(
     
     return results;
   }, {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     timeout: 30000
   });
 }

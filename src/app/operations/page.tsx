@@ -3,13 +3,14 @@ import { OperationsWorkflowHeader } from '@/components/operations/operations-wor
 import Link from 'next/link'
 import { 
   Package, 
-  Package2, 
+  PackageOpen, 
   BookOpen, 
   Upload, 
   AlertTriangle, 
   TrendingUp,
   ArrowRight,
-  ChevronRight
+  ChevronRight,
+  Truck
 } from 'lucide-react'
 
 interface OperationModule {
@@ -51,7 +52,7 @@ const operationGroups: OperationGroup[] = [
         title: 'Ship Goods',
         description: 'Process outbound shipments and update inventory',
         href: '/operations/ship',
-        icon: Package2,
+        icon: Truck,
         color: 'bg-purple-100 text-purple-700',
         details: [
           'Scan and verify items for shipment',
@@ -151,7 +152,13 @@ export default function OperationsPage() {
                 <p className="text-sm text-gray-600 mt-1">{group.description}</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={`grid grid-cols-1 gap-4 ${
+                group.modules.length === 1 
+                  ? 'md:grid-cols-1 max-w-md' 
+                  : group.modules.length === 2 
+                    ? 'md:grid-cols-2' 
+                    : 'md:grid-cols-2 lg:grid-cols-3'
+              }`}>
                 {group.modules.map((module, moduleIndex) => (
                   <div key={module.href} className="relative">
                     <Link

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useClientLogger } from '@/hooks/useClientLogger'
-import { Search, Filter, Download, Package2, Calendar, AlertCircle, BookOpen, Package, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, X, Info, ChevronDown, ChevronRight } from 'lucide-react'
+import { Search, Filter, Download, Package2, Calendar, AlertCircle, BookOpen, Package, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, BarChart3, X, Info, ChevronDown, ChevronRight, Truck } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -142,7 +142,9 @@ export default function UnifiedInventoryPage() {
       
       // Fetch warehouses on first load
       if (warehouses.length === 0) {
-        const warehouseResponse = await fetch('/api/warehouses')
+        const warehouseResponse = await fetch('/api/warehouses', {
+          credentials: 'include'
+        })
         if (warehouseResponse.ok) {
           const warehouseData = await warehouseResponse.json()
           setWarehouses(warehouseData)
@@ -154,7 +156,9 @@ export default function UnifiedInventoryPage() {
         // Fetch inventory balances
         const balancesUrl = '/api/inventory/balances'
         
-        const balancesResponse = await fetch(balancesUrl)
+        const balancesResponse = await fetch(balancesUrl, {
+          credentials: 'include'
+        })
         if (balancesResponse.ok) {
           const balancesResult = await balancesResponse.json()
           // Handle paginated response
@@ -169,7 +173,9 @@ export default function UnifiedInventoryPage() {
         // Fetch transactions
         const transactionsUrl = '/api/transactions/ledger'
         
-        const transactionsResponse = await fetch(transactionsUrl)
+        const transactionsResponse = await fetch(transactionsUrl, {
+          credentials: 'include'
+        })
         if (transactionsResponse.ok) {
           const transactionsData = await transactionsResponse.json()
           setTransactions(transactionsData.transactions)
@@ -200,7 +206,9 @@ export default function UnifiedInventoryPage() {
         if (activeTab === 'balances') {
           const url = '/api/inventory/balances'
           
-          const response = await fetch(url)
+          const response = await fetch(url, {
+            credentials: 'include'
+          })
           if (response.ok) {
             const result = await response.json()
             // Handle paginated response
@@ -214,7 +222,9 @@ export default function UnifiedInventoryPage() {
         } else if (activeTab === 'transactions') {
           const url = '/api/transactions/ledger'
           
-          const response = await fetch(url)
+          const response = await fetch(url, {
+            credentials: 'include'
+          })
           if (response.ok) {
             const data = await response.json()
             setTransactions(data.transactions)
@@ -545,16 +555,16 @@ export default function UnifiedInventoryPage() {
               />
               <Link
                 href="/operations/receive"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                className="inline-flex items-center h-10 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
               >
-                <Package2 className="h-4 w-4 mr-2" />
+                <Package className="h-4 w-4 mr-2" />
                 Receive Goods
               </Link>
               <Link
                 href="/operations/ship"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                className="inline-flex items-center h-10 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
               >
-                <Package2 className="h-4 w-4 mr-2" />
+                <Truck className="h-4 w-4 mr-2" />
                 Ship Goods
               </Link>
               <div className="relative">

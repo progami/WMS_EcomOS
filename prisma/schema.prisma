@@ -178,6 +178,7 @@ model InventoryTransaction {
   modeOfTransportation     String?         @map("mode_of_transportation")
   attachments              Json?
   unitsPerCarton           Int?            @map("units_per_carton")
+  supplier                 String?         @map("supplier")
   createdBy                User            @relation("TransactionCreator", fields: [createdById], references: [id])
   sku                      Sku             @relation(fields: [skuId], references: [id])
   warehouse                Warehouse       @relation(fields: [warehouseId], references: [id])
