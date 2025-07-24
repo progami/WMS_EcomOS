@@ -350,28 +350,12 @@ export default function WarehouseShipPage() {
       return
     }
     
-    // Validate date is not too old
-    const oneYearAgo = new Date()
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-    if (shipDateObj < oneYearAgo) {
-      toast.error('Ship date is too far in the past (max 1 year)')
+    // Validate date is not too old (5 years for historical data)
+    const fiveYearsAgo = new Date()
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
+    if (shipDateObj < fiveYearsAgo) {
+      toast.error('Ship date is too far in the past (max 5 years)')
       return
-    }
-    
-    // Check for backdated transactions
-    try {
-      const response = await fetch(`/api/transactions/ledger?warehouse=${session?.user.warehouseId}&limit=1`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.transactions && data.transactions.length > 0) {
-          const lastTransactionDate = new Date(data.transactions[0].transactionDate)
-          if (shipDateObj < lastTransactionDate) {
-            toast.error(`Cannot create backdated transactions. The last transaction was on ${lastTransactionDate.toLocaleDateString()}. Please use a date on or after this date.`)
-            return
-          }
-        }
-      }
-    } catch (error) {
     }
     
     // Validate items
@@ -617,7 +601,7 @@ export default function WarehouseShipPage() {
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
                   max={new Date().toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
                   required
                 />
               </div>
@@ -631,7 +615,7 @@ export default function WarehouseShipPage() {
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
                   max={new Date().toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
                   required
                 />
               </div>

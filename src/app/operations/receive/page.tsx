@@ -367,28 +367,12 @@ export default function WarehouseReceivePage() {
       return
     }
     
-    // Validate date is not too old
-    const oneYearAgo = new Date()
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-    if (receiptDateObj < oneYearAgo) {
-      toast.error('Receipt date is too far in the past (max 1 year)')
+    // Validate date is not too old (5 years for historical imports)
+    const fiveYearsAgo = new Date()
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
+    if (receiptDateObj < fiveYearsAgo) {
+      toast.error('Receipt date is too far in the past (max 5 years)')
       return
-    }
-    
-    // Check for backdated transactions
-    try {
-      const response = await fetch(`/api/transactions/ledger?warehouse=${selectedWarehouseId}&limit=1`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.transactions && data.transactions.length > 0) {
-          const lastTransactionDate = new Date(data.transactions[0].transactionDate)
-          if (receiptDateObj < lastTransactionDate) {
-            toast.error(`Cannot create backdated transactions. The last transaction was on ${lastTransactionDate.toLocaleDateString()}. Please use a date on or after this date.`)
-            return
-          }
-        }
-      }
-    } catch (error) {
     }
     
     // Validate items
@@ -633,7 +617,7 @@ export default function WarehouseReceivePage() {
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
                   max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
                   required
                 />
               </div>
@@ -647,7 +631,7 @@ export default function WarehouseReceivePage() {
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
                   max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
                   required
                 />
               </div>
