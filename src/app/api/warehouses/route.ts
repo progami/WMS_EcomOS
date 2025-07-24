@@ -284,7 +284,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Check if warehouse has any related data
-    const hasRelatedData = Object.values(relatedData._count).some(count => count > 0)
+    const hasRelatedData = Object.values(relatedData._count).some(count => (count as number) > 0)
     
     if (hasRelatedData) {
       // Soft delete - just mark as inactive

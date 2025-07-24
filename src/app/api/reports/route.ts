@@ -381,7 +381,7 @@ async function generateReconciliationReport(period: string, warehouseId?: string
     },
   })
 
-  const costMap = new Map(
+  const costMap = new Map<string, number>(
     calculatedCosts.map(c => [c.warehouseId, Number(c._sum.calculatedWeeklyCost || 0)])
   )
 

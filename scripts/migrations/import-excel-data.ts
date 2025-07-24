@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx'
 import { prisma } from '../../src/lib/prisma'
 import * as path from 'path'
 import * as fs from 'fs'
+import type { Warehouse } from '@prisma/client'
 
 // Helper function to convert Excel date to JS date
 function excelDateToJSDate(excelDate: number): Date {
@@ -73,7 +74,7 @@ async function importCostMaster(sheet: XLSX.WorkSheet) {
 
   // Get warehouse mapping
   const warehouses = await prisma.warehouse.findMany()
-  const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w]))
+  const warehouseMap = new Map<string, Warehouse>(warehouses.map(w => [w.name.toLowerCase(), w]))
 
   // Get admin user for createdById
   const adminUser = await prisma.user.findFirst({
@@ -165,7 +166,7 @@ async function importWarehouseConfig(sheet: XLSX.WorkSheet) {
 
   // Get warehouse mapping
   const warehouses = await prisma.warehouse.findMany()
-  const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w]))
+  const warehouseMap = new Map<string, Warehouse>(warehouses.map(w => [w.name.toLowerCase(), w]))
 
   // Get admin user for createdById
   const adminUser = await prisma.user.findFirst({

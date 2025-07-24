@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
 import { getImportConfig, mapExcelRowToEntity } from '@/lib/import-config'
+import type { Warehouse, Sku } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -169,10 +170,10 @@ async function importWarehouseSkuConfigs(data: any[], userId: string) {
 
   // Get warehouse and SKU mappings
   const warehouses = await prisma.warehouse.findMany()
-  const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w]))
+  const warehouseMap = new Map<string, Warehouse>(warehouses.map(w => [w.name.toLowerCase(), w]))
   
   const skus = await prisma.sku.findMany()
-  const skuMap = new Map(skus.map(s => [s.skuCode, s]))
+  const skuMap = new Map<string, Sku>(skus.map(s => [s.skuCode, s]))
 
   for (const row of data) {
     try {
@@ -230,7 +231,7 @@ async function importCostRates(data: any[], userId: string) {
 
   // Get warehouse mapping
   const warehouses = await prisma.warehouse.findMany()
-  const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w]))
+  const warehouseMap = new Map<string, Warehouse>(warehouses.map(w => [w.name.toLowerCase(), w]))
 
   for (const row of data) {
     try {
@@ -280,10 +281,10 @@ async function importInventoryTransactions(data: any[], userId: string) {
 
   // Get warehouse and SKU mappings
   const warehouses = await prisma.warehouse.findMany()
-  const warehouseMap = new Map(warehouses.map(w => [w.name.toLowerCase(), w]))
+  const warehouseMap = new Map<string, Warehouse>(warehouses.map(w => [w.name.toLowerCase(), w]))
   
   const skus = await prisma.sku.findMany()
-  const skuMap = new Map(skus.map(s => [s.skuCode, s]))
+  const skuMap = new Map<string, Sku>(skus.map(s => [s.skuCode, s]))
 
   for (const row of data) {
     try {

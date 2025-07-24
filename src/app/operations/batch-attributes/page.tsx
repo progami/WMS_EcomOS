@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Package2, Info } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import type { InventoryTransaction, User } from '@prisma/client'
 
 export default async function BatchAttributesPage() {
   const session = await getServerSession(authOptions)
@@ -59,7 +60,7 @@ export default async function BatchAttributesPage() {
   })
 
   // Create lookup map
-  const transactionMap = new Map(
+  const transactionMap = new Map<string, InventoryTransaction & { createdBy: User | null }>(
     receiveTransactions.map(t => [`${t.skuId}-${t.batchLot}`, t])
   )
 
@@ -75,7 +76,7 @@ export default async function BatchAttributesPage() {
   })
 
   // Group by SKU for better display
-  const batchesBySku = batchData.reduce((acc, batch) => {
+  const batchesBySku: Record<string, typeof batchData> = batchData.reduce((acc, batch) => {
     const skuKey = `${batch.sku.skuCode}|${batch.sku.description}`
     if (!acc[skuKey]) {
       acc[skuKey] = []

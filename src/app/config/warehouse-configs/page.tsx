@@ -63,8 +63,8 @@ export default async function WarehouseConfigsPage() {
     updatedAt: config.updatedAt.toISOString()
   }))
 
-  const configsByWarehouseForClient = Object.entries(configsByWarehouse).reduce((acc, [key, value]) => {
-    acc[key] = value.map(config => ({
+  const configsByWarehouseForClient = Object.entries(configsByWarehouse).reduce<Record<string, any[]>>((acc, [key, value]) => {
+    acc[key] = (value as typeof configs).map(config => ({
       ...config,
       effectiveDate: config.effectiveDate.toISOString(),
       endDate: config.endDate ? config.endDate.toISOString() : null,
@@ -72,7 +72,7 @@ export default async function WarehouseConfigsPage() {
       updatedAt: config.updatedAt.toISOString()
     }))
     return acc
-  }, {} as Record<string, any[]>)
+  }, {})
 
   return (
     <DashboardLayout>

@@ -5,6 +5,7 @@ import { BarChart3, TrendingUp, Package2, Users, Activity, PieChart } from 'luci
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { prisma } from '@/lib/prisma'
 import { ExportButton } from '@/components/common/export-button'
+import type { Sku } from '@prisma/client'
 
 export default async function AnalyticsPage() {
   const session = await getServerSession(authOptions)
@@ -39,7 +40,7 @@ export default async function AnalyticsPage() {
     where: { id: { in: topSkus.map(s => s.skuId) } }
   })
 
-  const skuMap = new Map(skus.map(s => [s.id, s]))
+  const skuMap = new Map<string, Sku>(skus.map(s => [s.id, s]))
 
   return (
     <DashboardLayout>
@@ -127,7 +128,7 @@ export default async function AnalyticsPage() {
                       <span className="text-lg font-medium text-gray-500">#{index + 1}</span>
                       <div>
                         <p className="font-medium">{sku?.skuCode || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500">{sku?.description}</p>
+                        <p className="text-sm text-gray-500">{sku?.description || ''}</p>
                       </div>
                     </div>
                     <div className="text-right">
