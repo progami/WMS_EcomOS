@@ -358,10 +358,11 @@ export default function WarehouseReceivePage() {
     
     // Validate date is not in future
     const receiptDateObj = new Date(receiptDate)
-    const today = new Date()
-    today.setHours(23, 59, 59, 999)
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
     
-    if (receiptDateObj > today) {
+    if (receiptDateObj >= tomorrow) {
       toast.error('Receipt date cannot be in the future')
       return
     }
@@ -631,7 +632,7 @@ export default function WarehouseReceivePage() {
                   name="receiptDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date().toISOString().slice(0, 16)}
+                  max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
                   required
                 />
@@ -645,7 +646,7 @@ export default function WarehouseReceivePage() {
                   name="dropOffDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date().toISOString().slice(0, 16)}
+                  max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 16)}
                   required
                 />
