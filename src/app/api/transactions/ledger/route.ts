@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Force a fresh read to avoid stale connection pool data
+    await prisma.$queryRaw`SELECT 1`
+    
     // Fetch transactions
     const transactions = await prisma.inventoryTransaction.findMany({
       where,

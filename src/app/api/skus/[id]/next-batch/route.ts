@@ -31,42 +31,80 @@ export async function GET(
       )
     }
 
-    // Find all batch numbers for this SKU
-    const allTransactions = await prisma.inventoryTransaction.findMany({
-      where: {
-        skuId: sku.id,
-        batchLot: {
-          not: {
-            in: ['', 'N/A', 'NA', '-']
+    // Find all batch numbers for this SKU from all sources
+    const [transactionBatches, balanceBatches, ledgerBatches] = await Promise.all([
+      // Check inventory transactions
+      prisma.inventoryTransaction.findMany({
+        where: {
+          skuId: sku.id,
+          batchLot: {
+            not: {
+              in: ['', 'N/A', 'NA', '-']
+            }
           }
-        }
-      },
-      select: {
-        batchLot: true
-      },
-      distinct: ['batchLot']
-    })
+        },
+        select: {
+          batchLot: true
+        },
+        distinct: ['batchLot']
+      }),
+      // Check current inventory balances
+      prisma.inventoryBalance.findMany({
+        where: {
+          skuId: sku.id,
+          batchLot: {
+            not: {
+              in: ['', 'N/A', 'NA', '-']
+            }
+          }
+        },
+        select: {
+          batchLot: true
+        },
+        distinct: ['batchLot']
+      }),
+      // Check storage ledger for historical batches
+      prisma.storageLedger.findMany({
+        where: {
+          skuId: sku.id,
+          batchLot: {
+            not: {
+              in: ['', 'N/A', 'NA', '-']
+            }
+          }
+        },
+        select: {
+          batchLot: true
+        },
+        distinct: ['batchLot']
+      })
+    ])
+    
+    // Combine all batches and remove duplicates
+    const allBatchLots = new Set<string>()
+    transactionBatches.forEach(t => allBatchLots.add(t.batchLot))
+    balanceBatches.forEach(b => allBatchLots.add(b.batchLot))
+    ledgerBatches.forEach(l => allBatchLots.add(l.batchLot))
+    
+    const allBatches = Array.from(allBatchLots).map(batchLot => ({ batchLot }))
 
     let nextBatchNumber = 1
     let lastBatch: string | null = null
     
-    if (allTransactions.length > 0) {
-      // Extract numeric values and find the highest
-      const batchNumbers = allTransactions
-        .map(t => {
-          const match = t.batchLot.match(/(\d+)/)
-          return match ? parseInt(match[1]) : 0
-        })
+    if (allBatches.length > 0) {
+      // Only consider purely numeric batch lots
+      const numericBatches = allBatches
+        .filter(t => /^\d+$/.test(t.batchLot))
+        .map(t => parseInt(t.batchLot))
         .filter(n => !isNaN(n) && n > 0)
       
-      if (batchNumbers.length > 0) {
-        const maxBatch = Math.max(...batchNumbers)
+      if (numericBatches.length > 0) {
+        const maxBatch = Math.max(...numericBatches)
         nextBatchNumber = maxBatch + 1
-        // Find the actual batch string with the max number
-        lastBatch = allTransactions.find(t => {
-          const match = t.batchLot.match(/(\d+)/)
-          return match && parseInt(match[1]) === maxBatch
-        })?.batchLot || null
+        lastBatch = maxBatch.toString()
+      } else {
+        // If no numeric batches exist, start from 1
+        nextBatchNumber = 1
       }
     }
 

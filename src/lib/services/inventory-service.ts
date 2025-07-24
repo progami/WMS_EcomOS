@@ -384,6 +384,131 @@ export class InventoryService {
   }
 
   /**
+   * Recalculate inventory balance for a specific SKU/batch/warehouse
+   * This is a reliable method that recalculates from the full transaction history
+   */
+  static async recalculateBalance(
+    warehouseId: string,
+    skuId: string,
+    batchLot: string
+  ): Promise<void> {
+    // Get all transactions for this specific combination
+    const transactions = await prisma.inventoryTransaction.findMany({
+      where: {
+        warehouseId,
+        skuId,
+        batchLot,
+      },
+      orderBy: { transactionDate: 'asc' }
+    })
+    
+    // Calculate the balance from transaction history
+    let currentCartons = 0
+    let lastTransactionDate: Date | null = null
+    let storageCartonsPerPallet: number | null = null
+    let shippingCartonsPerPallet: number | null = null
+    let totalUnits = 0
+    
+    for (const transaction of transactions) {
+      currentCartons += transaction.cartonsIn - transaction.cartonsOut
+      lastTransactionDate = transaction.transactionDate
+      
+      // Calculate units using transaction's captured unitsPerCarton if available
+      if (transaction.unitsPerCarton) {
+        totalUnits += (transaction.cartonsIn - transaction.cartonsOut) * transaction.unitsPerCarton
+      }
+      
+      // Capture batch-specific config from first RECEIVE transaction
+      if (transaction.transactionType === 'RECEIVE' && 
+          transaction.storageCartonsPerPallet && 
+          transaction.shippingCartonsPerPallet &&
+          !storageCartonsPerPallet) {
+        storageCartonsPerPallet = transaction.storageCartonsPerPallet
+        shippingCartonsPerPallet = transaction.shippingCartonsPerPallet
+      }
+    }
+    
+    // Never allow negative balance
+    currentCartons = Math.max(0, currentCartons)
+    
+    // Get SKU info for unit calculation fallback
+    const sku = await prisma.sku.findUnique({
+      where: { id: skuId }
+    })
+    
+    // If we didn't calculate units from transactions, use SKU master
+    if (totalUnits === 0 && currentCartons > 0 && sku) {
+      totalUnits = currentCartons * (sku.unitsPerCarton || 1)
+    }
+    
+    // If no batch config found, get warehouse SKU config
+    if (!storageCartonsPerPallet || !shippingCartonsPerPallet) {
+      const warehouseConfig = await prisma.warehouseSkuConfig.findFirst({
+        where: {
+          warehouseId,
+          skuId,
+          effectiveDate: { lte: lastTransactionDate || new Date() },
+          OR: [
+            { endDate: null },
+            { endDate: { gte: lastTransactionDate || new Date() } }
+          ]
+        },
+        orderBy: { effectiveDate: 'desc' }
+      })
+      
+      storageCartonsPerPallet = warehouseConfig?.storageCartonsPerPallet || storageCartonsPerPallet || 50
+      shippingCartonsPerPallet = warehouseConfig?.shippingCartonsPerPallet || shippingCartonsPerPallet || 50
+    }
+    
+    const currentPallets = storageCartonsPerPallet && currentCartons > 0
+      ? Math.ceil(currentCartons / storageCartonsPerPallet)
+      : 0
+    
+    // Update or create balance record
+    if (currentCartons > 0 || transactions.length > 0) {
+      await prisma.inventoryBalance.upsert({
+        where: {
+          warehouseId_skuId_batchLot: {
+            warehouseId,
+            skuId,
+            batchLot,
+          }
+        },
+        update: {
+          currentCartons,
+          currentPallets,
+          currentUnits: totalUnits,
+          storageCartonsPerPallet,
+          shippingCartonsPerPallet,
+          lastTransactionDate,
+          lastUpdated: new Date(),
+        },
+        create: {
+          warehouseId,
+          skuId,
+          batchLot,
+          currentCartons,
+          currentPallets,
+          currentUnits: totalUnits,
+          storageCartonsPerPallet,
+          shippingCartonsPerPallet,
+          lastTransactionDate,
+        }
+      })
+    } else if (currentCartons === 0) {
+      // Delete zero-balance record if it exists
+      await prisma.inventoryBalance.deleteMany({
+        where: {
+          warehouseId,
+          skuId,
+          batchLot,
+          currentCartons: 0
+        }
+      })
+    }
+  }
+
+  /**
    * Calculate point-in-time inventory balance
    */
   static async getPointInTimeBalance(
