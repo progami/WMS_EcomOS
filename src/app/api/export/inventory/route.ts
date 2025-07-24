@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
 import { generateExportConfig, applyExportConfig } from '@/lib/dynamic-export'
 import { inventoryBalanceConfig } from '@/lib/export-configurations'

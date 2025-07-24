@@ -8,7 +8,7 @@ import { sanitizeForDisplay } from '@/lib/security/input-sanitization';
 import { auditLog } from '@/lib/security/audit-logger';
 import { TransactionType } from '@prisma/client';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getPaginationParams, getPaginationSkipTake, createPaginatedResponse } from '@/lib/database/pagination';
 import { triggerCostCalculation, shouldCalculateCosts, validateTransactionForCostCalculation } from '@/lib/triggers/inventory-transaction-triggers';
 
