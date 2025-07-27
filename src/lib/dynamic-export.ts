@@ -26,7 +26,7 @@ export interface ExportConfig {
 // Default formatters for common data types
 const defaultFormatters = {
   DateTime: (value: Date | null) => 
-    value ? new Date(value).toLocaleString('en-US', { timeZone: 'America/Chicago' }) : '',
+    value ? new Date(value).toLocaleDateString('en-US', { timeZone: 'America/Chicago' }) : '',
   Boolean: (value: boolean) => value ? 'Yes' : 'No',
   Decimal: (value: any) => value?.toString() || '0',
   Json: (value: any) => value ? JSON.stringify(value) : '',

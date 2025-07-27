@@ -1395,13 +1395,6 @@ export default function UnifiedInventoryPage() {
                                         year: 'numeric'
                                       })}
                                     </div>
-                                    <div className="text-xs text-gray-500">
-                                      {new Date(transaction.transactionDate).toLocaleTimeString('en-US', {
-                                        timeZone: 'America/Chicago',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </div>
                                   </td>
                                 )
                               

@@ -815,7 +815,7 @@ async function generatePDF(data: any[], reportType: string, period: string): Pro
   
   // Add generation date
   doc.setFontSize(10)
-  doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 40)
+  doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy')}`, 14, 40)
   
   // Add table
   if (data.length > 0) {

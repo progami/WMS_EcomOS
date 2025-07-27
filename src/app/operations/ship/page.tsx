@@ -593,24 +593,24 @@ export default function WarehouseShipPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ship Date & Time
+                  Ship Date
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="shipDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date().toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 10)}
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pickup Date & Time
+                  Pickup Date
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="pickupDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}

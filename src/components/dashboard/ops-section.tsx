@@ -199,7 +199,7 @@ export function OpsSection({ data, loading }: OpsSectionProps) {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(transaction.date), 'MMM dd, HH:mm')}
+                  {format(new Date(transaction.date), 'MMM dd, yyyy')}
                 </p>
               </div>
             ))}

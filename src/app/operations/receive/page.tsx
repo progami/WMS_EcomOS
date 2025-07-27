@@ -612,24 +612,24 @@ export default function WarehouseReceivePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Receipt Date & Time
+                  Receipt Date
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="receiptDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 10)}
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Drop off Date & Time
+                  Drop off Date
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="dropOffDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={new Date().toISOString().slice(0, 16)}
