@@ -10,6 +10,7 @@ export {
   businessLogger,
   securityLogger,
   perfLogger,
+  cacheLogger,
   default
 } from './edge';
 

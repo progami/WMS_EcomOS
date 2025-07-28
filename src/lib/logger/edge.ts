@@ -321,5 +321,16 @@ export const perfLogger = {
   },
 };
 
+export const cacheLogger = {
+  info: (message: string, metadata?: any) =>
+    edgeLogger.info(message, { category: 'cache', ...metadata }),
+  error: (message: string, metadata?: any) =>
+    edgeLogger.error(message, { category: 'cache', ...metadata }),
+  warn: (message: string, metadata?: any) =>
+    edgeLogger.warn(message, { category: 'cache', ...metadata }),
+  debug: (message: string, metadata?: any) =>
+    edgeLogger.debug(message, { category: 'cache', ...metadata }),
+};
+
 // Default export
 export default edgeLogger;

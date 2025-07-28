@@ -94,20 +94,20 @@ export async function POST(request: NextRequest) {
     );
 
     // Trigger cost calculations asynchronously
-    if (shouldCalculateCosts(result.transaction.transactionType)) {
+    if (shouldCalculateCosts(result.transactionType)) {
       const transactionData = {
-        transactionId: result.transaction.transactionId,
-        warehouseId: result.transaction.warehouseId,
-        skuId: result.transaction.skuId,
-        batchLot: result.transaction.batchLot,
-        transactionType: result.transaction.transactionType,
-        transactionDate: result.transaction.transactionDate,
-        cartonsIn: result.transaction.cartonsIn,
-        cartonsOut: result.transaction.cartonsOut,
-        storagePalletsIn: result.transaction.storagePalletsIn,
-        shippingPalletsOut: result.transaction.shippingPalletsOut,
-        storageCartonsPerPallet: result.transaction.storageCartonsPerPallet || undefined,
-        shippingCartonsPerPallet: result.transaction.shippingCartonsPerPallet || undefined,
+        transactionId: result.transactionId,
+        warehouseId: result.warehouseId,
+        skuId: result.skuId,
+        batchLot: result.batchLot,
+        transactionType: result.transactionType,
+        transactionDate: result.transactionDate,
+        cartonsIn: result.cartonsIn,
+        cartonsOut: result.cartonsOut,
+        storagePalletsIn: result.storagePalletsIn,
+        shippingPalletsOut: result.shippingPalletsOut,
+        storageCartonsPerPallet: result.storageCartonsPerPallet || undefined,
+        shippingCartonsPerPallet: result.shippingCartonsPerPallet || undefined,
       };
 
       if (validateTransactionForCostCalculation(transactionData)) {
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           // Log but don't fail the request
           auditLog({
             entityType: 'CostCalculation',
-            entityId: result.transaction.transactionId,
+            entityId: result.transactionId,
             action: 'TRIGGER_FAILED',
             userId: session.user.id,
             data: { error: error.message }
@@ -128,8 +128,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      transaction: result.transaction,
-      balance: result.balance
+      transaction: result,
+      balance: 0
     });
   } catch (error: any) {
     // console.error('Transaction error:', error);

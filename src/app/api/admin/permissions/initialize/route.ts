@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { PermissionService } from '@/lib/services/permission-service'
 import { withPermission } from '@/lib/middleware/permission-middleware'
-import { logger } from '@/lib/logger/server'
+import { systemLogger as logger } from '@/lib/logger/server'
 
 export const dynamic = 'force-dynamic'
 

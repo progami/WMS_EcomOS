@@ -29,14 +29,15 @@ export async function GET() {
           }
         }
 
-    // Total inventory
-    const inventoryStats = await prisma.inventoryBalance.aggregate({
+    // Calculate total inventory from transactions
+    const inventoryStats = await prisma.inventoryTransaction.aggregate({
       where: warehouseFilter,
       _sum: {
-        currentCartons: true,
+        cartonsIn: true,
+        cartonsOut: true,
       },
     })
-    const currentInventory = inventoryStats._sum.currentCartons || 0
+    const currentInventory = (inventoryStats._sum.cartonsIn || 0) - (inventoryStats._sum.cartonsOut || 0)
 
     // Calculate inventory change from last month
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
@@ -156,19 +157,18 @@ export async function GET() {
       ? ((currentCost - lastCost) / lastCost) * 100 
       : 0
 
-    // Active SKUs count
-    const activeSkus = await prisma.inventoryBalance.findMany({
-      where: {
-        ...warehouseFilter,
-        currentCartons: {
-          gt: 0,
-        },
-      },
-      select: {
-        skuId: true,
-      },
-      distinct: ['skuId'],
+    // Active SKUs count - count unique SKUs with positive balance
+    const activeSkusGroup = await prisma.inventoryTransaction.groupBy({
+      by: ['skuId'],
+      where: warehouseFilter,
+      _sum: {
+        cartonsIn: true,
+        cartonsOut: true
+      }
     })
+    const activeSkus = activeSkusGroup.filter(sku => 
+      (sku._sum.cartonsIn || 0) - (sku._sum.cartonsOut || 0) > 0
+    )
     const activeSkusCount = activeSkus.length
 
     // Pending invoices count
@@ -306,11 +306,12 @@ export async function GET() {
     }
 
     // Chart Data: Warehouse Distribution
-    const warehouseInventory = await prisma.inventoryBalance.groupBy({
+    const warehouseInventory = await prisma.inventoryTransaction.groupBy({
       by: ['warehouseId'],
       where: warehouseFilter,
       _sum: {
-        currentCartons: true,
+        cartonsIn: true,
+        cartonsOut: true,
       },
     })
     
@@ -327,13 +328,17 @@ export async function GET() {
     })
     
     const warehouseMap = new Map(warehouses.map(w => [w.id, w.name]))
-    const totalCartons = warehouseInventory.reduce((sum, w) => sum + (w._sum.currentCartons || 0), 0)
+    const warehouseBalances = warehouseInventory.map(w => ({
+      warehouseId: w.warehouseId,
+      balance: (w._sum.cartonsIn || 0) - (w._sum.cartonsOut || 0)
+    }))
+    const totalCartons = warehouseBalances.reduce((sum, w) => sum + w.balance, 0)
     
-    const warehouseDistribution: Array<{ name: string; value: number; percentage: number }> = warehouseInventory
+    const warehouseDistribution: Array<{ name: string; value: number; percentage: number }> = warehouseBalances
       .map(w => ({
         name: warehouseMap.get(w.warehouseId) || 'Unknown',
-        value: w._sum.currentCartons || 0,
-        percentage: totalCartons > 0 ? ((w._sum.currentCartons || 0) / totalCartons) * 100 : 0,
+        value: w.balance,
+        percentage: totalCartons > 0 ? (w.balance / totalCartons) * 100 : 0,
       }))
       .filter(w => w.value > 0)
       .sort((a, b) => b.value - a.value)

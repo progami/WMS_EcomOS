@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { FeatureFlagsService } from '@/lib/services/feature-flags-service';
-import { logger } from '@/lib/logger/server';
+import { systemLogger as logger } from '@/lib/logger/server';
 import { z } from 'zod';
 
 // Schema for updating feature flags
