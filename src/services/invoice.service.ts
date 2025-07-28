@@ -10,25 +10,25 @@ import { Prisma } from '@prisma/client'
 
 // Validation schemas
 const createInvoiceSchema = z.object({
-  invoice_number: z.string().min(1).transform(val => sanitizeForDisplay(val)),
+  invoiceNumber: z.string().min(1).transform(val => sanitizeForDisplay(val)),
   warehouseId: z.string().uuid(),
-  billing_period_start: z.string().datetime(),
-  billing_period_end: z.string().datetime(),
-  invoice_date: z.string().datetime(),
-  due_date: z.string().datetime().optional(),
-  total_amount: z.number().positive(),
-  line_items: z.array(z.object({
-    cost_category: z.enum(['Container', 'Carton', 'Pallet', 'Storage', 'Unit', 'Shipment', 'Accessorial']),
-    cost_name: z.string().min(1).transform(val => sanitizeForDisplay(val)),
+  billingPeriodStart: z.string().datetime(),
+  billingPeriodEnd: z.string().datetime(),
+  invoiceDate: z.string().datetime(),
+  dueDate: z.string().datetime().optional(),
+  totalAmount: z.number().positive(),
+  lineItems: z.array(z.object({
+    costCategory: z.enum(['Container', 'Carton', 'Pallet', 'Storage', 'Unit', 'Shipment', 'Accessorial']),
+    costName: z.string().min(1).transform(val => sanitizeForDisplay(val)),
     quantity: z.number().positive(),
-    unit_rate: z.number().positive().optional(),
+    unitRate: z.number().positive().optional(),
     amount: z.number().positive()
   }))
 })
 
 const updateInvoiceSchema = z.object({
   status: z.enum(['pending', 'reconciled', 'disputed', 'paid']).optional(),
-  due_date: z.string().datetime().optional()
+  dueDate: z.string().datetime().optional()
 })
 
 export interface InvoiceFilters {
@@ -74,11 +74,11 @@ export class InvoiceService extends BaseService {
         const escapedSearch = escapeRegex(sanitizeSearchQuery(filters.search))
         const searchFloat = parseFloat(filters.search)
         where.OR = [
-          { invoice_number: { contains: escapedSearch, mode: 'insensitive' } },
-          { warehouses: { name: { contains: escapedSearch, mode: 'insensitive' } } }
+          { invoiceNumber: { contains: escapedSearch, mode: 'insensitive' } },
+          { warehouse: { name: { contains: escapedSearch, mode: 'insensitive' } } }
         ]
         if (!isNaN(searchFloat)) {
-          where.OR.push({ total_amount: { equals: searchFloat } })
+          where.OR.push({ totalAmount: { equals: searchFloat } })
         }
       }
 
@@ -92,9 +92,9 @@ export class InvoiceService extends BaseService {
       }
 
       if (filters.startDate || filters.endDate) {
-        where.invoice_date = {}
-        if (filters.startDate) where.invoice_date.gte = new Date(filters.startDate)
-        if (filters.endDate) where.invoice_date.lte = new Date(filters.endDate)
+        where.invoiceDate = {}
+        if (filters.startDate) where.invoiceDate.gte = new Date(filters.startDate)
+        if (filters.endDate) where.invoiceDate.lte = new Date(filters.endDate)
       }
 
       // Execute queries in parallel
@@ -104,9 +104,9 @@ export class InvoiceService extends BaseService {
           where,
           skip,
           take: limit,
-          orderBy: { created_at: 'desc' },
+          orderBy: { createdAt: 'desc' },
           include: {
-            warehouses: {
+            warehouse: {
               select: {
                 id: true,
                 code: true,
@@ -125,7 +125,7 @@ export class InvoiceService extends BaseService {
                 }
               }
             },
-            users_invoices_created_byTousers: {
+            createdByUser: {
               select: {
                 id: true,
                 fullName: true,

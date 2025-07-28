@@ -150,14 +150,14 @@ export class ReportService extends BaseService {
     const balances: any[] = []
 
     return balances.map(b => ({
-      'Warehouse': b.warehouses.name,
-      'SKU Code': b.skus.sku_code,
-      'Description': b.skus.description,
-      'Batch/Lot': b.batch_lot,
-      'Current Cartons': b.current_cartons,
-      'Current Pallets': b.current_pallets,
-      'Units per Carton (Current)': b.skus.units_per_carton,
-      'Total Units': b.current_units,
+      'Warehouse': b.warehouse.name,
+      'SKU Code': b.sku.skuCode,
+      'Description': b.sku.description,
+      'Batch/Lot': b.batchLot,
+      'Current Cartons': b.currentCartons,
+      'Current Pallets': b.currentPallets,
+      'Units per Carton (Current)': b.sku.unitsPerCarton,
+      'Total Units': b.currentUnits,
       'Report Date': new Date().toLocaleDateString()
     }))
   }
@@ -181,7 +181,7 @@ export class ReportService extends BaseService {
             }
           }
       ),
-      transaction_date: {
+      transactionDate: {
         gte: startDate,
         lte: endDate
       }
@@ -192,25 +192,25 @@ export class ReportService extends BaseService {
       include: {
         warehouse: true,
         sku: true,
-        created_by: true
+        createdBy: true
       },
-      orderBy: { transaction_date: 'desc' }
+      orderBy: { transactionDate: 'desc' }
     })
 
     return transactions.map(t => ({
-      'Date': new Date(t.transaction_date).toLocaleDateString(),
-      'Transaction ID': t.transaction_id,
+      'Date': new Date(t.transactionDate).toLocaleDateString(),
+      'Transaction ID': t.transactionId,
       'Warehouse': t.warehouse.name,
-      'SKU': t.sku.sku_code,
-      'Batch/Lot': t.batch_lot,
-      'Type': t.transaction_type,
-      'Reference': t.reference_id || '',
-      'Cartons In': t.cartons_in,
-      'Cartons Out': t.cartons_out,
-      'Units per Carton': t.units_per_carton || t.sku.units_per_carton,
-      'Units In': t.cartons_in * (t.units_per_carton || t.sku.units_per_carton || 1),
-      'Units Out': t.cartons_out * (t.units_per_carton || t.sku.units_per_carton || 1),
-      'Created By': t.created_by.full_name
+      'SKU': t.sku.skuCode,
+      'Batch/Lot': t.batchLot,
+      'Type': t.transactionType,
+      'Reference': t.referenceId || '',
+      'Cartons In': t.cartonsIn,
+      'Cartons Out': t.cartonsOut,
+      'Units per Carton': t.unitsPerCarton || t.sku.unitsPerCarton,
+      'Units In': t.cartonsIn * (t.unitsPerCarton || t.sku.unitsPerCarton || 1),
+      'Units Out': t.cartonsOut * (t.unitsPerCarton || t.sku.unitsPerCarton || 1),
+      'Created By': t.createdBy.fullName
     }))
   }
 
@@ -235,32 +235,32 @@ export class ReportService extends BaseService {
             }
           }
       ),
-      billing_period_start: billingStart,
-      billing_period_end: billingEnd
+      billingPeriodStart: billingStart,
+      billingPeriodEnd: billingEnd
     }
 
     const storageLedger = await this.prisma.storageLedger.findMany({
       where,
       include: {
-        warehouses: true,
-        skus: true
+        warehouse: true,
+        sku: true
       },
       orderBy: [
-        { warehouses: { name: 'asc' } },
-        { week_ending_date: 'asc' },
-        { skus: { sku_code: 'asc' } }
+        { warehouse: { name: 'asc' } },
+        { weekEndingDate: 'asc' },
+        { sku: { skuCode: 'asc' } }
       ]
     })
 
     return storageLedger.map(s => ({
-      'Week Ending': new Date(s.week_ending_date).toLocaleDateString(),
+      'Week Ending': new Date(s.weekEndingDate).toLocaleDateString(),
       'Warehouse': s.warehouse.name,
-      'SKU': s.sku.sku_code,
-      'Batch/Lot': s.batch_lot,
-      'Cartons (Monday)': s.cartons_end_of_monday,
-      'Pallets Charged': s.storage_pallets_charged,
-      'Weekly Rate': s.applicable_weekly_rate,
-      'Weekly Cost': s.calculated_weekly_cost,
+      'SKU': s.sku.skuCode,
+      'Batch/Lot': s.batchLot,
+      'Cartons (Monday)': s.cartonsEndOfMonday,
+      'Pallets Charged': s.storagePalletsCharged,
+      'Weekly Rate': s.applicableWeeklyRate,
+      'Weekly Cost': s.calculatedWeeklyCost,
       'Billing Period': `${billingStart.toLocaleDateString()} - ${billingEnd.toLocaleDateString()}`
     }))
   }
@@ -273,11 +273,11 @@ export class ReportService extends BaseService {
       by: ['warehouseId'],
       where: {
         ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        billing_period_start: new Date(year, month - 2, 16),
-        billing_period_end: new Date(year, month - 1, 15)
+        billingPeriodStart: new Date(year, month - 2, 16),
+        billingPeriodEnd: new Date(year, month - 1, 15)
       },
       _sum: {
-        calculated_weekly_cost: true
+        calculatedWeeklyCost: true
       }
     })
 
@@ -296,10 +296,10 @@ export class ReportService extends BaseService {
 
     return storageCosts.map(cost => ({
       'Warehouse': warehouseMap.get(cost.warehouseId) || 'Unknown',
-      'Storage Costs': cost._sum.calculated_weekly_cost || 0,
+      'Storage Costs': cost._sum.calculatedWeeklyCost || 0,
       'Handling Costs': 0, // To be calculated from calculated_costs table
       'Other Costs': 0, // To be calculated
-      'Total Costs': cost._sum.calculated_weekly_cost || 0,
+      'Total Costs': cost._sum.calculatedWeeklyCost || 0,
       'Period': `${period}`
     }))
   }
@@ -312,16 +312,16 @@ export class ReportService extends BaseService {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        invoice_date: {
+        invoiceDate: {
           gte: startDate,
           lte: endDate
         }
       },
       include: {
-        warehouses: true
+        warehouse: true
       },
       orderBy: {
-        invoice_date: 'asc'
+        invoiceDate: 'asc'
       }
     })
 
@@ -329,26 +329,26 @@ export class ReportService extends BaseService {
     const calculatedCosts = await this.prisma.storageLedger.groupBy({
       by: ['warehouseId'],
       where: {
-        billing_period_start: startDate,
-        billing_period_end: endDate
+        billingPeriodStart: startDate,
+        billingPeriodEnd: endDate
       },
       _sum: {
-        calculated_weekly_cost: true
+        calculatedWeeklyCost: true
       }
     })
 
     const costMap = new Map<string, number>(
-      calculatedCosts.map(c => [c.warehouseId, Number(c._sum.calculated_weekly_cost || 0)])
+      calculatedCosts.map(c => [c.warehouseId, Number(c._sum.calculatedWeeklyCost || 0)])
     )
 
     return invoices.map(invoice => ({
-      'Invoice Number': invoice.invoice_number,
-      'Invoice Date': invoice.invoice_date.toLocaleDateString(),
-      'Warehouse': invoice.warehouses.name,
-      'Invoiced Amount': `£${Number(invoice.total_amount).toFixed(2)}`,
-      'Calculated Amount': `£${(costMap.get(invoice.warehouse_id) || 0).toFixed(2)}`,
-      'Variance': `£${(Number(invoice.total_amount) - (costMap.get(invoice.warehouse_id) || 0)).toFixed(2)}`,
-      'Status': Math.abs(Number(invoice.total_amount) - (costMap.get(invoice.warehouse_id) || 0)) < 0.01 ? 'Matched' : 'Variance'
+      'Invoice Number': invoice.invoiceNumber,
+      'Invoice Date': invoice.invoiceDate.toLocaleDateString(),
+      'Warehouse': invoice.warehouse.name,
+      'Invoiced Amount': `£${Number(invoice.totalAmount).toFixed(2)}`,
+      'Calculated Amount': `£${(costMap.get(invoice.warehouseId) || 0).toFixed(2)}`,
+      'Variance': `£${(Number(invoice.totalAmount) - (costMap.get(invoice.warehouseId) || 0)).toFixed(2)}`,
+      'Status': Math.abs(Number(invoice.totalAmount) - (costMap.get(invoice.warehouseId) || 0)) < 0.01 ? 'Matched' : 'Variance'
     }))
   }
 
@@ -372,16 +372,16 @@ export class ReportService extends BaseService {
     const storageCosts = await this.prisma.storageLedger.findMany({
       where: {
         ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        billing_period_start: startDate,
-        billing_period_end: endDate
+        billingPeriodStart: startDate,
+        billingPeriodEnd: endDate
       },
       include: {
-        warehouses: true,
-        skus: true
+        warehouse: true,
+        sku: true
       },
       orderBy: [
-        { warehouses: { name: 'asc' } },
-        { skus: { sku_code: 'asc' } }
+        { warehouse: { name: 'asc' } },
+        { sku: { skuCode: 'asc' } }
       ]
     })
 
@@ -421,7 +421,7 @@ export class ReportService extends BaseService {
 
     // Get all warehouses (excluding Amazon FBA)
     const warehouses = warehouseId 
-      ? await this.prisma.warehouse.findMany({ where: { id: warehouse_id } })
+      ? await this.prisma.warehouse.findMany({ where: { id: warehouseId } })
       : await this.prisma.warehouse.findMany({
           where: {
             NOT: {
@@ -439,20 +439,20 @@ export class ReportService extends BaseService {
         const storageCost = await this.prisma.storageLedger.aggregate({
           where: {
             warehouseId: warehouse.id,
-            billing_period_start: billingStart,
-            billing_period_end: billingEnd
+            billingPeriodStart: billingStart,
+            billingPeriodEnd: billingEnd
           },
           _sum: {
-            calculated_weekly_cost: true
+            calculatedWeeklyCost: true
           }
         })
 
         // Transaction counts
         const transactions = await this.prisma.inventoryTransaction.groupBy({
-          by: ['transaction_type'],
+          by: ['transactionType'],
           where: {
             warehouseId: warehouse.id,
-            transaction_date: {
+            transactionDate: {
               gte: billingStart,
               lte: billingEnd
             }
@@ -460,12 +460,12 @@ export class ReportService extends BaseService {
           _count: true
         })
 
-        const receiveCount = transactions.find(t => t.transaction_type === 'RECEIVE')?._count || 0
-        const shipCount = transactions.find(t => t.transaction_type === 'SHIP')?._count || 0
+        const receiveCount = transactions.find(t => t.transactionType === 'RECEIVE')?._count || 0
+        const shipCount = transactions.find(t => t.transactionType === 'SHIP')?._count || 0
 
         return {
           'Warehouse': warehouse.name,
-          'Storage Costs': `£${Number(storageCost._sum.calculated_weekly_cost || 0).toFixed(2)}`,
+          'Storage Costs': `£${Number(storageCost._sum.calculatedWeeklyCost || 0).toFixed(2)}`,
           'Receiving Transactions': receiveCount,
           'Shipping Transactions': shipCount,
           'Handling Fees': `£${((receiveCount + shipCount) * 25).toFixed(2)}`, // £25 per transaction
@@ -491,7 +491,7 @@ export class ReportService extends BaseService {
     const previousMetrics = await this.getMetricsForPeriod(prevStartDate, prevEndDate, warehouseId)
 
     const warehouses = warehouseId 
-      ? await this.prisma.warehouse.findMany({ where: { id: warehouse_id } })
+      ? await this.prisma.warehouse.findMany({ where: { id: warehouseId } })
       : await this.prisma.warehouse.findMany({
           where: {
             NOT: {
@@ -541,20 +541,20 @@ export class ReportService extends BaseService {
     const transactions = await this.prisma.inventoryTransaction.findMany({
       where: {
         ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        transaction_date: {
+        transactionDate: {
           gte: startDate,
           lte: endDate
         }
       },
       include: {
-        warehouses: true
+        warehouse: true
       }
     })
 
     // Group by warehouse and calculate metrics
     const warehouseMetrics = transactions.reduce((acc, trans) => {
-      if (!acc[trans.warehouse_id]) {
-        acc[trans.warehouse_id] = {
+      if (!acc[trans.warehouseId]) {
+        acc[trans.warehouseId] = {
           warehouseName: trans.warehouse.name,
           totalTransactions: 0,
           receiveTransactions: 0,
@@ -562,23 +562,23 @@ export class ReportService extends BaseService {
           totalCartonsReceived: 0,
           totalCartonsShipped: 0,
           uniqueSkus: new Set(),
-          transaction_dates: []
+          transactionDates: []
         }
       }
 
-      const metrics = acc[trans.warehouse_id]
+      const metrics = acc[trans.warehouseId]
       metrics.totalTransactions++
       
-      if (trans.transaction_type === 'RECEIVE') {
+      if (trans.transactionType === 'RECEIVE') {
         metrics.receiveTransactions++
-        metrics.totalCartonsReceived += trans.cartons_in
-      } else if (trans.transaction_type === 'SHIP') {
+        metrics.totalCartonsReceived += trans.cartonsIn
+      } else if (trans.transactionType === 'SHIP') {
         metrics.shipTransactions++
-        metrics.totalCartonsShipped += trans.cartons_out
+        metrics.totalCartonsShipped += trans.cartonsOut
       }
       
-      metrics.uniqueSkus.add(trans.sku_id)
-      metrics.transaction_dates.push(trans.transaction_date)
+      metrics.uniqueSkus.add(trans.skuId)
+      metrics.transactionDates.push(trans.transactionDate)
 
       return acc
     }, {} as any)
@@ -609,18 +609,18 @@ export class ReportService extends BaseService {
    */
   private async getMetricsForPeriod(startDate: Date, endDate: Date, warehouseId?: string) {
     const transactions = await this.prisma.inventoryTransaction.groupBy({
-      by: ['warehouse_id', 'transaction_type'],
+      by: ['warehouseId', 'transactionType'],
       where: {
         ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        transaction_date: {
+        transactionDate: {
           gte: startDate,
           lte: endDate
         }
       },
       _count: true,
       _sum: {
-        cartons_in: true,
-        cartons_out: true
+        cartonsIn: true,
+        cartonsOut: true
       }
     })
 

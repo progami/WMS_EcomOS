@@ -15,19 +15,19 @@ const createUserSchema = z.object({
     message: "Username must be alphanumeric"
   }).transform(val => sanitizeForDisplay(val)),
   email: z.string().email(),
-  full_name: z.string().min(1).transform(val => sanitizeForDisplay(val)),
+  fullName: z.string().min(1).transform(val => sanitizeForDisplay(val)),
   password: z.string().min(8),
   role: z.enum(['admin', 'staff']),
-  warehouse_id: z.string().uuid().optional().nullable(),
-  is_active: z.boolean().default(true)
+  warehouseId: z.string().uuid().optional().nullable(),
+  isActive: z.boolean().default(true)
 })
 
 const updateUserSchema = z.object({
   email: z.string().email().optional(),
-  full_name: z.string().min(1).optional().transform(val => val ? sanitizeForDisplay(val) : val),
+  fullName: z.string().min(1).optional().transform(val => val ? sanitizeForDisplay(val) : val),
   role: z.enum(['admin', 'staff']).optional(),
-  warehouse_id: z.string().uuid().optional().nullable(),
-  is_active: z.boolean().optional(),
+  warehouseId: z.string().uuid().optional().nullable(),
+  isActive: z.boolean().optional(),
   password: z.string().min(8).optional()
 })
 
@@ -55,14 +55,14 @@ export class UserService extends BaseService {
     try {
       await this.requirePermission('user:read')
 
-      const where: Prisma.usersWhereInput = {}
+      const where: Prisma.UserWhereInput = {}
       
       if (filters.search) {
         const sanitizedSearch = sanitizeForDisplay(filters.search)
         where.OR = [
           { username: { contains: sanitizedSearch, mode: 'insensitive' } },
           { email: { contains: sanitizedSearch, mode: 'insensitive' } },
-          { full_name: { contains: sanitizedSearch, mode: 'insensitive' } }
+          { fullName: { contains: sanitizedSearch, mode: 'insensitive' } }
         ]
       }
 
@@ -70,23 +70,23 @@ export class UserService extends BaseService {
         where.role = filters.role
       }
 
-      if (filters.warehouse_id) {
-        where.warehouse_id = filters.warehouse_id
+      if (filters.warehouseId) {
+        where.warehouseId = filters.warehouseId
       }
 
-      if (filters.is_active2275 !== undefined) {
-        where.is_active = filters.is_active2335
+      if (filters.isActive !== undefined) {
+        where.isActive = filters.isActive
       }
 
-      const users = await this.prisma.users.findMany({
+      const users = await this.prisma.user.findMany({
         where,
         select: {
           id: true,
           username: true,
           email: true,
-          full_name: true,
+          fullName: true,
           role: true,
-          warehouse_id: true,
+          warehouseId: true,
           warehouse: {
             select: {
               id: true,
@@ -94,14 +94,14 @@ export class UserService extends BaseService {
               code: true
             }
           },
-          is_active: true,
-          last_login_at: true,
-          created_at: true,
-          updated_at: true,
-          locked_until: true,
-          locked_reason: true
+          isActive: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+          lockedUntil: true,
+          lockedReason: true
         },
-        orderBy: { created_at: 'desc' }
+        orderBy: { createdAt: 'desc' }
       })
 
       return users
@@ -117,15 +117,15 @@ export class UserService extends BaseService {
     try {
       await this.requirePermission('user:read')
 
-      const user = await this.prisma.users.findUnique({
-        where: { id: user_id },
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
         select: {
           id: true,
           username: true,
           email: true,
-          full_name: true,
+          fullName: true,
           role: true,
-          warehouse_id: true,
+          warehouseId: true,
           warehouse: {
             select: {
               id: true,
@@ -133,12 +133,12 @@ export class UserService extends BaseService {
               code: true
             }
           },
-          is_active: true,
-          last_login_at: true,
-          created_at: true,
-          updated_at: true,
-          locked_until: true,
-          locked_reason: true,
+          isActive: true,
+          lastLoginAt: true,
+          createdAt: true,
+          updatedAt: true,
+          lockedUntil: true,
+          lockedReason: true,
           permissions: {
             include: {
               permission: true
@@ -168,7 +168,7 @@ export class UserService extends BaseService {
 
       const user = await this.executeInTransaction(async (tx) => {
         // Check if username or email already exists
-        const existingUser = await tx.users.findFirst({
+        const existingUser = await tx.user.findFirst({
           where: {
             OR: [
               { username: validatedData.username },
@@ -189,15 +189,15 @@ export class UserService extends BaseService {
         const passwordHash = await bcrypt.hash(validatedData.password, 10)
 
         // Create user
-        const newUser = await tx.users.create({
+        const newUser = await tx.user.create({
           data: {
             username: validatedData.username,
             email: validatedData.email,
-            full_name: validatedData.full_name,
-            password_hash: password_hash,
+            fullName: validatedData.fullName,
+            passwordHash: passwordHash,
             role: validatedData.role,
-            warehouse_id: validatedData.warehouse_id,
-            is_active: validatedData.is_active5333
+            warehouseId: validatedData.warehouseId,
+            isActive: validatedData.isActive
           },
           select: {
             id: true,
@@ -205,8 +205,8 @@ export class UserService extends BaseService {
             email: true,
             full_name: true,
             role: true,
-            warehouse_id: true,
-            is_active: true
+            warehouseId: true,
+            isActive: true
           }
         })
 
@@ -220,10 +220,10 @@ export class UserService extends BaseService {
       })
 
       businessLogger.info('User created successfully', {
-        user_id: user.id,
+        userId: user.id,
         username: user.username,
         role: user.role,
-        created_by: this.session?.user?.id
+        createdBy: this.session?.user?.id
       })
 
       return user
@@ -243,8 +243,8 @@ export class UserService extends BaseService {
 
       const updatedUser = await this.executeInTransaction(async (tx) => {
         // Get current user data
-        const currentUser = await tx.users.findUnique({
-          where: { id: user_id },
+        const currentUser = await tx.user.findUnique({
+          where: { id: userId },
           select: { role: true, email: true, username: true }
         })
 
@@ -254,7 +254,7 @@ export class UserService extends BaseService {
 
         // Check if email is being changed to one that already exists
         if (validatedData.email && validatedData.email !== currentUser.email) {
-          const existingEmail = await tx.users.findUnique({
+          const existingEmail = await tx.user.findUnique({
             where: { email: validatedData.email }
           })
           
@@ -268,13 +268,13 @@ export class UserService extends BaseService {
         
         // Hash password if provided
         if (validatedData.password) {
-          updateData.password_hash = await bcrypt.hash(validatedData.password, 10)
+          updateData.passwordHash = await bcrypt.hash(validatedData.password, 10)
           delete updateData.password
         }
 
         // Update user
-        const updated = await tx.users.update({
-          where: { id: user_id },
+        const updated = await tx.user.update({
+          where: { id: userId },
           data: updateData,
           select: {
             id: true,
@@ -299,7 +299,7 @@ export class UserService extends BaseService {
           await invalidateAllUserSessions(userId)
           
           securityLogger.warn('User role changed - sessions invalidated', {
-            user_id,
+            userId,
             username: currentUser.username,
             oldRole: currentUser.role,
             newRole: validatedData.role,
@@ -316,7 +316,7 @@ export class UserService extends BaseService {
       })
 
       businessLogger.info('User updated successfully', {
-        user_id,
+        userId,
         username: updatedUser.username,
         changes: Object.keys(validatedData),
         updatedBy: this.session?.user?.id
@@ -369,7 +369,7 @@ export class UserService extends BaseService {
       })
 
       securityLogger.warn('User deactivated', {
-        user_id,
+        userId,
         username: result.username,
         email: result.email,
         deactivatedBy: this.session?.user?.id
@@ -377,7 +377,7 @@ export class UserService extends BaseService {
 
       return { 
         message: 'User deactivated successfully',
-        user_id 
+        userId 
       }
     } catch (error) {
       this.handleError(error, 'deleteUser')
@@ -403,28 +403,28 @@ export class UserService extends BaseService {
         }
 
         // Remove existing permissions
-        await tx.users_permissions.deleteMany({
-          where: { user_id }
+        await tx.userPermission.deleteMany({
+          where: { userId }
         })
 
         // Add new permissions
         if (permissionIds.length > 0) {
-          await tx.users_permissions.createMany({
-            data: permissionIds.map(permission_id => ({
-              user_id,
-              permission_id
+          await tx.userPermission.createMany({
+            data: permissionIds.map(permissionId => ({
+              userId,
+              permissionId
             }))
           })
         }
 
-        await this.logAudit('USER_PERMISSIONS_UPDATED', 'User', user_id, {
+        await this.logAudit('USER_PERMISSIONS_UPDATED', 'User', userId, {
           username: user.username,
           permissionCount: permissionIds.length
         })
       })
 
       businessLogger.info('User permissions updated', {
-        user_id,
+        userId,
         permissionCount: permissionIds.length,
         updatedBy: this.session?.user?.id
       })
@@ -447,12 +447,12 @@ export class UserService extends BaseService {
         : null // Permanent lock
 
       const user = await this.executeInTransaction(async (tx) => {
-        const updated = await tx.users.update({
-          where: { id: user_id },
+        const updated = await tx.user.update({
+          where: { id: userId },
           data: {
-            locked_until: locked_until,
-            locked_reason: sanitizeForDisplay(reason),
-            is_active: false
+            lockedUntil: lockedUntil,
+            lockedReason: sanitizeForDisplay(reason),
+            isActive: false
           },
           select: {
             id: true,
@@ -464,26 +464,26 @@ export class UserService extends BaseService {
         // Invalidate all sessions
         await invalidateAllUserSessions(userId)
 
-        await this.logAudit('USER_LOCKED', 'User', user_id, {
+        await this.logAudit('USER_LOCKED', 'User', userId, {
           username: updated.username,
           reason,
-          locked_until
+          lockedUntil
         })
 
         return updated
       })
 
       securityLogger.warn('User account locked', {
-        user_id,
+        userId,
         username: user.username,
         reason,
-        locked_until,
+        lockedUntil,
         lockedBy: this.session?.user?.id
       })
 
       return {
         message: 'User account locked successfully',
-        locked_until
+        lockedUntil
       }
     } catch (error) {
       this.handleError(error, 'lockUser')
@@ -498,13 +498,13 @@ export class UserService extends BaseService {
       await this.requirePermission('user:unlock')
 
       const user = await this.executeInTransaction(async (tx) => {
-        const updated = await tx.users.update({
-          where: { id: user_id },
+        const updated = await tx.user.update({
+          where: { id: userId },
           data: {
-            locked_until: null,
-            locked_reason: null,
-            is_active: true,
-            failed_login_attempts: 0
+            lockedUntil: null,
+            lockedReason: null,
+            isActive: true,
+            failedLoginAttempts: 0
           },
           select: {
             id: true,
@@ -513,7 +513,7 @@ export class UserService extends BaseService {
           }
         })
 
-        await this.logAudit('USER_UNLOCKED', 'User', user_id, {
+        await this.logAudit('USER_UNLOCKED', 'User', userId, {
           username: updated.username
         })
 
@@ -521,7 +521,7 @@ export class UserService extends BaseService {
       })
 
       securityLogger.info('User account unlocked', {
-        user_id,
+        userId,
         username: user.username,
         unlockedBy: this.session?.user?.id
       })

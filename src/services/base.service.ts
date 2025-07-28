@@ -33,9 +33,9 @@ export abstract class BaseService {
 
     try {
       businessLogger.info(`Starting transaction`, {
-        transaction_id: transactionId,
+        transactionId: transactionId,
         service: this.constructor.name,
-        user_id: this.session?.user?.id
+        userId: this.session?.user?.id
       })
 
       const result = await this.prisma.$transaction(
@@ -52,7 +52,7 @@ export abstract class BaseService {
 
       const duration = Date.now() - startTime
       perfLogger.log(`Transaction completed`, {
-        transaction_id: transactionId,
+        transactionId: transactionId,
         service: this.constructor.name,
         duration
       })
@@ -61,11 +61,11 @@ export abstract class BaseService {
     } catch (error) {
       const duration = Date.now() - startTime
       businessLogger.error(`Transaction failed`, {
-        transaction_id: transactionId,
+        transactionId: transactionId,
         service: this.constructor.name,
         error: error instanceof Error ? error.message : 'Unknown error',
         duration,
-        user_id: this.session?.user?.id
+        userId: this.session?.user?.id
       })
       throw error
     }
@@ -76,8 +76,8 @@ export abstract class BaseService {
    */
   protected async logAudit(
     action: string,
-    entity_type: string,
-    entity_id: string,
+    entityType: string,
+    entityId: string,
     details?: Record<string, any>
   ): Promise<void> {
     try {
@@ -85,8 +85,8 @@ export abstract class BaseService {
         data: {
           userId: this.session?.user?.id || 'system',
           action,
-          entityType: entity_type,
-          entityId: entity_id,
+          entityType: entityType,
+          entityId: entityId,
           details: details ? JSON.stringify(details) : null,
           ipAddress: null, // Can be extracted from request in actual implementation
           userAgent: null  // Can be extracted from request in actual implementation
@@ -95,19 +95,19 @@ export abstract class BaseService {
 
       securityLogger.info(`Audit log created`, {
         action,
-        entity_type,
-        entity_id,
-        user_id: this.session?.user?.id,
+        entityType,
+        entityId,
+        userId: this.session?.user?.id,
         service: this.constructor.name
       })
     } catch (error) {
       // Don't throw on audit log failures
       securityLogger.error(`Failed to create audit log`, {
         action,
-        entity_type,
-        entity_id,
+        entityType,
+        entityId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        user_id: this.session?.user?.id
+        userId: this.session?.user?.id
       })
     }
   }
@@ -145,7 +145,7 @@ export abstract class BaseService {
     if (!hasPermission) {
       securityLogger.warn(`Permission denied`, {
         permission,
-        user_id: this.session?.user?.id,
+        userId: this.session?.user?.id,
         service: this.constructor.name
       })
       throw new Error(`Permission denied: ${permission}`)
@@ -172,7 +172,7 @@ export abstract class BaseService {
       service: this.constructor.name,
       operation,
       error: errorMessage,
-      user_id: this.session?.user?.id
+      userId: this.session?.user?.id
     })
 
     // Re-throw with consistent error structure

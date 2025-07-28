@@ -16,9 +16,9 @@ const createWarehouseSchema = z.object({
   address: z.string().optional().transform(val => val ? sanitizeForDisplay(val) : val),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
-  contact_email: z.string().email().optional(),
-  contact_phone: z.string().optional().transform(val => val ? sanitizeForDisplay(val) : val),
-  is_active: z.boolean().default(true)
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().optional().transform(val => val ? sanitizeForDisplay(val) : val),
+  isActive: z.boolean().default(true)
 })
 
 const updateWarehouseSchema = z.object({
@@ -29,9 +29,9 @@ const updateWarehouseSchema = z.object({
   address: z.string().optional().transform(val => val ? sanitizeForDisplay(val) : val),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
-  contact_email: z.string().email().optional().nullable(),
-  contact_phone: z.string().optional().nullable().transform(val => val ? sanitizeForDisplay(val) : val),
-  is_active: z.boolean().optional()
+  contactEmail: z.string().email().optional().nullable(),
+  contactPhone: z.string().optional().nullable().transform(val => val ? sanitizeForDisplay(val) : val),
+  isActive: z.boolean().optional()
 })
 
 export interface WarehouseFilters {
@@ -53,11 +53,11 @@ function transformWarehouse(warehouse: any) {
     address: warehouse.address,
     latitude: warehouse.latitude,
     longitude: warehouse.longitude,
-    contact_email: warehouse.contact_email,
-    contact_phone: warehouse.contact_phone,
-    is_active: warehouse.is_active,
-    created_at: warehouse.created_at,
-    updated_at: warehouse.updated_at,
+    contactEmail: warehouse.contactEmail,
+    contactPhone: warehouse.contactPhone,
+    isActive: warehouse.isActive,
+    createdAt: warehouse.createdAt,
+    updatedAt: warehouse.updatedAt,
     _count: warehouse._count
   }
 }
@@ -77,9 +77,9 @@ export class WarehouseService extends BaseService {
       const { page, limit } = this.getPaginationParams(pagination)
       const skip = (page - 1) * limit
 
-      const where: Prisma.warehousesWhereInput = filters.includeInactive 
+      const where: Prisma.WarehouseWhereInput = filters.includeInactive 
         ? {} 
-        : { is_active: true }
+        : { isActive: true }
       
       // Exclude Amazon FBA warehouses unless explicitly requested
       if (!filters.includeAmazon) {
@@ -92,7 +92,7 @@ export class WarehouseService extends BaseService {
       }
 
       const [warehouses, total] = await Promise.all([
-        this.prisma.warehouses.findMany({
+        this.prisma.warehouse.findMany({
           where,
           orderBy: { name: 'asc' },
           skip,
@@ -101,13 +101,13 @@ export class WarehouseService extends BaseService {
             _count: {
               select: {
                 users: true,
-                inventory_balances: true,
+                inventoryBalance: true,
                 invoices: true
               }
             }
           }
         }),
-        this.prisma.warehouses.count({ where })
+        this.prisma.warehouse.count({ where })
       ])
 
       // Transform snake_case to camelCase for frontend
@@ -126,16 +126,16 @@ export class WarehouseService extends BaseService {
     try {
       await this.requirePermission('warehouse:read')
 
-      const warehouse = await this.prisma.warehouses.findUnique({
-        where: { id: warehouse_id },
+      const warehouse = await this.prisma.warehouse.findUnique({
+        where: { id: warehouseId },
         include: {
           _count: {
             select: {
               users: true,
               inventory_balances: true,
               invoices: true,
-              inventory_transactions: true,
-              calculated_costs: true
+              inventoryTransaction: true,
+              calculatedCost: true
             }
           }
         }
@@ -162,7 +162,7 @@ export class WarehouseService extends BaseService {
 
       const warehouse = await this.executeInTransaction(async (tx) => {
         // Check if warehouse code or name already exists (case-insensitive)
-        const existingWarehouse = await tx.warehouses.findFirst({
+        const existingWarehouse = await tx.warehouse.findFirst({
           where: {
             OR: [
               { code: { equals: validatedData.code, mode: 'insensitive' } },
@@ -179,22 +179,22 @@ export class WarehouseService extends BaseService {
           }
         }
 
-        const newWarehouse = await tx.warehouses.create({
+        const newWarehouse = await tx.warehouse.create({
           data: {
             code: validatedData.code,
             name: validatedData.name,
             address: validatedData.address || null,
             latitude: validatedData.latitude || null,
             longitude: validatedData.longitude || null,
-            contact_email: validatedData.contact_email || null,
-            contact_phone: validatedData.contact_phone || null,
-            is_active: validatedData.is_active
+            contactEmail: validatedData.contactEmail || null,
+            contactPhone: validatedData.contactPhone || null,
+            isActive: validatedData.isActive
           },
           include: {
             _count: {
               select: {
                 users: true,
-                inventory_balances: true,
+                inventoryBalance: true,
                 invoices: true
               }
             }
@@ -210,7 +210,7 @@ export class WarehouseService extends BaseService {
       })
 
       businessLogger.info('Warehouse created successfully', {
-        warehouse_id: warehouse.id,
+        warehouseId: warehouse.id,
         code: warehouse.code,
         name: warehouse.name
       })
@@ -232,8 +232,8 @@ export class WarehouseService extends BaseService {
 
       const updatedWarehouse = await this.executeInTransaction(async (tx) => {
         // Check if warehouse exists
-        const currentWarehouse = await tx.warehouses.findUnique({
-          where: { id: warehouse_id }
+        const currentWarehouse = await tx.warehouse.findUnique({
+          where: { id: warehouseId }
         })
 
         if (!currentWarehouse) {
@@ -247,18 +247,18 @@ export class WarehouseService extends BaseService {
           if (validatedData.code) {
             whereConditions.push({
               code: { equals: validatedData.code, mode: 'insensitive' as const },
-              id: { not: warehouse_id }
+              id: { not: warehouseId }
             })
           }
           
           if (validatedData.name) {
             whereConditions.push({
               name: { equals: validatedData.name, mode: 'insensitive' as const },
-              id: { not: warehouse_id }
+              id: { not: warehouseId }
             })
           }
           
-          const existingWarehouse = await tx.warehouses.findFirst({
+          const existingWarehouse = await tx.warehouse.findFirst({
             where: { OR: whereConditions }
           })
 
@@ -278,25 +278,25 @@ export class WarehouseService extends BaseService {
         if (validatedData.address !== undefined) updateData.address = validatedData.address
         if (validatedData.latitude !== undefined) updateData.latitude = validatedData.latitude
         if (validatedData.longitude !== undefined) updateData.longitude = validatedData.longitude
-        if (validatedData.contact_email !== undefined) updateData.contact_email = validatedData.contact_email
-        if (validatedData.contact_phone !== undefined) updateData.contact_phone = validatedData.contact_phone
-        if (validatedData.is_active !== undefined) updateData.is_active = validatedData.is_active
+        if (validatedData.contactEmail !== undefined) updateData.contactEmail = validatedData.contactEmail
+        if (validatedData.contactPhone !== undefined) updateData.contactPhone = validatedData.contactPhone
+        if (validatedData.isActive !== undefined) updateData.isActive = validatedData.isActive
 
-        const updated = await tx.warehouses.update({
-          where: { id: warehouse_id },
+        const updated = await tx.warehouse.update({
+          where: { id: warehouseId },
           data: updateData,
           include: {
             _count: {
               select: {
                 users: true,
-                inventory_balances: true,
+                inventoryBalance: true,
                 invoices: true
               }
             }
           }
         })
 
-        await this.logAudit('WAREHOUSE_UPDATED', 'Warehouse', warehouse_id, {
+        await this.logAudit('WAREHOUSE_UPDATED', 'Warehouse', warehouseId, {
           previousData: currentWarehouse,
           newData: updateData
         })
@@ -305,7 +305,7 @@ export class WarehouseService extends BaseService {
       })
 
       businessLogger.info('Warehouse updated successfully', {
-        warehouse_id,
+        warehouseId,
         changes: validatedData
       })
 
@@ -324,16 +324,16 @@ export class WarehouseService extends BaseService {
 
       const result = await this.executeInTransaction(async (tx) => {
         // Check if warehouse has related data
-        const relatedData = await tx.warehouses.findUnique({
-          where: { id: warehouse_id },
+        const relatedData = await tx.warehouse.findUnique({
+          where: { id: warehouseId },
           include: {
             _count: {
               select: {
                 users: true,
-                inventory_balances: true,
-                inventory_transactions: true,
+                inventoryBalance: true,
+                inventoryTransaction: true,
                 invoices: true,
-                calculated_costs: true
+                calculatedCost: true
               }
             }
           }
@@ -348,12 +348,12 @@ export class WarehouseService extends BaseService {
         
         if (hasRelatedData) {
           // Soft delete - just mark as inactive
-          const updatedWarehouse = await tx.warehouses.update({
-            where: { id: warehouse_id },
-            data: { is_active: false }
+          const updatedWarehouse = await tx.warehouse.update({
+            where: { id: warehouseId },
+            data: { isActive: false }
           })
 
-          await this.logAudit('WAREHOUSE_DEACTIVATED', 'Warehouse', warehouse_id, {
+          await this.logAudit('WAREHOUSE_DEACTIVATED', 'Warehouse', warehouseId, {
             code: relatedData.code,
             name: relatedData.name,
             reason: 'Has related data'
@@ -365,11 +365,11 @@ export class WarehouseService extends BaseService {
           }
         } else {
           // Hard delete - no related data
-          await tx.warehouses.delete({
-            where: { id: warehouse_id }
+          await tx.warehouse.delete({
+            where: { id: warehouseId }
           })
 
-          await this.logAudit('WAREHOUSE_DELETED', 'Warehouse', warehouse_id, {
+          await this.logAudit('WAREHOUSE_DELETED', 'Warehouse', warehouseId, {
             code: relatedData.code,
             name: relatedData.name
           })
@@ -381,7 +381,7 @@ export class WarehouseService extends BaseService {
       })
 
       businessLogger.info('Warehouse deletion completed', {
-        warehouse_id,
+        warehouseId,
         action: result.action
       })
 
@@ -405,24 +405,24 @@ export class WarehouseService extends BaseService {
         userCount
       ] = await Promise.all([
         // Inventory statistics
-        this.prisma.inventory_balances.aggregate({
-          where: { warehouse_id: warehouse_id },
+        this.prisma.inventoryBalance.aggregate({
+          where: { warehouseId: warehouseId },
           _sum: {
-            current_cartons: true,
-            current_pallets: true,
-            current_units: true
+            currentCartons: true,
+            currentPallets: true,
+            currentUnits: true
           },
           _count: {
-            sku_id: true
+            skuId: true
           }
         }),
         
         // Transaction statistics
-        this.prisma.inventory_transactions.groupBy({
-          by: ['transaction_type'],
+        this.prisma.inventoryTransaction.groupBy({
+          by: ['transactionType'],
           where: {
-            warehouse_id: warehouse_id,
-            transaction_date: {
+            warehouseId: warehouseId,
+            transactionDate: {
               gte: new Date(new Date().setDate(new Date().getDate() - 30))
             }
           },
@@ -430,36 +430,36 @@ export class WarehouseService extends BaseService {
         }),
         
         // Invoice statistics
-        this.prisma.invoices.aggregate({
-          where: { warehouse_id: warehouse_id },
+        this.prisma.invoice.aggregate({
+          where: { warehouseId: warehouseId },
           _sum: {
-            total_amount: true
+            totalAmount: true
           },
           _count: true
         }),
         
         // User count
-        this.prisma.users.count({
-          where: { warehouse_id: warehouse_id }
+        this.prisma.user.count({
+          where: { warehouseId: warehouseId }
         })
       ])
 
       return {
         inventory: {
-          totalSkus: inventoryStats._count.sku_id,
-          totalCartons: inventoryStats._sum.current_cartons || 0,
-          totalPallets: inventoryStats._sum.current_pallets || 0,
-          totalUnits: inventoryStats._sum.current_units || 0
+          totalSkus: inventoryStats._count.skuId,
+          totalCartons: inventoryStats._sum.currentCartons || 0,
+          totalPallets: inventoryStats._sum.currentPallets || 0,
+          totalUnits: inventoryStats._sum.currentUnits || 0
         },
         transactions: {
           last30Days: transactionStats.reduce((acc, stat) => ({
             ...acc,
-            [stat.transaction_type.toLowerCase()]: stat._count
+            [stat.transactionType.toLowerCase()]: stat._count
           }), {})
         },
         invoices: {
           total: invoiceStats._count,
-          total_amount: invoiceStats._sum.total_amount || 0
+          totalAmount: invoiceStats._sum.totalAmount || 0
         },
         users: userCount
       }
