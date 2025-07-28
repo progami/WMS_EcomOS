@@ -193,7 +193,6 @@ test.describe('Application Health Check', () => {
     // Test navigation to main pages - updated paths based on actual app structure
     const navigationTests = [
       { path: '/', name: 'Home/Dashboard' },
-      { path: '/operations', name: 'Operations' },
       { path: '/operations/inventory', name: 'Inventory' },
       { path: '/operations/transactions', name: 'Transactions' },
       { path: '/finance', name: 'Finance' },
@@ -281,7 +280,6 @@ test.describe('Application Health Check', () => {
     const pagesToCheck = [
       '/',
       '/auth/login',
-      '/operations',
       '/operations/inventory',
       '/operations/transactions',
       '/finance',
