@@ -20,7 +20,10 @@ export async function getPendingCostCalculations() {
   return []
 }
 
-export async function triggerWeeklyStorageCalculation() {
+export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, userId?: string, warehouseId?: string) {
   // Placeholder - weekly storage calculation logic would go here
-  return Promise.resolve()
+  return Promise.resolve({
+    processed: 0,
+    errors: []
+  })
 }
