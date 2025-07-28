@@ -25,9 +25,10 @@ export function formatDate(date: Date | string, formatStr: string = 'MMM dd, yyy
   return formatInTimeZone(dateObj, CENTRAL_TIMEZONE, formatStr)
 }
 
-export function formatDateTime(date: Date | string, formatStr: string = 'MMM dd, yyyy HH:mm'): string {
+export function formatDateTime(date: Date | string, formatStr: string = 'MMM dd, yyyy'): string {
+  // Changed to use date-only format, removing time
   const dateObj = typeof date === 'string' ? new Date(date) : date
-  return formatInTimeZone(dateObj, CENTRAL_TIMEZONE, formatStr + ' zzz')
+  return formatInTimeZone(dateObj, CENTRAL_TIMEZONE, formatStr)
 }
 
 export function toCentralTime(date: Date | string): Date {

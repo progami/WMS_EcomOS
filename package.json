@@ -38,6 +38,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx scripts/seed-data.ts",
     "logs:setup": "tsx scripts/production/setup-logging.ts",
     "db:generate": "prisma generate",
     "logs:tail": "tail -f logs/dev.log",

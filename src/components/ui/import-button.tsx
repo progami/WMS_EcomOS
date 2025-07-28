@@ -16,9 +16,10 @@ interface ImportButtonProps {
   entityName: string
   onImportComplete?: () => void
   className?: string
+  buttonText?: string
 }
 
-export function ImportButton({ entityName, onImportComplete, className = '' }: ImportButtonProps) {
+export function ImportButton({ entityName, onImportComplete, className = '', buttonText }: ImportButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
@@ -114,7 +115,7 @@ export function ImportButton({ entityName, onImportComplete, className = '' }: I
         className={className}
       >
         <Upload className="h-4 w-4 mr-2" />
-        Import {config.displayName}
+        {buttonText || `Import ${config.displayName}`}
       </Button>
 
       {isOpen && (

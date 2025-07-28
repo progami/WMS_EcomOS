@@ -197,7 +197,6 @@ export default function AdminRatesPage() {
       <div className="space-y-6">
         <PageHeader
           title="Cost Rates Management"
-          description="Configure and manage storage rates, handling fees, and other charges for each warehouse. These rates are used to calculate monthly storage costs and reconcile with warehouse invoices."
           icon={DollarSign}
           actions={
             session?.user.role === 'admin' && (

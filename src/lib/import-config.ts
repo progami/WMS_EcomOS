@@ -363,7 +363,7 @@ export const importConfigs: Record<string, ImportEntityConfig> = {
         defaultValue: false,
       },
       
-      // ========== Location Fields (Required) ==========
+      // ========== Warehouse Fields (Required) ==========
       {
         dbField: 'warehouse',
         excelColumns: ['Warehouse', 'warehouse', 'Warehouse Name'], // Matches export name

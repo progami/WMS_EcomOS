@@ -101,12 +101,8 @@ export default function InvoiceTemplatesPage() {
         setWarehouses(warehouseData)
       }
 
-      // Fetch templates
-      const templateRes = await fetch('/api/warehouse-configs/invoice-templates')
-      if (templateRes.ok) {
-        const templateData = await templateRes.json()
-        setTemplates(templateData)
-      }
+      // API endpoint removed - set empty data
+      setTemplates([])
     } catch (error) {
       toast.error('Failed to load data')
     } finally {
@@ -161,20 +157,8 @@ export default function InvoiceTemplatesPage() {
       
       const method = editingTemplate ? 'PUT' : 'POST'
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-
-      if (response.ok) {
-        toast.success(`Template ${editingTemplate ? 'updated' : 'created'} successfully`)
-        setShowModal(false)
-        fetchData()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to save template')
-      }
+      // API endpoints removed
+      toast.error('Save feature not available')
     } catch (error) {
       toast.error('Failed to save template')
     }
@@ -184,16 +168,8 @@ export default function InvoiceTemplatesPage() {
     if (!confirm('Are you sure you want to delete this template?')) return
 
     try {
-      const response = await fetch(`/api/warehouse-configs/invoice-templates/${id}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        toast.success('Template deleted successfully')
-        fetchData()
-      } else {
-        toast.error('Failed to delete template')
-      }
+      // API endpoint removed
+      toast.error('Delete feature not available')
     } catch (error) {
       toast.error('Failed to delete template')
     }
@@ -211,18 +187,8 @@ export default function InvoiceTemplatesPage() {
     delete (newTemplate as any).warehouse
 
     try {
-      const response = await fetch('/api/warehouse-configs/invoice-templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTemplate)
-      })
-
-      if (response.ok) {
-        toast.success('Template copied successfully')
-        fetchData()
-      } else {
-        toast.error('Failed to copy template')
-      }
+      // API endpoint removed
+      toast.error('Copy feature not available')
     } catch (error) {
       toast.error('Failed to copy template')
     }
@@ -244,7 +210,6 @@ export default function InvoiceTemplatesPage() {
         <PageHeader
           title="Invoice Templates"
           subtitle="Configure warehouse-specific billing strategies"
-          description="Define how each warehouse calculates costs for different transaction types. Templates determine which costs are included and how they are calculated."
           icon={FileText}
           iconColor="text-purple-600"
           bgColor="bg-purple-50"

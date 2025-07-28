@@ -17,7 +17,6 @@ export default async function OrderManagementPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Order Management"
-          description="Manage customer orders and fulfillment"
         />
 
         <div className="mt-8 flex flex-col items-center justify-center text-center py-16">

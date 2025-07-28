@@ -84,7 +84,6 @@ export default function AdminSettingsPage() {
         {/* Header */}
         <PageHeader
           title="System Settings"
-          description="Configure system-wide settings and master data. Manage warehouses, SKUs, cost rates, users, and system configurations. Use quick actions to export data or access advanced settings."
           icon={SettingsIcon}
           iconColor="text-gray-600"
           bgColor="bg-gray-50"

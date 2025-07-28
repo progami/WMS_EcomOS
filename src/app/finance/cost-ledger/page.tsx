@@ -59,7 +59,16 @@ export default function CostLedgerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [ledgerData, setLedgerData] = useState<WeekCosts[]>([])
-  const [totals, setTotals] = useState<any>(null)
+  const [totals, setTotals] = useState<any>({
+    total: 0,
+    storage: 0,
+    container: 0,
+    pallet: 0,
+    carton: 0,
+    unit: 0,
+    shipment: 0,
+    accessorial: 0
+  })
   const [warehouses, setWarehouses] = useState<{id: string; name: string}[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -98,6 +107,20 @@ export default function CostLedgerPage() {
   const fetchCostLedger = useCallback(async () => {
     try {
       setLoading(true)
+      // API endpoint removed - return empty data with proper defaults
+      setLedgerData([])
+      setTotals({
+        total: 0,
+        storage: 0,
+        container: 0,
+        pallet: 0,
+        carton: 0,
+        unit: 0,
+        shipment: 0,
+        accessorial: 0
+      })
+      
+      /* Disabled - API removed
       const params = new URLSearchParams({
         startDate: filters.startDate,
         endDate: filters.endDate,
@@ -116,6 +139,7 @@ export default function CostLedgerPage() {
       const data = await response.json()
       setLedgerData(data.ledger || [])
       setTotals(data.totals || {})
+      */
     } catch (error) {
       toast.error('Failed to load cost ledger')
     } finally {
@@ -138,6 +162,9 @@ export default function CostLedgerPage() {
   }
 
   const handleExport = () => {
+    // Export disabled - API removed
+    toast.error('Export functionality is currently unavailable')
+    /* Disabled - API removed
     const params = new URLSearchParams({
       startDate: filters.startDate,
       endDate: filters.endDate,
@@ -146,6 +173,7 @@ export default function CostLedgerPage() {
     })
     window.open(`/api/finance/export/cost-ledger?${params}`, '_blank')
     toast.success('Exporting cost ledger...')
+    */
   }
 
   // Filter ledger data based on search
@@ -201,7 +229,6 @@ export default function CostLedgerPage() {
         <PageHeader
           title="Cost Ledger"
           subtitle="Comprehensive cost tracking and analysis"
-          description="Track all warehouse costs including storage, handling, and shipping. Costs are aggregated weekly and linked to source transactions for full traceability."
           icon={DollarSign}
           iconColor="text-green-600"
           bgColor="bg-green-50"
@@ -246,7 +273,7 @@ export default function CostLedgerPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Storage Costs</p>
                   <p className="text-2xl font-bold text-blue-600">{formatCurrency(totals.storage)}</p>
-                  <p className="text-xs text-gray-500">{((totals.storage / totals.total) * 100).toFixed(1)}% of total</p>
+                  <p className="text-xs text-gray-500">{totals.total > 0 ? ((totals.storage / totals.total) * 100).toFixed(1) : '0.0'}% of total</p>
                 </div>
                 <Box className="h-8 w-8 text-blue-400" />
               </div>
@@ -259,7 +286,7 @@ export default function CostLedgerPage() {
                     {formatCurrency(totals.container + totals.pallet + totals.carton + totals.unit)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {(((totals.container + totals.pallet + totals.carton + totals.unit) / totals.total) * 100).toFixed(1)}% of total
+                    {totals.total > 0 ? (((totals.container + totals.pallet + totals.carton + totals.unit) / totals.total) * 100).toFixed(1) : '0.0'}% of total
                   </p>
                 </div>
                 <Package className="h-8 w-8 text-green-400" />
@@ -270,7 +297,7 @@ export default function CostLedgerPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Shipping Costs</p>
                   <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.shipment)}</p>
-                  <p className="text-xs text-gray-500">{((totals.shipment / totals.total) * 100).toFixed(1)}% of total</p>
+                  <p className="text-xs text-gray-500">{totals.total > 0 ? ((totals.shipment / totals.total) * 100).toFixed(1) : '0.0'}% of total</p>
                 </div>
                 <Truck className="h-8 w-8 text-red-400" />
               </div>

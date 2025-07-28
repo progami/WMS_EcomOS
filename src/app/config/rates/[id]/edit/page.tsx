@@ -178,7 +178,6 @@ export default function EditRatePage() {
         <PageHeader
           title="Edit Cost Rate"
           subtitle={`${rate.warehouse.name} - ${rate.costCategory}`}
-          description="Update rate details. Note: You cannot change the warehouse or category. To change these, create a new rate."
           icon={DollarSign}
           iconColor="text-green-600"
           bgColor="bg-green-50"

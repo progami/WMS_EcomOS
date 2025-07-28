@@ -43,9 +43,9 @@ export function QuickStartGuide({ userRole }: QuickStartGuideProps) {
     admin: [
       {
         title: 'Set Up Warehouses',
-        description: 'Configure your warehouse locations and storage settings',
+        description: 'Configure your warehouses and storage settings',
         icon: Package,
-        link: '/config/locations'
+        link: '/config/warehouses'
       },
       {
         title: 'Configure SKUs',
@@ -63,7 +63,7 @@ export function QuickStartGuide({ userRole }: QuickStartGuideProps) {
     staff: [
       {
         title: 'Check Inventory',
-        description: 'Review current stock levels and locations',
+        description: 'Review current stock levels and warehouses',
         icon: Package,
         link: '/operations/inventory'
       },

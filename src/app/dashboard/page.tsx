@@ -99,8 +99,8 @@ export default function DashboardPage() {
     }
   }, [status, router])
   
-  // Auto-detect demo mode from user session
-  const useDemoData = session?.user?.isDemo || false
+  // Always use real data, never demo data
+  const useDemoData = false
   const isAdmin = session?.user?.role === 'admin'
   
   const timeRanges: Record<string, TimeRange> = useMemo(() => ({
@@ -196,121 +196,14 @@ export default function DashboardPage() {
     }
   }, [selectedTimeRange, timeRanges, logAction, logPerformance, logError])
 
-  // Generate dummy data for demo users
-  const generateDummyData = useCallback(() => {
-    const currentDate = new Date()
-    
-    // Generate inventory trend data (last 12 months)
-    const inventoryTrend = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(currentDate)
-      date.setMonth(currentDate.getMonth() - (11 - i))
-      return {
-        date: date.toISOString().split('T')[0],
-        inventory: 20000 + Math.floor(Math.random() * 10000) + (i * 500)
-      }
-    })
-    
-    // Generate cost trend data (last 12 months)
-    const costTrend = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(currentDate)
-      date.setMonth(currentDate.getMonth() - (11 - i))
-      return {
-        date: date.toISOString().split('T')[0],
-        cost: 3000 + Math.floor(Math.random() * 2000) + (i * 100)
-      }
-    })
-    
-    return {
-      // Market data
-      amazonMetrics: {
-        pendingShipments: 5,
-        inboundInventory: 1250,
-        activeListings: 147
-      },
-      reorderAlerts: 12,
-      plannedShipments: 8,
-      inventoryTrend: inventoryTrend,
-      
-      // Operations data
-      totalInventory: 27000,
-      inventoryChange: '15',
-      inventoryTrendStatus: 'up' as const,
-      activeSkus: 247,
-      warehouseDistribution: [
-        { name: 'London Central', value: 8500, percentage: 31 },
-        { name: 'Manchester North', value: 6200, percentage: 23 },
-        { name: 'Birmingham Hub', value: 4800, percentage: 18 },
-        { name: 'Glasgow Depot', value: 3200, percentage: 12 },
-        { name: 'Bristol South', value: 2800, percentage: 10 },
-        { name: 'Leeds East', value: 1500, percentage: 6 }
-      ],
-      recentTransactions: Array.from({ length: 10 }, (_, i) => ({
-        id: `TRX-${1000 + i}`,
-        type: ['RECEIVE', 'SHIP', 'TRANSFER'][Math.floor(Math.random() * 3)],
-        sku: ['ELEC-1234', 'APP-5678', 'HOME-9012', 'SPRT-3456', 'BEAU-7890'][Math.floor(Math.random() * 5)],
-        quantity: Math.floor(Math.random() * 100) + 10,
-        warehouse: ['London Central', 'Manchester North', 'Birmingham Hub'][Math.floor(Math.random() * 3)],
-        date: new Date(Date.now() - (i * 4 * 60 * 60 * 1000)).toISOString()
-      })),
-      
-      // Finance data
-      storageCost: '4500.00',
-      costChange: '8',
-      costTrendStatus: 'up' as const,
-      costTrend: costTrend,
-      pendingInvoices: 3,
-      overdueInvoices: 1,
-      reconciliationStatus: {
-        matched: 45,
-        mismatched: 3,
-        pending: 7
-      },
-      recentInvoices: [
-        { id: 'INV-2024-001', clientName: 'Acme Corp', amount: '2,450.00', status: 'pending' as const, date: '2024-01-15' },
-        { id: 'INV-2024-002', clientName: 'Tech Solutions', amount: '1,890.00', status: 'paid' as const, date: '2024-01-12' },
-        { id: 'INV-2024-003', clientName: 'Global Trade', amount: '3,200.00', status: 'overdue' as const, date: '2024-01-08' }
-      ]
-    }
-  }, [])
-
-  // Use dummy data for demo
-  const dummyData = useMemo(() => generateDummyData(), [generateDummyData])
 
   useEffect(() => {
     // Only fetch if we haven't already
     if (!hasFetched && status === 'authenticated') {
       setHasFetched(true)
-      if (!useDemoData) {
-        fetchDashboardStats()
-      } else {
-        // For demo users, set dummy stats and chart data
-        const data = generateDummyData()
-        setStats({
-          totalInventory: data.totalInventory,
-          inventoryChange: data.inventoryChange,
-          inventoryTrend: data.inventoryTrendStatus,
-          storageCost: data.storageCost,
-          costChange: data.costChange,
-          costTrend: data.costTrendStatus,
-          activeSkus: data.activeSkus,
-          pendingInvoices: data.pendingInvoices,
-          overdueInvoices: data.overdueInvoices
-        })
-        setChartData({
-          inventoryTrend: data.inventoryTrend,
-          costTrend: data.costTrend,
-          warehouseDistribution: data.warehouseDistribution,
-          recentTransactions: data.recentTransactions,
-          amazonMetrics: data.amazonMetrics,
-          reorderAlerts: data.reorderAlerts,
-          plannedShipments: data.plannedShipments,
-          reconciliationStatus: data.reconciliationStatus,
-          recentInvoices: data.recentInvoices
-        })
-        setLoadingStats(false)
-      }
+      fetchDashboardStats()
     }
-  }, [hasFetched, status, fetchDashboardStats, useDemoData, generateDummyData])
+  }, [hasFetched, status, fetchDashboardStats])
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
@@ -398,14 +291,7 @@ export default function DashboardPage() {
 
 
   // Prepare data for sections
-  const marketData = useDemoData ? {
-    data: {
-      amazonMetrics: dummyData.amazonMetrics,
-      reorderAlerts: dummyData.reorderAlerts,
-      plannedShipments: dummyData.plannedShipments,
-      inventoryTrend: dummyData.inventoryTrend
-    }
-  } : {
+  const marketData = {
     data: {
       amazonMetrics: chartData?.amazonMetrics,
       reorderAlerts: chartData?.reorderAlerts,
@@ -414,16 +300,7 @@ export default function DashboardPage() {
     }
   }
 
-  const opsData = useDemoData ? {
-    data: {
-      totalInventory: dummyData.totalInventory,
-      inventoryChange: dummyData.inventoryChange,
-      inventoryTrend: dummyData.inventoryTrendStatus,
-      activeSkus: dummyData.activeSkus,
-      warehouseDistribution: dummyData.warehouseDistribution,
-      recentTransactions: dummyData.recentTransactions
-    }
-  } : {
+  const opsData = {
     data: {
       totalInventory: stats?.totalInventory,
       inventoryChange: stats?.inventoryChange,
@@ -434,18 +311,7 @@ export default function DashboardPage() {
     }
   }
 
-  const finData = useDemoData ? {
-    data: {
-      storageCost: dummyData.storageCost,
-      costChange: dummyData.costChange,
-      costTrend: dummyData.costTrendStatus,
-      pendingInvoices: dummyData.pendingInvoices,
-      overdueInvoices: dummyData.overdueInvoices,
-      reconciliationStatus: dummyData.reconciliationStatus,
-      recentInvoices: dummyData.recentInvoices,
-      costTrendData: dummyData.costTrend
-    }
-  } : {
+  const finData = {
     data: {
       storageCost: stats?.storageCost,
       costChange: stats?.costChange,
@@ -460,7 +326,6 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {useDemoData && <DemoWelcome />}
       <div className="space-y-6">
         {/* Header with Actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

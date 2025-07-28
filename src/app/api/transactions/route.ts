@@ -3,8 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
-import { withTransaction, withRetry } from '@/lib/database/transaction-utils'
-import { InventoryService } from '@/lib/services/inventory-service'
 import { businessLogger, perfLogger } from '@/lib/logger/index'
 import { sanitizeForDisplay, validateAlphanumeric, validatePositiveInteger } from '@/lib/security/input-sanitization'
 import { triggerCostCalculation, shouldCalculateCosts, validateTransactionForCostCalculation } from '@/lib/triggers/inventory-transaction-triggers'
@@ -289,17 +287,24 @@ export async function POST(request: NextRequest) {
 
       // For SHIP and ADJUST_OUT transactions, verify inventory availability
       if (['SHIP', 'ADJUST_OUT'].includes(txType)) {
-        const balance = await prisma.inventoryBalance.findFirst({
+        // Calculate current balance from transactions
+        const transactions = await prisma.inventoryTransaction.findMany({
           where: {
             warehouseId,
             skuId: sku.id,
             batchLot: item.batchLot,
+            transactionDate: { lte: transactionDateObj }
           }
         })
         
-        if (!balance || balance.currentCartons < item.cartons) {
+        let currentCartons = 0
+        for (const txn of transactions) {
+          currentCartons += txn.cartonsIn - txn.cartonsOut
+        }
+        
+        if (currentCartons < item.cartons) {
           return NextResponse.json({ 
-            error: `Insufficient inventory for SKU ${item.skuCode} batch ${item.batchLot}. Available: ${balance?.currentCartons || 0}, Requested: ${item.cartons}` 
+            error: `Insufficient inventory for SKU ${item.skuCode} batch ${item.batchLot}. Available: ${currentCartons}, Requested: ${item.cartons}` 
           }, { status: 400 })
         }
       }
@@ -318,8 +323,7 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
     
     // Create transactions with proper database transaction and locking
-    const result = await withRetry(async () => {
-      return withTransaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         const transactions = [];
         
         // Pre-fetch all SKUs to reduce queries
@@ -357,20 +361,21 @@ export async function POST(request: NextRequest) {
               }
             }
           } else if (['SHIP', 'ADJUST_OUT'].includes(txType)) {
-            // For SHIP, get the batch-specific config from inventory balance with lock
-            const balances = await tx.$queryRaw<any[]>`
-              SELECT * FROM "inventory_balances" 
-              WHERE "warehouse_id" = ${warehouseId} 
-              AND "sku_id" = ${sku.id} 
-              AND "batch_lot" = ${item.batchLot}
-              FOR UPDATE
-            `;
-            const balance = balances[0];
+            // For SHIP, get the batch-specific config from the original RECEIVE transaction
+            const originalReceive = await tx.inventoryTransaction.findFirst({
+              where: {
+                warehouseId,
+                skuId: sku.id,
+                batchLot: item.batchLot,
+                transactionType: 'RECEIVE'
+              },
+              orderBy: { transactionDate: 'asc' }
+            });
             
             if (txType === 'ADJUST_OUT' && item.pallets) {
               calculatedShippingPalletsOut = item.pallets
-            } else if (balance?.shippingCartonsPerPallet) {
-              batchShippingCartonsPerPallet = balance.shipping_cartons_per_pallet
+            } else if (originalReceive?.shippingCartonsPerPallet) {
+              batchShippingCartonsPerPallet = originalReceive.shippingCartonsPerPallet
               calculatedShippingPalletsOut = Math.ceil(item.cartons / batchShippingCartonsPerPallet)
               if (item.pallets !== calculatedShippingPalletsOut) {
                 palletVarianceNotes = `Shipping pallet variance: Actual ${item.pallets}, Calculated ${calculatedShippingPalletsOut} (${item.cartons} cartons @ ${batchShippingCartonsPerPallet}/pallet)`
@@ -419,22 +424,10 @@ export async function POST(request: NextRequest) {
           transactions.push(transaction)
         }
 
-        // Recalculate inventory balances reliably for each affected item
-        const processedCombinations = new Set<string>();
-        for (const transaction of transactions) {
-          const key = `${transaction.warehouseId}|${transaction.skuId}|${transaction.batchLot}`;
-          if (!processedCombinations.has(key)) {
-            processedCombinations.add(key);
-            await InventoryService.recalculateBalance(
-              transaction.warehouseId,
-              transaction.skuId,
-              transaction.batchLot
-            );
-          }
-        }
+        // Inventory balances are now calculated at runtime from transactions
+        // No need to update a separate balance table
         
         return transactions;
-      }, { timeout: 30000, maxWait: 10000 }); // Increase timeout to 30 seconds
     });
 
     const duration = Date.now() - startTime;
@@ -479,7 +472,7 @@ export async function POST(request: NextRequest) {
 
         if (validateTransactionForCostCalculation(transactionData)) {
           // Trigger cost calculation without awaiting
-          triggerCostCalculation(transactionData, session.user.id).catch(error => {
+          triggerCostCalculation(transactionData).catch(error => {
             // console.error(`Failed to trigger cost calculation for ${transaction.transactionId}:`, error);
             businessLogger.error('Cost calculation trigger failed', {
               transactionId: transaction.transactionId,

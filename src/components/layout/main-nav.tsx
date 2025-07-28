@@ -58,15 +58,12 @@ const baseNavigation: NavSection[] = [
     title: 'Operations',
     items: [
       { name: 'Inventory Ledger', href: '/operations/inventory', icon: BookOpen },
-      { name: 'Receive Goods', href: '/operations/receive', icon: Package },
-      { name: 'Ship Goods', href: '/operations/ship', icon: Package2 },
       { name: 'Pallet Variance', href: '/operations/pallet-variance', icon: AlertTriangle },
     ]
   },
   {
     title: 'Finance',
     items: [
-      { name: 'Dashboard', href: '/finance/dashboard', icon: DollarSign },
       { name: 'Storage Ledger', href: '/finance/storage-ledger', icon: Calendar },
       { name: 'Cost Ledger', href: '/finance/cost-ledger', icon: BarChart3 },
       { name: 'Invoices', href: '/finance/invoices', icon: FileText },
@@ -77,15 +74,10 @@ const baseNavigation: NavSection[] = [
     title: 'Configuration',
     items: [
       { name: 'Products (SKUs)', href: '/config/products', icon: Package },
-      { name: 'Locations', href: '/config/locations', icon: Building },
+      { name: 'Warehouses', href: '/config/warehouses', icon: Building },
       { name: 'Cost Rates', href: '/config/rates', icon: DollarSign },
       { name: 'Invoice Templates', href: '/config/invoice-templates', icon: FileText },
-    ]
-  },
-  {
-    title: 'Analytics',
-    items: [
-      { name: 'Reports', href: '/reports', icon: BarChart3 },
+      { name: 'Reports & Analytics', href: '/finance/reports', icon: BarChart3 },
     ]
   },
 ]

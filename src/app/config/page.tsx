@@ -26,9 +26,9 @@ const configModules = [
     color: 'bg-purple-100 text-purple-700'
   },
   {
-    title: 'Locations',
-    description: 'Configure warehouse locations',
-    href: '/config/locations',
+    title: 'Warehouses',
+    description: 'Configure warehouses',
+    href: '/config/warehouses',
     icon: Building,
     color: 'bg-green-100 text-green-700'
   },
@@ -95,7 +95,7 @@ export default function ConfigurationPage() {
             <li>• Set up <strong>Products (SKUs)</strong> before creating transactions</li>
             <li>• Configure <strong>Cost Rates</strong> for accurate billing</li>
             <li>• Use <strong>Warehouse Configs</strong> for SKU-specific pallet settings</li>
-            <li>• Keep <strong>Locations</strong> updated for all warehouses</li>
+            <li>• Keep <strong>Warehouses</strong> information updated</li>
           </ul>
         </div>
       </div>

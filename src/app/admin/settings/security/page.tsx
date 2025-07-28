@@ -287,13 +287,6 @@ export default function SecuritySettingsPage() {
           </label>
           {settings.twoFactorEnabled && (
             <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                <div className="text-sm text-amber-800">
-                  <p className="font-medium">Important:</p>
-                  <p>Enabling 2FA will require all users to set up authenticator apps on their next login.</p>
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -304,9 +297,6 @@ export default function SecuritySettingsPage() {
             <UserX className="h-5 w-5" />
             IP Address Whitelist
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Restrict access to specific IP addresses. Leave empty to allow all IPs.
-          </p>
           <div className="space-y-4">
             <div className="flex gap-2">
               <input

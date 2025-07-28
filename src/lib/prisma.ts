@@ -16,17 +16,11 @@ const createPrismaClient = () => {
   })
 }
 
-// In development, we want to prevent too many instances
-if (process.env.NODE_ENV === 'production') {
-  // In production, always create a new instance
-  exports.prisma = createPrismaClient()
-} else {
-  // In development, use singleton to prevent too many connections
-  if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = createPrismaClient()
-  }
-  exports.prisma = globalForPrisma.prisma
+// Use singleton pattern to prevent multiple instances
+export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
 }
 
-export const prisma = exports.prisma
 export default prisma

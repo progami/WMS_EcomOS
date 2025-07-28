@@ -53,7 +53,6 @@ model Warehouse {
   updatedAt             DateTime                @updatedAt @map("updated_at")
   calculatedCosts       CalculatedCost[]
   costRates             CostRate[]
-  inventoryBalances     InventoryBalance[]
   inventoryTransactions InventoryTransaction[]
   invoices              Invoice[]
   storageLedgerEntries  StorageLedger[]
@@ -83,7 +82,6 @@ model Sku {
   fbaStock              Int                    @default(0) @map("fba_stock")
   fbaStockLastUpdated   DateTime?              @map("fba_stock_last_updated")
   calculatedCosts       CalculatedCost[]
-  inventoryBalances     InventoryBalance[]
   inventoryTransactions InventoryTransaction[]
   versions              SkuVersion[]
   storageLedgerEntries  StorageLedger[]
@@ -190,26 +188,6 @@ model InventoryTransaction {
   @@map("inventory_transactions")
 }
 
-model InventoryBalance {
-  id                       String    @id @default(uuid())
-  warehouseId              String    @map("warehouse_id")
-  skuId                    String    @map("sku_id")
-  batchLot                 String    @map("batch_lot")
-  currentCartons           Int       @default(0) @map("current_cartons")
-  currentPallets           Int       @default(0) @map("current_pallets")
-  currentUnits             Int       @default(0) @map("current_units")
-  lastTransactionDate      DateTime? @map("last_transaction_date")
-  lastUpdated              DateTime  @default(now()) @updatedAt @map("last_updated")
-  shippingCartonsPerPallet Int?      @map("shipping_cartons_per_pallet")
-  storageCartonsPerPallet  Int?      @map("storage_cartons_per_pallet")
-  version                  Int       @default(0)
-  sku                      Sku       @relation(fields: [skuId], references: [id])
-  warehouse                Warehouse @relation(fields: [warehouseId], references: [id])
-
-  @@unique([warehouseId, skuId, batchLot])
-  @@index([warehouseId, skuId, batchLot])
-  @@map("inventory_balances")
-}
 
 model StorageLedger {
   id                    String    @id @default(uuid())

@@ -18,11 +18,9 @@ export async function GET(
     const sku = await prisma.sku.findUnique({
       where: { id: params.id },
       include: {
-        inventoryBalances: true,
         warehouseConfigs: true,
         _count: {
           select: {
-            inventoryBalances: true,
             warehouseConfigs: true
           }
         }
@@ -125,7 +123,6 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            inventoryBalances: true,
             warehouseConfigs: true
           }
         }
@@ -137,7 +134,7 @@ export async function DELETE(
     }
 
     // If SKU has related data, deactivate instead of delete
-    if (sku._count.inventoryBalances > 0 || sku._count.warehouseConfigs > 0) {
+    if (sku._count.warehouseConfigs > 0) {
       const deactivatedSku = await prisma.sku.update({
         where: { id: params.id },
         data: { isActive: false }

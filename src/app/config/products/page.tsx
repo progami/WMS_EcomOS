@@ -23,7 +23,7 @@ interface SKU {
   packagingType?: string | null
   isActive: boolean
   _count: {
-    inventoryBalances: number
+    inventoryTransactions: number
     warehouseConfigs: number
   }
 }
@@ -128,7 +128,6 @@ export default function AdminSkusPage() {
         <PageHeader
           title="SKU Management"
           subtitle="Manage product definitions and specifications"
-          description="Define and manage Stock Keeping Units (SKUs) for products in your warehouse. Set up product codes, descriptions, dimensions, weights, and packaging specifications. These definitions are used throughout the system for inventory tracking and invoicing."
           icon={Package2}
           iconColor="text-indigo-600"
           bgColor="bg-indigo-50"

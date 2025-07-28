@@ -203,13 +203,14 @@ DASHBOARD_REFACTOR_SUMMARY.md
 prisma/migrations_backup/
 
 # Serena cache
-.serena/cache/
+.serena/
 
 # Logs
 logs/*.log
 
 # Claude configuration
 CLAUDE.md
+.claude/
 wms-deployment-minimal.tar.gz
 # Screenshots and test artifacts
 *.png
@@ -226,6 +227,26 @@ cookies.txt
 *.txt
 !requirements.txt
 !README.txt
+
+# Temporary terraform files
+infrastructure/terraform/*.txt
+infrastructure/terraform/terraform.tfstate*
+
+# One-time scripts and debugging files  
+test-*.js
+check-*.js
+debug-*.js
+manual-*.js
+fix-*.js
+run-*.js
+analyze-*.js
+capture-*.sh
+complete-*.js
+verify-*.js
+final-*.js
+
+# Root level SQL files (should be in scripts/)
+/*.sql
 
 # Repomix
 repomix-output.xml

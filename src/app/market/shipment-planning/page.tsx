@@ -83,10 +83,14 @@ export default function ShipmentPlanningPage() {
     try {
       setLoading(true)
       
+      // API removed - return empty data
+      const data: any[] = []
+      /*
       // Fetch FBA stock levels
       const response = await fetch('/api/amazon/inventory-comparison')
       if (response.ok) {
         const data = await response.json()
+        */
         
         // Transform data to include analytics
         const enrichedData: FBAStockItem[] = data.map((item: any) => {
@@ -147,7 +151,7 @@ export default function ShipmentPlanningPage() {
           item.warehouseStock > 0
         )
         setLowStockCount(lowStock.length)
-      }
+      //}
     } catch (error) {
       toast.error('Failed to load FBA stock data')
     } finally {
@@ -322,7 +326,6 @@ export default function ShipmentPlanningPage() {
       <div className="space-y-6">
         <PageHeader
           title="FBA Shipment Planning"
-          description="Monitor FBA stock levels and plan replenishments with intelligent restock recommendations"
           actions={
             <div className="flex items-center gap-2">
               <button

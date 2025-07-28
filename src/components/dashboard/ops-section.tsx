@@ -101,7 +101,7 @@ export function OpsSection({ data, loading }: OpsSectionProps) {
               <p className="text-xs text-muted-foreground mt-2">
                 {data?.warehouseDistribution 
                   ? `${data.warehouseDistribution.reduce((sum, w) => sum + w.value, 0).toLocaleString()} total cartons`
-                  : 'Active locations'}
+                  : 'Active warehouses'}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
@@ -116,7 +116,7 @@ export function OpsSection({ data, loading }: OpsSectionProps) {
         <div className="border rounded-lg p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Warehouse Distribution</h3>
-            <p className="text-sm text-muted-foreground">Current inventory across locations</p>
+            <p className="text-sm text-muted-foreground">Current inventory across warehouses</p>
           </div>
           <div className="h-64 sm:h-72 md:h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -199,7 +199,7 @@ export function OpsSection({ data, loading }: OpsSectionProps) {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(transaction.date), 'MMM dd, HH:mm')}
+                  {format(new Date(transaction.date), 'MMM dd, yyyy')}
                 </p>
               </div>
             ))}

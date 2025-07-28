@@ -539,7 +539,6 @@ export default function UnifiedInventoryPage() {
         <PageHeader
           title="Inventory Ledger & Balances"
           subtitle="Inventory movements and current stock levels"
-          description="This combines the Excel Inventory Ledger (all movements) and calculated balances. Use the tabs to switch between the full inventory ledger and current inventory balances."
           icon={BookOpen}
           iconColor="text-green-600"
           bgColor="bg-green-50"
@@ -547,12 +546,6 @@ export default function UnifiedInventoryPage() {
           textColor="text-green-800"
           actions={
             <div className="flex items-center gap-2">
-              <ImportButton 
-                entityName="inventoryTransactions" 
-                onImportComplete={() => {
-                  fetchData(true)
-                }}
-              />
               <Link
                 href="/operations/receive"
                 className="inline-flex items-center h-10 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
@@ -567,6 +560,13 @@ export default function UnifiedInventoryPage() {
                 <Truck className="h-4 w-4 mr-2" />
                 Ship Goods
               </Link>
+              <ImportButton 
+                entityName="inventoryTransactions" 
+                onImportComplete={() => {
+                  fetchData(true)
+                }}
+                buttonText="Import"
+              />
               <div className="relative">
                 <button 
                   type="button"
@@ -1393,13 +1393,6 @@ export default function UnifiedInventoryPage() {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric'
-                                      })}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {new Date(transaction.transactionDate).toLocaleTimeString('en-US', {
-                                        timeZone: 'America/Chicago',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
                                       })}
                                     </div>
                                   </td>

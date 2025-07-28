@@ -220,7 +220,10 @@ export default function FinanceInvoicesPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '-'
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -276,16 +279,6 @@ export default function FinanceInvoicesPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 New Invoice
               </Link>
-            </div>
-          </div>
-          
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <FileText className="h-5 w-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="text-sm text-purple-800">
-                <p className="font-semibold mb-1">About This Page:</p>
-                <p>Manage warehouse service invoices from receipt through payment. Upload invoice files (PDF, Excel, CSV), review line items, reconcile charges against actual usage, and track payment status. Use filters to find specific invoices by warehouse, status, or date range.</p>
-              </div>
             </div>
           </div>
         </div>
@@ -503,39 +496,6 @@ export default function FinanceInvoicesPage() {
           </div>
         )}
 
-        {/* Invoice Upload Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-2">Quick Invoice Upload</h3>
-          <p className="text-sm text-gray-600 mb-4">Upload warehouse invoices for processing and reconciliation</p>
-          <div 
-            className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center cursor-pointer hover:bg-blue-50 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="h-12 w-12 mx-auto text-blue-400 mb-4 animate-spin" />
-                <p className="text-gray-700">Uploading invoice...</p>
-              </>
-            ) : (
-              <>
-                <FileText className="h-12 w-12 mx-auto text-blue-400 mb-4" />
-                <p className="text-gray-700 mb-2">Drop invoice files here or click to browse</p>
-                <p className="text-sm text-gray-500 mb-4">Supports PDF, Excel, and CSV formats</p>
-                <button className="action-button">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Select Files
-                </button>
-              </>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.xlsx,.xls,.csv"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </div>
       </div>
     </DashboardLayout>
   )

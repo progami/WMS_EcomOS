@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       include: {
         _count: {
           select: {
-            inventoryBalances: true,
+            inventoryTransactions: true,
             warehouseConfigs: true
           }
         }
@@ -210,7 +210,6 @@ export async function DELETE(request: NextRequest) {
       include: {
         _count: {
           select: {
-            inventoryBalances: true,
             inventoryTransactions: true,
             calculatedCosts: true
           }

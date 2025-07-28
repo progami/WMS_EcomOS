@@ -63,16 +63,8 @@ export function StorageLedgerTab({
       })
       
       
-      const response = await fetch(`/api/finance/storage-ledger?${params}`)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        toast.error(`Failed to load storage ledger: ${errorData.error || response.statusText}`)
-        return
-      }
-      
-      const data = await response.json()
-      setSnapshots(data.snapshots || [])
+      // API endpoint removed - set empty data
+      setSnapshots([])
     } catch (error) {
       toast.error(`Failed to load storage ledger: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -97,8 +89,8 @@ export function StorageLedgerTab({
       endDate: dateRange.end,
       ...(filters.warehouse && { warehouseId: filters.warehouse })
     })
-    window.open(`/api/finance/export/storage-ledger?${params}`, '_blank')
-    toast.success('Exporting storage ledger...')
+    // API endpoint removed
+    toast.error('Export feature not available')
   }
 
   const toggleRow = (key: string) => {
@@ -242,22 +234,6 @@ export function StorageLedgerTab({
 
   return (
     <div className="space-y-6">
-      {/* Information Panel */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-blue-900">Storage Billing Information</p>
-            <ul className="mt-2 space-y-1 text-blue-800">
-              <li>• <strong>Regular Warehouses:</strong> Charged weekly based on Monday inventory counts (23:59:59)</li>
-              <li>• <strong>Amazon FBA:</strong> Charged monthly based on average daily inventory volume</li>
-              <li>• <strong>Billing Period:</strong> 16th of one month to 15th of the next</li>
-              <li>• <strong>Snapshot Time:</strong> Every Monday at 23:59:59 CT</li>
-              <li>• <strong>Monthly View:</strong> Shows total pallet-weeks (sum of all weekly pallets in the period)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* Date Range and Export Controls */}
       <div className="bg-white border rounded-lg p-4">
@@ -490,11 +466,6 @@ export function StorageLedgerTab({
           <h3 className="text-lg font-semibold">
             {aggregationView === 'weekly' ? 'Weekly Storage Snapshots' : 'Monthly Storage Summary'}
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            {aggregationView === 'weekly' 
-              ? 'Monday inventory counts with storage costs. Click on a row to see SKU details.'
-              : 'Monthly aggregation based on billing periods (16th to 15th). Click on a row to see SKU details.'}
-          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
