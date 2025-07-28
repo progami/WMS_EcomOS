@@ -35,7 +35,7 @@ async function createDemoUsers() {
         passwordHash: adminHash,
         fullName: 'Demo Administrator',
         role: 'admin',
-        is_active: true,
+        isActive: true,
         is_demo: true,
         updated_at: new Date()
       }
@@ -58,7 +58,7 @@ async function createDemoUsers() {
         passwordHash: staffHash,
         fullName: 'Demo Staff',
         role: 'staff',
-        is_active: true,
+        isActive: true,
         is_demo: true,
         updated_at: new Date()
       }

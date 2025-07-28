@@ -91,7 +91,7 @@ function generateWarehouseData(index: number) {
     latitude: Number(faker.location.latitude()),
     longitude: Number(faker.location.longitude()),
     contactEmail: faker.internet.email({ provider: 'warehouse.example.com' }),
-    contactPhone: faker.phone.number('+1-###-###-####'),
+    contactPhone: faker.phone.number({ style: 'international' }),
     isActive: true
   }
 }
