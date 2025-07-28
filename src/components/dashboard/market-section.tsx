@@ -66,7 +66,9 @@ export function MarketSection({ data, loading }: MarketSectionProps) {
                     dataKey="date" 
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
+                      if (!value) return ''
                       const date = new Date(value)
+                      if (isNaN(date.getTime())) return ''
                       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     }}
                   />
@@ -82,7 +84,9 @@ export function MarketSection({ data, loading }: MarketSectionProps) {
                     }}
                     formatter={(value: number) => [value.toLocaleString(), 'Inventory']}
                     labelFormatter={(label) => {
+                      if (!label) return ''
                       const date = new Date(label)
+                      if (isNaN(date.getTime())) return ''
                       return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
                     }}
                   />

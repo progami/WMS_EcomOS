@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAuthOptions } from '@/lib/auth-test'
 import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(getAuthOptions())
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -257,8 +257,9 @@ export async function GET() {
     })
     
     // Fill in all days including those without transactions
-    for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toISOString().split('T')[0]
+    const currentDate = new Date(thirtyDaysAgoForTrend)
+    while (currentDate <= now) {
+      const dateKey = currentDate.toISOString().split('T')[0]
       const dayTransactions = transactionMap.get(dateKey)
       
       if (dayTransactions) {
@@ -266,9 +267,12 @@ export async function GET() {
       }
       
       inventoryTrend.push({
-        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: currentDate.toISOString().split('T')[0], // Keep full ISO date for proper formatting
         inventory: Math.max(0, runningBalance),
       })
+      
+      // Create new date object for next iteration
+      currentDate.setDate(currentDate.getDate() + 1)
     }
 
     // Chart Data: Cost Trend (last 12 weeks)
