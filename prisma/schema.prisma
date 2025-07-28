@@ -177,6 +177,7 @@ model InventoryTransaction {
   attachments              Json?
   unitsPerCarton           Int?            @map("units_per_carton")
   supplier                 String?         @map("supplier")
+  unitValue                Decimal?        @map("unit_value") @db.Decimal(12, 4)
   createdBy                User            @relation("TransactionCreator", fields: [createdById], references: [id])
   sku                      Sku             @relation(fields: [skuId], references: [id])
   warehouse                Warehouse       @relation(fields: [warehouseId], references: [id])
