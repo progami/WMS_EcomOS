@@ -113,7 +113,7 @@ export class InvoiceService extends BaseService {
                 name: true
               }
             },
-            line_items: true,
+            lineItems: true,
             reconciliations: {
               include: {
                 resolvedBy: {
@@ -171,12 +171,12 @@ export class InvoiceService extends BaseService {
       // Execute in transaction
       const invoice = await this.executeInTransaction(async (tx) => {
         // Check for existing invoice with same number (idempotency)
-        const existingInvoice = await tx.invoices.findUnique({
-          where: { invoice_number: validatedData.invoice_number },
+        const existingInvoice = await tx.invoice.findUnique({
+          where: { invoiceNumber: validatedData.invoiceNumber },
           include: {
-            warehouses: true,
-            line_items: true,
-            users_invoices_created_byTousers: {
+            warehouse: true,
+            lineItems: true,
+            createdByUser: {
               select: {
                 id: true,
                 fullName: true,
@@ -190,12 +190,12 @@ export class InvoiceService extends BaseService {
           // Check if it's the same request (idempotent)
           const isSameRequest = 
             existingInvoice.warehouseId === validatedData.warehouseId &&
-            Number(existingInvoice.total_amount) === validatedData.total_amount &&
-            existingInvoice.line_items.length === validatedData.line_items.length
+            Number(existingInvoice.totalAmount) === validatedData.totalAmount &&
+            existingInvoice.lineItems.length === validatedData.lineItems.length
 
           if (isSameRequest) {
             businessLogger.info('Idempotent invoice creation', {
-              invoice_number: existingInvoice.invoice_number,
+              invoiceNumber: existingInvoice.invoiceNumber,
               invoiceId: existingInvoice.id
             })
             return { invoice: existingInvoice, idempotent: true }
@@ -205,34 +205,34 @@ export class InvoiceService extends BaseService {
         }
 
         // Create new invoice
-        const newInvoice = await tx.invoices.create({
+        const newInvoice = await tx.invoice.create({
           data: {
-            invoice_number: validatedData.invoice_number,
+            invoiceNumber: validatedData.invoiceNumber,
             warehouseId: validatedData.warehouseId,
-            customer_id: this.session!.user.id,
-            billing_period_start: new Date(validatedData.billing_period_start),
-            billing_period_end: new Date(validatedData.billing_period_end),
-            invoice_date: new Date(validatedData.invoice_date),
-            issue_date: new Date(),
-            due_date: validatedData.due_date ? new Date(validatedData.due_date) : null,
-            subtotal: validatedData.total_amount,
-            tax_amount: 0,
-            total_amount: validatedData.total_amount,
-            created_by_id: this.session!.user.id,
-            line_items: {
-              create: validatedData.line_items.map(item => ({
-                cost_category: item.cost_category,
-                cost_name: item.cost_name,
+            customerId: this.session!.user.id,
+            billingPeriodStart: new Date(validatedData.billingPeriodStart),
+            billingPeriodEnd: new Date(validatedData.billingPeriodEnd),
+            invoiceDate: new Date(validatedData.invoiceDate),
+            issueDate: new Date(),
+            dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
+            subtotal: validatedData.totalAmount,
+            taxAmount: 0,
+            totalAmount: validatedData.totalAmount,
+            createdById: this.session!.user.id,
+            lineItems: {
+              create: validatedData.lineItems.map(item => ({
+                costCategory: item.costCategory,
+                costName: item.costName,
                 quantity: item.quantity,
-                unit_rate: item.unit_rate,
+                unitRate: item.unitRate,
                 amount: item.amount
               }))
             }
           },
           include: {
-            warehouses: true,
-            line_items: true,
-            users_invoices_created_byTousers: {
+            warehouse: true,
+            lineItems: true,
+            createdByUser: {
               select: {
                 id: true,
                 fullName: true,
@@ -244,10 +244,10 @@ export class InvoiceService extends BaseService {
 
         // Log audit trail
         await this.logAudit('INVOICE_CREATED', 'Invoice', newInvoice.id, {
-          invoice_number: newInvoice.invoice_number,
+          invoiceNumber: newInvoice.invoiceNumber,
           warehouseId: newInvoice.warehouseId,
-          total_amount: newInvoice.total_amount,
-          lineItemCount: validatedData.line_items.length
+          totalAmount: newInvoice.totalAmount,
+          lineItemCount: validatedData.lineItems.length
         })
 
         return { invoice: newInvoice, idempotent: false }
@@ -256,9 +256,9 @@ export class InvoiceService extends BaseService {
       const duration = Date.now() - startTime
       businessLogger.info('Invoice created successfully', {
         invoiceId: invoice.invoice.id,
-        invoice_number: invoice.invoice.invoice_number,
+        invoiceNumber: invoice.invoice.invoiceNumber,
         warehouseId: invoice.invoice.warehouseId,
-        total_amount: invoice.invoice.total_amount,
+        totalAmount: invoice.invoice.totalAmount,
         duration,
         idempotent: invoice.idempotent
       })
@@ -289,16 +289,16 @@ export class InvoiceService extends BaseService {
         }
 
         // Update invoice
-        const updated = await tx.invoices.update({
+        const updated = await tx.invoice.update({
           where: { id: invoiceId },
           data: {
             status: validatedData.status,
-            due_date: validatedData.due_date ? new Date(validatedData.due_date) : undefined,
-            updated_at: new Date()
+            dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : undefined,
+            updatedAt: new Date()
           },
           include: {
-            warehouses: true,
-            line_items: true,
+            warehouse: true,
+            lineItems: true,
             reconciliations: true
           }
         })
@@ -333,7 +333,7 @@ export class InvoiceService extends BaseService {
 
       const result = await this.executeInTransaction(async (tx) => {
         // Check if invoice exists and can be deleted
-        const invoice = await tx.invoices.findUnique({
+        const invoice = await tx.invoice.findUnique({
           where: { id: invoiceId }
         })
 
@@ -346,22 +346,22 @@ export class InvoiceService extends BaseService {
         }
 
         // Delete invoice (cascade will handle line items)
-        await tx.invoices.delete({
+        await tx.invoice.delete({
           where: { id: invoiceId }
         })
 
         // Log audit trail
         await this.logAudit('INVOICE_DELETED', 'Invoice', invoiceId, {
-          invoice_number: invoice.invoice_number,
+          invoiceNumber: invoice.invoiceNumber,
           status: invoice.status
         })
 
-        return { invoice_number: invoice.invoice_number }
+        return { invoiceNumber: invoice.invoiceNumber }
       })
 
       businessLogger.info('Invoice deleted successfully', {
         invoiceId,
-        invoice_number: result.invoice_number
+        invoiceNumber: result.invoiceNumber
       })
 
       return { message: 'Invoice deleted successfully' }
@@ -378,7 +378,7 @@ export class InvoiceService extends BaseService {
       await this.requirePermission('invoice:accept')
 
       const updatedInvoice = await this.executeInTransaction(async (tx) => {
-        const invoice = await tx.invoices.findUnique({
+        const invoice = await tx.invoice.findUnique({
           where: { id: invoiceId }
         })
 
@@ -390,16 +390,16 @@ export class InvoiceService extends BaseService {
           throw new Error('Only pending invoices can be accepted')
         }
 
-        const updated = await tx.invoices.update({
+        const updated = await tx.invoice.update({
           where: { id: invoiceId },
           data: {
             status: 'paid',
-            updated_at: new Date()
+            updatedAt: new Date()
           }
         })
 
         await this.logAudit('INVOICE_ACCEPTED', 'Invoice', invoiceId, {
-          invoice_number: invoice.invoice_number,
+          invoiceNumber: invoice.invoiceNumber,
           previousStatus: invoice.status
         })
 
@@ -420,7 +420,7 @@ export class InvoiceService extends BaseService {
       await this.requirePermission('invoice:dispute')
 
       const result = await this.executeInTransaction(async (tx) => {
-        const invoice = await tx.invoices.findUnique({
+        const invoice = await tx.invoice.findUnique({
           where: { id: invoiceId }
         })
 
@@ -433,11 +433,11 @@ export class InvoiceService extends BaseService {
         }
 
         // Update invoice status
-        const updated = await tx.invoices.update({
+        const updated = await tx.invoice.update({
           where: { id: invoiceId },
           data: {
             status: 'disputed',
-            updated_at: new Date()
+            updatedAt: new Date()
           }
         })
 
@@ -446,15 +446,15 @@ export class InvoiceService extends BaseService {
           data: {
             invoiceId,
             reason: sanitizeForDisplay(reason),
-            disputed_amount: disputedAmount || Number(invoice.total_amount),
-            raised_by_id: this.session!.user.id
+            disputedAmount: disputedAmount || Number(invoice.totalAmount),
+            raisedById: this.session!.user.id
           }
         })
 
         await this.logAudit('INVOICE_DISPUTED', 'Invoice', invoiceId, {
-          invoice_number: invoice.invoice_number,
+          invoiceNumber: invoice.invoiceNumber,
           reason,
-          disputed_amount: dispute.disputed_amount
+          disputedAmount: dispute.disputedAmount
         })
 
         return { invoice: updated, dispute }
