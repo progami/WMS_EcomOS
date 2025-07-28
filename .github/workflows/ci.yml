@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ['**']  # Run on all branches
+    branches: [main, develop, 'feature/**']  # Run on main, develop, and feature branches
     tags:
       - 'v*'
   pull_request:
