@@ -340,13 +340,13 @@ export class FinanceService extends BaseService {
       where: invoiceWhere,
       _count: true,
       _sum: {
-        total_amount: true
+        totalAmount: true
       }
     })
 
-    const paidInvoices = invoiceStats.find(s => s.status === 'paid') || { _count: 0, _sum: { total_amount: 0 } }
-    const pendingInvoices = invoiceStats.find(s => s.status === 'pending') || { _count: 0, _sum: { total_amount: 0 } }
-    const disputedInvoices = invoiceStats.find(s => s.status === 'disputed') || { _count: 0, _sum: { total_amount: 0 } }
+    const paidInvoices = invoiceStats.find(s => s.status === 'paid') || { _count: 0, _sum: { totalAmount: 0 } }
+    const pendingInvoices = invoiceStats.find(s => s.status === 'pending') || { _count: 0, _sum: { totalAmount: 0 } }
+    const disputedInvoices = invoiceStats.find(s => s.status === 'disputed') || { _count: 0, _sum: { totalAmount: 0 } }
     
     // Get overdue invoices
     const overdueInvoices = await this.prisma.invoice.findMany({
@@ -358,31 +358,31 @@ export class FinanceService extends BaseService {
         }
       },
       select: {
-        total_amount: true
+        totalAmount: true
       }
     })
     
     const overdueCount = overdueInvoices.length
-    const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + Number(inv.total_amount), 0)
+    const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0)
 
-    const totalInvoiced = Number(paidInvoices._sum.total_amount || 0) + 
-                         Number(pendingInvoices._sum.total_amount || 0) +
-                         Number(disputedInvoices._sum.total_amount || 0)
+    const totalInvoiced = Number(paidInvoices._sum.totalAmount || 0) + 
+                         Number(pendingInvoices._sum.totalAmount || 0) +
+                         Number(disputedInvoices._sum.totalAmount || 0)
     
     const totalBilled = totalInvoiced + overdueAmount
     const collectionRate = totalBilled > 0 
-      ? (Number(paidInvoices._sum.total_amount || 0) / totalBilled) * 100 
+      ? (Number(paidInvoices._sum.totalAmount || 0) / totalBilled) * 100 
       : 0
 
     return {
       status: {
         paid: {
           count: paidInvoices._count,
-          amount: Number(paidInvoices._sum.total_amount || 0)
+          amount: Number(paidInvoices._sum.totalAmount || 0)
         },
         pending: {
           count: pendingInvoices._count,
-          amount: Number(pendingInvoices._sum.total_amount || 0)
+          amount: Number(pendingInvoices._sum.totalAmount || 0)
         },
         overdue: {
           count: overdueCount,
@@ -390,12 +390,12 @@ export class FinanceService extends BaseService {
         },
         disputed: {
           count: disputedInvoices._count,
-          amount: Number(disputedInvoices._sum.total_amount || 0)
+          amount: Number(disputedInvoices._sum.totalAmount || 0)
         }
       },
       outstanding: {
         count: pendingInvoices._count + overdueCount,
-        amount: Number(pendingInvoices._sum.total_amount || 0) + overdueAmount
+        amount: Number(pendingInvoices._sum.totalAmount || 0) + overdueAmount
       },
       totalInvoiced,
       collectionRate,
@@ -410,10 +410,10 @@ export class FinanceService extends BaseService {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        invoice_number: true,
+        invoiceNumber: true,
         status: true,
-        total_amount: true,
-        created_at: true,
+        totalAmount: true,
+        createdAt: true,
         warehouse: {
           select: {
             name: true
@@ -444,13 +444,13 @@ export class FinanceService extends BaseService {
       ...recentInvoices.map(invoice => ({
         id: invoice.id,
         type: 'invoice' as const,
-        title: `Invoice #${invoice.invoice_number} ${
+        title: `Invoice #${invoice.invoiceNumber} ${
           invoice.status === 'paid' ? 'paid' : 
           invoice.status === 'disputed' ? 'disputed' : 
           'processed'
         }`,
-        amount: Number(invoice.total_amount),
-        time: invoice.created_at,
+        amount: Number(invoice.totalAmount),
+        time: invoice.createdAt,
         status: invoice.status === 'paid' ? 'success' : 
                 invoice.status === 'disputed' ? 'warning' : 'info',
         warehouse: invoice.warehouse.name
@@ -458,9 +458,9 @@ export class FinanceService extends BaseService {
       ...recentDisputes.map(dispute => ({
         id: dispute.id,
         type: 'dispute' as const,
-        title: `Dispute raised for Invoice #${dispute.invoice.invoice_number}`,
-        amount: Number(dispute.disputed_amount),
-        time: dispute.created_at,
+        title: `Dispute raised for Invoice #${dispute.invoice.invoiceNumber}`,
+        amount: Number(dispute.disputedAmount),
+        time: dispute.createdAt,
         status: 'warning' as const,
         warehouse: dispute.invoice.warehouse.name
       }))
