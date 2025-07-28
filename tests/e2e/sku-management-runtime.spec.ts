@@ -33,7 +33,8 @@ test.describe('📦 SKU Management Runtime Tests', () => {
   test.beforeEach(async ({ page, request }) => {
     // Setup demo data first via API
     const setupResponse = await request.post('/api/demo/setup')
-    expect(setupResponse.ok()).toBeTruthy()
+    // Check that we got a response (200 is OK even if demo data already exists)
+    expect(setupResponse.status()).toBe(200)
     
     // Use the auth helper that handles both test and regular auth
     await setupDemoAndLogin(page)
