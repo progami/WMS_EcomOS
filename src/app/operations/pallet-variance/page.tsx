@@ -71,11 +71,8 @@ export default function PalletVariancePage() {
   const fetchVariances = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/operations/pallet-variance')
-      if (response.ok) {
-        const data = await response.json()
-        setVariances(data)
-      }
+      // API endpoint removed - set empty data
+      setVariances([])
     } catch (error) {
       toast.error('Failed to load pallet variances')
     } finally {
@@ -116,15 +113,7 @@ export default function PalletVariancePage() {
 
       if (response.ok) {
         // Update variance status
-        await fetch(`/api/operations/pallet-variance/${selectedVariance.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status: 'RESOLVED',
-            actualPallets: adjustmentData.actualPallets,
-            notes: adjustmentData.notes
-          })
-        })
+        // API endpoint removed - skip update
 
         toast.success('Adjustment created successfully')
         setShowAdjustModal(false)
@@ -140,8 +129,8 @@ export default function PalletVariancePage() {
   }
 
   const handleExport = () => {
-    window.open('/api/operations/pallet-variance/export', '_blank')
-    toast.success('Exporting pallet variance report...')
+    // API endpoint removed
+    toast.error('Export feature not available')
   }
 
   const filteredVariances = variances.filter(v => {
@@ -172,7 +161,6 @@ export default function PalletVariancePage() {
         <PageHeader
           title="Pallet Variance Management"
           subtitle="Track and reconcile differences between system and physical pallet counts"
-          description="Monitor discrepancies between inventory ledger pallet counts and actual warehouse counts. Create adjustment transactions to reconcile variances."
           icon={Package}
           iconColor="text-orange-600"
           bgColor="bg-orange-50"

@@ -63,16 +63,8 @@ export function StorageLedgerTab({
       })
       
       
-      const response = await fetch(`/api/finance/storage-ledger?${params}`)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        toast.error(`Failed to load storage ledger: ${errorData.error || response.statusText}`)
-        return
-      }
-      
-      const data = await response.json()
-      setSnapshots(data.snapshots || [])
+      // API endpoint removed - set empty data
+      setSnapshots([])
     } catch (error) {
       toast.error(`Failed to load storage ledger: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
@@ -97,8 +89,8 @@ export function StorageLedgerTab({
       endDate: dateRange.end,
       ...(filters.warehouse && { warehouseId: filters.warehouse })
     })
-    window.open(`/api/finance/export/storage-ledger?${params}`, '_blank')
-    toast.success('Exporting storage ledger...')
+    // API endpoint removed
+    toast.error('Export feature not available')
   }
 
   const toggleRow = (key: string) => {
