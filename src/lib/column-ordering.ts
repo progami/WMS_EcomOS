@@ -27,7 +27,7 @@ export const INVENTORY_TRANSACTION_COLUMNS: ColumnDefinition[] = [
     exportName: 'Transaction ID',
     group: 'metadata',
     order: 0,
-    showInUI: true,
+    showInUI: false,
     showInExport: true
   },
   
