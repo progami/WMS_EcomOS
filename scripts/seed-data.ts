@@ -25,17 +25,17 @@ function generateSkuData(index: number) {
   const unitsPerCarton = faker.helpers.arrayElement(category.unitsPerCarton)
   
   // Generate realistic dimensions based on category
-  const unitLength = faker.number.float({ min: 5, max: 30, precision: 0.1 })
-  const unitWidth = faker.number.float({ min: 5, max: 30, precision: 0.1 })
-  const unitHeight = faker.number.float({ min: 2, max: 20, precision: 0.1 })
+  const unitLength = faker.number.float({ min: 5, max: 30, fractionDigits: 0.1 })
+  const unitWidth = faker.number.float({ min: 5, max: 30, fractionDigits: 0.1 })
+  const unitHeight = faker.number.float({ min: 2, max: 20, fractionDigits: 0.1 })
   
-  const cartonLength = faker.number.float({ min: 30, max: 60, precision: 0.1 })
-  const cartonWidth = faker.number.float({ min: 20, max: 50, precision: 0.1 })
-  const cartonHeight = faker.number.float({ min: 15, max: 40, precision: 0.1 })
+  const cartonLength = faker.number.float({ min: 30, max: 60, fractionDigits: 0.1 })
+  const cartonWidth = faker.number.float({ min: 20, max: 50, fractionDigits: 0.1 })
+  const cartonHeight = faker.number.float({ min: 15, max: 40, fractionDigits: 0.1 })
   
   // Weight calculations
-  const unitWeight = faker.number.float({ min: 0.1, max: 2, precision: 0.001 })
-  const cartonWeight = (unitWeight * unitsPerCarton) + faker.number.float({ min: 0.2, max: 0.5, precision: 0.001 })
+  const unitWeight = faker.number.float({ min: 0.1, max: 2, fractionDigits: 0.001 })
+  const cartonWeight = (unitWeight * unitsPerCarton) + faker.number.float({ min: 0.2, max: 0.5, fractionDigits: 0.001 })
 
   return {
     skuCode: `${category.prefix}-${productNum}${variant}`,
@@ -222,7 +222,7 @@ async function main() {
       for (const [category, templates] of Object.entries(costTemplates)) {
         for (const template of templates) {
           // Add some variation to the base rates
-          const variation = faker.number.float({ min: 0.9, max: 1.1, precision: 0.01 })
+          const variation = faker.number.float({ min: 0.9, max: 1.1, fractionDigits: 0.01 })
           await prisma.costRate.create({
             data: {
               warehouseId: warehouse.id,
