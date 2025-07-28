@@ -418,7 +418,6 @@ export async function POST(request: NextRequest) {
               pickupDate: pickupDate ? new Date(pickupDate) : new Date(txDate), // Use provided pickup date or default to transaction date
               createdById: session.user.id,
               unitsPerCarton: item.unitsPerCarton || sku.unitsPerCarton, // Capture units per carton - prefer provided value, fallback to SKU master
-              unitValue: item.unitValue && item.unitValue > 0 ? item.unitValue : null, // Store unit value for first batch
             }
           })
 
