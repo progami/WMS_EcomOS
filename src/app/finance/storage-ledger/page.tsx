@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Search, Filter, Download, Calendar, DollarSign } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { StorageLedgerTab } from '@/components/finance/storage-ledger-tab'
@@ -51,12 +52,8 @@ export default function StorageLedgerPage() {
       e.preventDefault()
       e.stopPropagation()
     }
-    const params = new URLSearchParams({
-      ...(filters.warehouse && { warehouseId: filters.warehouse }),
-      ...(filters.startDate && { startDate: filters.startDate }),
-      ...(filters.endDate && { endDate: filters.endDate })
-    })
-    window.open(`/api/finance/export/storage-ledger?${params}`, '_blank')
+    // API endpoint removed
+    toast('Export feature not available', { icon: '⚠️' })
   }
 
   if (status === 'loading') {
