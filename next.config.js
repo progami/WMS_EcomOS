@@ -88,7 +88,17 @@ const nextConfig = {
   },
   
   // Webpack configuration
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Fix for Next.js 15.4.4 module resolution in dev mode
+    if (!isServer && dev) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+    
     // Enable webpack stats for bundle analysis
     if (process.env.ANALYZE === 'true') {
       config.stats = 'verbose'
