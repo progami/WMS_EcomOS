@@ -353,66 +353,15 @@ export class ReportService extends BaseService {
   }
 
   private async generateInventoryBalanceReport(warehouseId?: string) {
-    const data = // inventory_balances removed - returning empty data
-    await Promise.resolve([]); const emptyResult = await this.prisma.inventoryTransaction.findMany({
-      where: warehouseId ? { warehouseId: warehouseId } : {},
-      include: {
-        warehouses: true,
-        skus: true
-      },
-      orderBy: [
-        { warehouses: { name: 'asc' } },
-        { skus: { sku_code: 'asc' } }
-      ]
-    })
-
-    return data.map(balance => ({
-      'Warehouse': balance.warehouses.name,
-      'SKU Code': balance.skus.sku_code,
-      'SKU Description': balance.skus.description,
-      'Batch/Lot': balance.batch_lot,
-      'Cartons': balance.current_cartons,
-      'Pallets': balance.current_pallets,
-      'Units': balance.current_units,
-      'Last Transaction': balance.last_transaction_date?.toLocaleDateString() || 'N/A',
-      'Days Since Last Activity': balance.last_transaction_date 
-        ? Math.floor((new Date().getTime() - balance.last_transaction_date.getTime()) / (1000 * 60 * 60 * 24))
-        : 'N/A'
-    }))
+    // inventory_balances table removed - returning empty data
+    const data: any[] = []
+    return data
   }
 
   private async generateLowStockReport(warehouseId?: string) {
-    const data = // inventory_balances removed - returning empty data
-    await Promise.resolve([]); const emptyResult = await this.prisma.inventoryTransaction.findMany({
-      where: {
-        ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        current_cartons: {
-          lt: 10 // Low stock threshold
-        }
-      },
-      include: {
-        warehouses: true,
-        skus: true
-      },
-      orderBy: [
-        { current_cartons: 'asc' },
-        { warehouses: { name: 'asc' } },
-        { skus: { sku_code: 'asc' } }
-      ]
-    })
-
-    return data.map(balance => ({
-      'Warehouse': balance.warehouses.name,
-      'SKU Code': balance.skus.sku_code,
-      'SKU Description': balance.skus.description,
-      'Batch/Lot': balance.batch_lot,
-      'Current Stock': balance.current_cartons,
-      'Status': balance.current_cartons === 0 ? 'OUT OF STOCK' : 'LOW STOCK',
-      'Days Since Last Receipt': balance.last_transaction_date 
-        ? Math.floor((new Date().getTime() - balance.last_transaction_date.getTime()) / (1000 * 60 * 60 * 24))
-        : 'N/A',
-      'Action Required': balance.current_cartons === 0 ? 'URGENT - Reorder immediately' : 'Reorder soon'
-    }))
+    // inventory_balances table removed - returning empty data
+    const data: any[] = []
+    return data
   }
 
   private async generateCostAnalysisReport(period: string, warehouseId?: string) {
@@ -437,19 +386,19 @@ export class ReportService extends BaseService {
     })
 
     const grouped = storageCosts.reduce((acc, item) => {
-      const key = `${item.warehouse_id}-${item.sku_id}`
+      const key = `${item.warehouseId}-${item.skuId}`
       if (!acc[key]) {
         acc[key] = {
           warehouse: item.warehouse.name,
-          sku: item.sku.sku_code,
+          sku: item.sku.skuCode,
           description: item.sku.description,
           totalCartons: 0,
           totalCost: 0,
           weeks: 0
         }
       }
-      acc[key].totalCartons += item.storage_pallets_charged || 0
-      acc[key].totalCost += Number(item.calculated_weekly_cost || 0)
+      acc[key].totalCartons += item.storagePalletsCharged || 0
+      acc[key].totalCost += Number(item.calculatedWeeklyCost || 0)
       acc[key].weeks += 1
       return acc
     }, {} as any)
@@ -675,62 +624,42 @@ export class ReportService extends BaseService {
       }
     })
 
-    const inventoryStats = // inventory_balances removed - returning empty data
-    await Promise.resolve([]); const emptyResult = await this.prisma.inventoryTransaction.groupBy({
-      by: ['warehouseId'],
-      where: warehouseId ? { warehouseId: warehouseId } : {},
-      _avg: {
-        current_cartons: true
-      },
-      _count: {
-        sku_id: true
-      }
-    })
-
-    const activeSkus = // inventory_balances removed - returning empty data
-    await Promise.resolve([]); const emptyResult = await this.prisma.inventoryTransaction.groupBy({
-      by: ['warehouseId'],
-      where: {
-        ...(warehouseId ? { warehouseId: warehouseId } : {}),
-        current_cartons: { gt: 0 }
-      },
-      _count: {
-        sku_id: true
-      }
-    })
+    // inventory_balances removed - using empty arrays
+    const inventoryStats: any[] = []
+    const activeSkus: any[] = []
 
     const metrics = new Map()
 
     // Process transactions
     transactions.forEach(t => {
-      if (!metrics.has(t.warehouse_id)) {
-        metrics.set(t.warehouse_id, {})
+      if (!metrics.has(t.warehouseId)) {
+        metrics.set(t.warehouseId, {})
       }
-      const m = metrics.get(t.warehouse_id)
+      const m = metrics.get(t.warehouseId)
       
       m.totalTransactions = (m.totalTransactions || 0) + t._count
-      if (t.transaction_type === 'SHIP') {
-        m.shipments = (m.shipments || 0) + (t._sum.cartons_out || 0)
+      if (t.transactionType === 'SHIP') {
+        m.shipments = (m.shipments || 0) + (t._sum.cartonsOut || 0)
       }
     })
 
-    // Process inventory stats
+    // Process inventory stats (empty for now)
     inventoryStats.forEach(stat => {
-      if (!metrics.has(stat.warehouse_id)) {
-        metrics.set(stat.warehouse_id, {})
+      if (!metrics.has(stat.warehouseId)) {
+        metrics.set(stat.warehouseId, {})
       }
-      const m = metrics.get(stat.warehouse_id)
-      m.avgInventory = stat._avg.current_cartons || 0
-      m.totalSkus = stat._count.sku_id
+      const m = metrics.get(stat.warehouseId)
+      m.avgInventory = stat._avg.currentCartons || 0
+      m.totalSkus = stat._count.skuId
     })
 
-    // Process active SKUs
+    // Process active SKUs (empty for now)
     activeSkus.forEach(stat => {
-      if (!metrics.has(stat.warehouse_id)) {
-        metrics.set(stat.warehouse_id, {})
+      if (!metrics.has(stat.warehouseId)) {
+        metrics.set(stat.warehouseId, {})
       }
-      const m = metrics.get(stat.warehouse_id)
-      m.activeSkus = stat._count.sku_id
+      const m = metrics.get(stat.warehouseId)
+      m.activeSkus = stat._count.skuId
     })
 
     return metrics
