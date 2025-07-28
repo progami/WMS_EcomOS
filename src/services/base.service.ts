@@ -85,9 +85,9 @@ export abstract class BaseService {
         data: {
           userId: this.session?.user?.id || 'system',
           action,
-          entityType: entityType,
-          entityId: entityId,
-          details: details ? JSON.stringify(details) : null,
+          tableName: entityType,
+          recordId: entityId,
+          changes: details || null,
           ipAddress: null, // Can be extracted from request in actual implementation
           userAgent: null  // Can be extracted from request in actual implementation
         }

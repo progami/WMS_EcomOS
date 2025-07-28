@@ -469,7 +469,7 @@ export class ReportService extends BaseService {
           'Receiving Transactions': receiveCount,
           'Shipping Transactions': shipCount,
           'Handling Fees': `£${((receiveCount + shipCount) * 25).toFixed(2)}`, // £25 per transaction
-          'Total Charges': `£${(Number(storageCost._sum.calculated_weekly_cost || 0) + ((receiveCount + shipCount) * 25)).toFixed(2)}`,
+          'Total Charges': `£${(Number(storageCost._sum.calculatedWeeklyCost || 0) + ((receiveCount + shipCount) * 25)).toFixed(2)}`,
           'Billing Period': `${billingStart.toLocaleDateString()} - ${billingEnd.toLocaleDateString()}`
         }
       })

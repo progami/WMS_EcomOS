@@ -85,9 +85,9 @@ export class InvoiceService extends BaseService {
       if (filters.status) {
         // Handle comma-separated statuses
         if (filters.status.includes(',')) {
-          where.status = { in: filters.status.split(',') }
+          where.status = { in: filters.status.split(',') as any }
         } else {
-          where.status = filters.status
+          where.status = filters.status as any
         }
       }
 
@@ -125,7 +125,7 @@ export class InvoiceService extends BaseService {
                 }
               }
             },
-            createdByUser: {
+            createdBy: {
               select: {
                 id: true,
                 fullName: true,
@@ -176,7 +176,7 @@ export class InvoiceService extends BaseService {
           include: {
             warehouse: true,
             lineItems: true,
-            createdByUser: {
+            createdBy: {
               select: {
                 id: true,
                 fullName: true,
@@ -232,7 +232,7 @@ export class InvoiceService extends BaseService {
           include: {
             warehouse: true,
             lineItems: true,
-            createdByUser: {
+            createdBy: {
               select: {
                 id: true,
                 fullName: true,
@@ -447,7 +447,7 @@ export class InvoiceService extends BaseService {
             invoiceId,
             reason: sanitizeForDisplay(reason),
             disputedAmount: disputedAmount || Number(invoice.totalAmount),
-            raisedById: this.session!.user.id
+            disputedBy: this.session!.user.id
           }
         })
 

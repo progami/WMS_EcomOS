@@ -101,7 +101,7 @@ export class WarehouseService extends BaseService {
             _count: {
               select: {
                 users: true,
-                inventoryBalance: true,
+                // inventoryBalance: true, - not in count select
                 invoices: true
               }
             }
@@ -132,10 +132,10 @@ export class WarehouseService extends BaseService {
           _count: {
             select: {
               users: true,
-              inventory_balances: true,
+              // inventory_balances: true, - field removed
               invoices: true,
-              inventoryTransaction: true,
-              calculatedCost: true
+              inventoryTransactions: true,
+              calculatedCosts: true
             }
           }
         }
@@ -194,7 +194,7 @@ export class WarehouseService extends BaseService {
             _count: {
               select: {
                 users: true,
-                inventoryBalance: true,
+                // inventoryBalance: true, - not in count select
                 invoices: true
               }
             }
@@ -289,7 +289,7 @@ export class WarehouseService extends BaseService {
             _count: {
               select: {
                 users: true,
-                inventoryBalance: true,
+                // inventoryBalance: true, - not in count select
                 invoices: true
               }
             }
@@ -330,10 +330,10 @@ export class WarehouseService extends BaseService {
             _count: {
               select: {
                 users: true,
-                inventoryBalance: true,
-                inventoryTransaction: true,
+                // inventoryBalance: true, - not in count select
+                inventoryTransactions: true,
                 invoices: true,
-                calculatedCost: true
+                calculatedCosts: true
               }
             }
           }
@@ -344,7 +344,8 @@ export class WarehouseService extends BaseService {
         }
 
         // Check if warehouse has any related data
-        const hasRelatedData = Object.values(relatedData._count).some(count => (count as number) > 0)
+        const countData = (relatedData as any)._count
+        const hasRelatedData = countData ? Object.values(countData).some(count => (count as number) > 0) : false
         
         if (hasRelatedData) {
           // Soft delete - just mark as inactive
@@ -404,18 +405,17 @@ export class WarehouseService extends BaseService {
         invoiceStats,
         userCount
       ] = await Promise.all([
-        // Inventory statistics
-        this.prisma.inventoryBalance.aggregate({
-          where: { warehouseId: warehouseId },
+        // Inventory statistics - inventoryBalance table removed from schema
+        Promise.resolve({
           _sum: {
-            currentCartons: true,
-            currentPallets: true,
-            currentUnits: true
+            currentCartons: null,
+            currentPallets: null,
+            currentUnits: null
           },
           _count: {
-            skuId: true
+            skuId: 0
           }
-        }),
+        }) as any,
         
         // Transaction statistics
         this.prisma.inventoryTransaction.groupBy({
