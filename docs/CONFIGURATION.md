@@ -10,7 +10,7 @@ Copy `.env.example` to `.env` and configure the following variables:
 
 ```bash
 # Database
-DATABASE_URL="postgresql://username:password@localhost:5432/database_name?schema=public"
+DATABASE_URL="postgresql://[USERNAME]:[PASSWORD]@localhost:5432/[DATABASE_NAME]?schema=public"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:3000"
@@ -25,7 +25,7 @@ REDIS_URL="redis://localhost:6379"
 ```bash
 # Demo admin credentials (required for demo setup)
 DEMO_ADMIN_EMAIL="demo-admin@warehouse.com"
-DEMO_ADMIN_PASSWORD="your-secure-password-here"
+DEMO_ADMIN_PASSWORD="[YOUR_SECURE_PASSWORD]"
 ```
 
 ### Security Configuration
@@ -61,8 +61,8 @@ AMAZON_BATCH_SIZE_MINUTES="15"
 ```bash
 EMAIL_SERVER_HOST="smtp.gmail.com"
 EMAIL_SERVER_PORT="587"
-EMAIL_SERVER_USER="your-email@gmail.com"
-EMAIL_SERVER_PASSWORD="your-app-password"
+EMAIL_SERVER_USER="[YOUR_EMAIL]@gmail.com"
+EMAIL_SERVER_PASSWORD="[YOUR_APP_PASSWORD]"
 EMAIL_FROM="noreply@warehouse-system.com"
 ```
 
