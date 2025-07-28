@@ -50,13 +50,13 @@ export class InventoryReconciliationService {
     
     try {
       // Create the report record
-      await this.prisma.reconciliation_reports.create({
+      await this.prisma.reconciliationReport.create({
         data: {
           id: reportId,
           report_type: 'INVENTORY',
           started_at: new Date(),
           status: 'IN_PROGRESS',
-          created_by: user_id,
+          created_by: userId,
         },
       });
 
@@ -95,7 +95,7 @@ export class InventoryReconciliationService {
       }
 
       // Update report with final status
-      await this.prisma.reconciliation_reports.update({
+      await this.prisma.reconciliationReport.update({
         where: { id: reportId },
         data: {
           completed_at: new Date(),
@@ -116,7 +116,7 @@ export class InventoryReconciliationService {
       return reportId;
     } catch (error) {
       // Mark report as failed
-      await this.prisma.reconciliation_reports.update({
+      await this.prisma.reconciliationReport.update({
         where: { id: reportId },
         data: {
           completed_at: new Date(),
@@ -129,48 +129,22 @@ export class InventoryReconciliationService {
   }
 
   /**
-   * Get all unique warehouse/sku/batch combinations from both tables
+   * Get all unique warehouse/sku/batch combinations from transactions
    */
   private async getInventoryCombinations() {
-    // Get combinations from inventory_balances
-    const balanceCombos = await this.prisma.inventory_balances.findMany({
-      select: {
-        warehouse_id: true,
-        sku_id: true,
-        batch_lot: true,
-      },
-      distinct: ['warehouse_id', 'sku_id', 'batch_lot'],
-    });
-
     // Get combinations from inventory_transactions
-    const transactionCombos = await this.prisma.inventory_transactions.groupBy({
-      by: ['warehouse_id', 'sku_id', 'batch_lot'],
+    const transactionCombos = await this.prisma.inventoryTransaction.groupBy({
+      by: ['warehouseId', 'skuId', 'batchLot'],
     });
 
-    // Merge and deduplicate
-    const combinationMap = new Map<string, { warehouse_id: string; sku_id: string; batch_lot: string }>();
-    
-    balanceCombos.forEach(combo => {
-      const key = `${combo.warehouse_id}-${combo.sku_id}-${combo.batch_lot}`;
-      combinationMap.set(key, {
-        warehouse_id: combo.warehouse_id,
-        sku_id: combo.sku_id,
-        batch_lot: combo.batch_lot,
-      });
-    });
+    // Convert to the expected format
+    const combinations = transactionCombos.map(combo => ({
+      warehouse_id: combo.warehouseId,
+      sku_id: combo.skuId,
+      batch_lot: combo.batchLot,
+    }));
 
-    transactionCombos.forEach(combo => {
-      const key = `${combo.warehouse_id}-${combo.sku_id}-${combo.batch_lot}`;
-      if (!combinationMap.has(key)) {
-        combinationMap.set(key, {
-          warehouse_id: combo.warehouse_id,
-          sku_id: combo.sku_id,
-          batch_lot: combo.batch_lot,
-        });
-      }
-    });
-
-    return Array.from(combinationMap.values());
+    return combinations;
   }
 
   /**
@@ -181,84 +155,72 @@ export class InventoryReconciliationService {
     sku_id: string,
     batch_lot: string
   ): Promise<ReconciliationDiscrepancy | null> {
-    // Get recorded balance
-    const recordedBalance = await this.prisma.inventory_balances.findUnique({
-      where: {
-        warehouse_id_sku_id_batch_lot: {
-          warehouse_id: warehouse_id,
-          sku_id: sku_id,
-          batch_lot: batch_lot,
-        },
-      },
-      include: {
-        warehouses: true,
-        skus: true,
-      },
-    });
-
     // Calculate balance from transactions
-    const transactions = await this.prisma.inventory_transactions.findMany({
+    const transactions = await this.prisma.inventoryTransaction.findMany({
       where: {
-        warehouse_id: warehouse_id,
-        sku_id: sku_id,
-        batch_lot: batch_lot,
+        warehouseId: warehouse_id,
+        skuId: sku_id,
+        batchLot: batch_lot,
       },
-      orderBy: { transaction_date: 'asc' },
+      orderBy: { transactionDate: 'asc' },
     });
 
     let calculatedBalance = 0;
     const transactionHistory = [];
+    let lastTransactionDate: Date | undefined;
 
     for (const tx of transactions) {
-      const netCartons = tx.cartons_in - tx.cartons_out;
+      const netCartons = tx.cartonsIn - tx.cartonsOut;
       calculatedBalance += netCartons;
+      lastTransactionDate = tx.transactionDate;
       
       transactionHistory.push({
-        transaction_id: tx.transaction_id,
-        type: tx.transaction_type,
+        transaction_id: tx.transactionId,
+        type: tx.transactionType,
         cartons: netCartons,
-        date: tx.transaction_date,
+        date: tx.transactionDate,
       });
     }
 
-    const currentBalance = recordedBalance?.current_cartons || 0;
-    const difference = Math.abs(currentBalance - calculatedBalance);
+    // Since we no longer have a recorded balance table, we'll compare against 0
+    // This service now checks for any SKU/batch combinations that have negative balances
+    const difference = Math.abs(calculatedBalance);
 
-    // Only report if there's a discrepancy
-    if (difference === 0) {
-      return null;
+    // Only report if there's a negative balance or other issue
+    if (calculatedBalance >= 0) {
+      return null; // No discrepancy - positive or zero balance
     }
 
-    // Determine severity
+    // Determine severity based on negative balance
     let severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    if (difference > 100) {
+    if (Math.abs(calculatedBalance) > 100) {
       severity = 'CRITICAL';
-    } else if (difference > 50) {
+    } else if (Math.abs(calculatedBalance) > 50) {
       severity = 'HIGH';
-    } else if (difference > 10) {
+    } else if (Math.abs(calculatedBalance) > 10) {
       severity = 'MEDIUM';
     } else {
       severity = 'LOW';
     }
 
     // Get warehouse and SKU details
-    const warehouse = recordedBalance?.warehouses || 
-      await this.prisma.warehouses.findUnique({ where: { id: warehouse_id } });
-    const sku = recordedBalance?.skus || 
-      await this.prisma.skus.findUnique({ where: { id: sku_id } });
+    const [warehouse, sku] = await Promise.all([
+      this.prisma.warehouse.findUnique({ where: { id: warehouse_id } }),
+      this.prisma.sku.findUnique({ where: { id: sku_id } })
+    ]);
 
     return {
       warehouse_id,
       warehouseName: warehouse?.name || 'Unknown',
       sku_id,
-      sku_code: sku?.sku_code || 'Unknown',
+      sku_code: sku?.skuCode || 'Unknown',
       batch_lot,
-      recordedBalance: currentBalance,
+      recordedBalance: 0, // No recorded balance anymore
       calculatedBalance,
-      difference: currentBalance - calculatedBalance,
+      difference: calculatedBalance, // Negative balance amount
       severity,
       details: {
-        last_transaction_date: recordedBalance?.last_transaction_date || undefined,
+        last_transaction_date: lastTransactionDate,
         transactionHistory: transactionHistory.slice(-10), // Last 10 transactions
       },
     };
@@ -318,7 +280,7 @@ export class InventoryReconciliationService {
       discrepancy_details: d.details,
     }));
 
-    await this.prisma.reconciliation_discrepancies.createMany({
+    await this.prisma.reconciliationDiscrepancy.createMany({
       data: discrepancyRecords,
     });
   }
@@ -336,14 +298,14 @@ export class InventoryReconciliationService {
    */
   private async sendCriticalDiscrepancyNotifications(reportId: string, criticalCount: number) {
     // Get all admin users
-    const adminUsers = await this.prisma.users.findMany({
-      where: { role: 'admin', is_active: true },
+    const adminUsers = await this.prisma.user.findMany({
+      where: { role: 'admin', isActive: true },
     });
 
     // Create notifications for each admin
     const notifications = adminUsers.map(user => ({
       id: uuidv4(),
-      warehouse_id: user.warehouse_id || '', // System-wide notification
+      warehouse_id: user.warehouseId || '', // System-wide notification
       type: 'RECONCILIATION_COMPLETE' as const,
       title: 'Critical Inventory Discrepancies Found',
       message: `Reconciliation completed with ${criticalCount} critical discrepancies requiring immediate attention. Report ID: ${reportId}`,
@@ -351,7 +313,7 @@ export class InventoryReconciliationService {
     }));
 
     if (notifications.length > 0 && notifications[0].warehouse_id) {
-      await this.prisma.warehouses_notifications.createMany({
+      await this.prisma.warehouseNotification.createMany({
         data: notifications.filter(n => n.warehouse_id),
       });
     }
@@ -363,14 +325,14 @@ export class InventoryReconciliationService {
    * Get a specific reconciliation report
    */
   async getReconciliationReport(reportId: string) {
-    return await this.prisma.reconciliation_reports.findUnique({
+    return await this.prisma.reconciliationReport.findUnique({
       where: { id: reportId },
       include: {
-        users: true,
+        user: true,
         discrepancies: {
           include: {
-            warehouses: true,
-            skus: true,
+            warehouse: true,
+            sku: true,
           },
         },
       },
@@ -381,11 +343,11 @@ export class InventoryReconciliationService {
    * Get recent reconciliation reports
    */
   async getRecentReports(limit: number = 10) {
-    return await this.prisma.reconciliation_reports.findMany({
+    return await this.prisma.reconciliationReport.findMany({
       take: limit,
-      orderBy: { started_at: 'desc' },
+      orderBy: { startedAt: 'desc' },
       include: {
-        users: true,
+        user: true,
       },
     });
   }
@@ -399,12 +361,12 @@ export class InventoryReconciliationService {
       where.report_id = reportId;
     }
 
-    return await this.prisma.reconciliation_discrepancies.findMany({
+    return await this.prisma.reconciliationDiscrepancy.findMany({
       where,
       include: {
-        reconciliation_reports: true,
-        warehouses: true,
-        skus: true,
+        reconciliationReport: true,
+        warehouse: true,
+        sku: true,
       },
       orderBy: [
         { severity: 'desc' },

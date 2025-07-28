@@ -49,6 +49,7 @@ export default function WarehouseReceivePage() {
   const [cubeMasterAttachment, setCubeMasterAttachment] = useState<Attachment | null>(null)
   const [transactionCertificateAttachment, setTransactionCertificateAttachment] = useState<Attachment | null>(null)
   const [customDeclarationAttachment, setCustomDeclarationAttachment] = useState<Attachment | null>(null)
+  const [receiptDate, setReceiptDate] = useState(new Date().toISOString().slice(0, 10))
   const [items, setItems] = useState([
     { 
       id: 1, 
@@ -276,9 +277,15 @@ export default function WarehouseReceivePage() {
       // Get units per carton from SKU master data
       const selectedSku = skus.find(sku => sku.skuCode === value)
       if (selectedSku) {
-        setItems(prevItems => prevItems.map(item => 
-          item.id === id ? { ...item, unitsPerCarton: selectedSku.unitsPerCarton } : item
-        ))
+        setItems(prevItems => prevItems.map(item => {
+          if (item.id === id) {
+            const updatedItem = { ...item, unitsPerCarton: selectedSku.unitsPerCarton }
+            // Recalculate units based on current cartons and new unitsPerCarton
+            updatedItem.units = updatedItem.cartons * updatedItem.unitsPerCarton
+            return updatedItem
+          }
+          return item
+        }))
       }
       await fetchSkuDefaults(id, value)
       await fetchNextBatchNumber(id, value)
@@ -326,15 +333,21 @@ export default function WarehouseReceivePage() {
         }
       }
 
-      setItems(prev => prev.map(item =>
-        item.id === itemId ? {
-          ...item,
-          unitsPerCarton: sku.unitsPerCarton,
-          storageCartonsPerPallet,
-          shippingCartonsPerPallet,
-          configLoaded: true,
-        } : item
-      ))
+      setItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = {
+            ...item,
+            unitsPerCarton: sku.unitsPerCarton,
+            storageCartonsPerPallet,
+            shippingCartonsPerPallet,
+            configLoaded: true,
+          }
+          // Recalculate units based on current cartons
+          updatedItem.units = updatedItem.cartons * updatedItem.unitsPerCarton
+          return updatedItem
+        }
+        return item
+      }))
     } catch (error) {
       setItems(prev => prev.map(item => item.id === itemId ? { ...item, configLoaded: true } : item))
     }
@@ -519,15 +532,36 @@ export default function WarehouseReceivePage() {
               Record incoming inventory
             </p>
           </div>
-          <button
-            onClick={() => router.push('/operations/inventory')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/operations/inventory')}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="receive-form"
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Receipt
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="receive-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Header Information */}
           <div className="border rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Shipment Details</h3>
@@ -617,10 +651,23 @@ export default function WarehouseReceivePage() {
                 <input
                   type="date"
                   name="receiptDate"
+                  id="receiptDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  value={receiptDate}
                   max={new Date().toISOString().slice(0, 10)}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 10)}
+                  onChange={(e) => {
+                    setReceiptDate(e.target.value)
+                    // Update min date for dropoff date when receipt date changes
+                    const dropOffInput = document.getElementById('dropOffDate') as HTMLInputElement
+                    if (dropOffInput && e.target.value) {
+                      dropOffInput.min = e.target.value
+                      // If dropoff date is before receipt date, update it
+                      if (dropOffInput.value && dropOffInput.value < e.target.value) {
+                        dropOffInput.value = e.target.value
+                      }
+                    }
+                  }}
                   required
                 />
               </div>
@@ -631,10 +678,10 @@ export default function WarehouseReceivePage() {
                 <input
                   type="date"
                   name="dropOffDate"
+                  id="dropOffDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
+                  defaultValue={receiptDate}
+                  min={receiptDate}
                   required
                 />
               </div>
@@ -910,43 +957,44 @@ export default function WarehouseReceivePage() {
 
           {/* Attachments */}
           <div className="border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Required Documents</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload the following documents for this shipment (Max 5MB per file)
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Required Documents</h3>
+              <span className="text-sm text-gray-600">Max 5MB per file</span>
+            </div>
             
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Commercial Invoice */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Commercial Invoice</h4>
-                    <p className="text-xs text-gray-600">Invoice from supplier with pricing details</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Commercial Invoice
+                      {commercialInvoiceAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Invoice with pricing</p>
                   </div>
-                  {commercialInvoiceAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {commercialInvoiceAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{commercialInvoiceAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(commercialInvoiceAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{commercialInvoiceAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('commercial_invoice')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -959,36 +1007,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Bill of Lading */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Bill of Lading</h4>
-                    <p className="text-xs text-gray-600">Shipping document issued by carrier</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Bill of Lading
+                      {billOfLadingAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Carrier document</p>
                   </div>
-                  {billOfLadingAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {billOfLadingAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{billOfLadingAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(billOfLadingAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{billOfLadingAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('bill_of_lading')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1001,36 +1050,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Packing List */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Packing List</h4>
-                    <p className="text-xs text-gray-600">List of items, quantities, and packaging details</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Packing List
+                      {packingListAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Items & quantities</p>
                   </div>
-                  {packingListAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {packingListAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{packingListAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(packingListAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{packingListAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('packing_list')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1043,36 +1093,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Delivery Note */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Delivery Note</h4>
-                    <p className="text-xs text-gray-600">Proof of delivery from carrier</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Delivery Note
+                      {deliveryNoteAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Proof of delivery</p>
                   </div>
-                  {deliveryNoteAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {deliveryNoteAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{deliveryNoteAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(deliveryNoteAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{deliveryNoteAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('delivery_note')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1085,36 +1136,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Cube Master Stacking Style */}
-              <div className="border rounded-lg p-4 bg-blue-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Cube Master Stacking Style for Storage Pallets</h4>
-                    <p className="text-xs text-gray-600">Document showing optimal pallet stacking configuration</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Cube Master
+                      {cubeMasterAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Pallet stacking config</p>
                   </div>
-                  {cubeMasterAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {cubeMasterAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{cubeMasterAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(cubeMasterAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{cubeMasterAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('cube_master')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1127,36 +1179,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Transaction Certificate for GRS */}
-              <div className="border rounded-lg p-4 bg-green-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Transaction Certificate (TC) GRS</h4>
-                    <p className="text-xs text-gray-600">Goods Receipt Slip</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      TC GRS
+                      {transactionCertificateAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Goods Receipt Slip</p>
                   </div>
-                  {transactionCertificateAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {transactionCertificateAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{transactionCertificateAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(transactionCertificateAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{transactionCertificateAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('transaction_certificate')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1169,36 +1222,37 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Custom Declaration Document */}
-              <div className="border rounded-lg p-4 bg-yellow-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Custom Declaration Document (CDS)</h4>
-                    <p className="text-xs text-gray-600">Customs clearance documentation</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      CDS
+                      {customDeclarationAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Customs clearance</p>
                   </div>
-                  {customDeclarationAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {customDeclarationAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{customDeclarationAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(customDeclarationAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{customDeclarationAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeSpecificAttachment('custom_declaration')}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -1211,61 +1265,61 @@ export default function WarehouseReceivePage() {
               </div>
 
               {/* Other Attachments */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-sm mb-2">Additional Documents (Optional)</h4>
-                <div className="space-y-2">
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-6 w-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-sm text-gray-600">Click to upload additional documents</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, DOC, DOCX, XLS, XLSX</p>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                      onChange={(e) => {
-                        const files = e.target.files
-                        if (files) {
-                          Array.from(files).forEach(file => {
-                            const event = new Event('change') as any
-                            event.target = { files: [file] }
-                            handleFileUpload(event as React.ChangeEvent<HTMLInputElement>, 'other')
-                          })
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                  
-                  {attachments.length > 0 && (
-                    <div className="space-y-2 mt-2">
-                      {attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm text-gray-700">{file.name}</span>
-                            <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">Additional Docs</h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Optional files</p>
+                  </div>
                 </div>
+                <label className="cursor-pointer">
+                  <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
+                    <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                    <p className="text-xs text-gray-600 mt-1">Upload</p>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                    onChange={(e) => {
+                      const files = e.target.files
+                      if (files) {
+                        Array.from(files).forEach(file => {
+                          const event = new Event('change') as any
+                          event.target = { files: [file] }
+                          handleFileUpload(event as React.ChangeEvent<HTMLInputElement>, 'other')
+                        })
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                {attachments.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {attachments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                        <div className="flex items-center gap-1 truncate">
+                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                          <span className="text-gray-700 truncate">{file.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(index)}
+                          className="text-red-600 hover:text-red-800 ml-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Notes */}
           <div className="border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Additional Notes</h3>
+            <h3 className="text-lg font-semibold mb-4">Notes</h3>
             <textarea
               name="notes"
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1275,33 +1329,6 @@ export default function WarehouseReceivePage() {
             />
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => router.push('/operations/inventory')}
-              className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Receipt
-                </>
-              )}
-            </button>
-          </div>
         </form>
       </div>
     </DashboardLayout>

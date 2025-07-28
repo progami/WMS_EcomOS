@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            inventoryBalances: true,
+            inventoryTransactions: true,
             invoices: true
           }
         }
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            inventoryBalances: true,
+            inventoryTransactions: true,
             invoices: true
           }
         }
@@ -219,7 +219,7 @@ export async function PATCH(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            inventoryBalances: true,
+            inventoryTransactions: true,
             invoices: true
           }
         }
@@ -267,7 +267,6 @@ export async function DELETE(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            inventoryBalances: true,
             inventoryTransactions: true,
             invoices: true,
             calculatedCosts: true

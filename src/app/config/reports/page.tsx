@@ -113,7 +113,7 @@ export default async function AdminReportsPage() {
               <div>
                 <p className="text-sm font-medium text-purple-700">Warehouses</p>
                 <h2 className="text-3xl font-bold text-purple-900 mt-1">{totalWarehouses}</h2>
-                <p className="text-xs text-purple-600 mt-1">Active locations</p>
+                <p className="text-xs text-purple-600 mt-1">Active warehouses</p>
               </div>
               <BarChart3 className="h-10 w-10 text-purple-400" />
             </div>

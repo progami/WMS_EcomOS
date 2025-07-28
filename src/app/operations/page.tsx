@@ -77,7 +77,7 @@ const operationGroups: OperationGroup[] = [
         details: [
           'Scan incoming items and pallets',
           'Verify against purchase orders',
-          'Assign storage locations',
+          'Assign storage warehouses',
           'Update inventory counts automatically'
         ]
       }
@@ -96,7 +96,7 @@ const operationGroups: OperationGroup[] = [
         color: 'bg-blue-100 text-blue-700',
         details: [
           'View all inventory transactions',
-          'Filter by date, product, or location',
+          'Filter by date, product, or warehouse',
           'Export detailed reports',
           'Audit trail for compliance'
         ]

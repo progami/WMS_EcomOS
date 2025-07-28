@@ -774,7 +774,7 @@ export default function AdminDashboardPage() {
             <div className="border rounded-lg p-6">
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Current Inventory by Warehouse</h3>
-                <p className="text-sm text-muted-foreground">Distribution of cartons across locations</p>
+                <p className="text-sm text-muted-foreground">Distribution of cartons across warehouses</p>
               </div>
               {useDemoData || (chartData?.warehouseDistribution && chartData.warehouseDistribution.length > 0) ? (
                 <div className="space-y-4">

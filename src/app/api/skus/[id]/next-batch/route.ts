@@ -32,24 +32,9 @@ export async function GET(
     }
 
     // Find all batch numbers for this SKU from all sources
-    const [transactionBatches, balanceBatches, ledgerBatches] = await Promise.all([
+    const [transactionBatches, ledgerBatches] = await Promise.all([
       // Check inventory transactions
       prisma.inventoryTransaction.findMany({
-        where: {
-          skuId: sku.id,
-          batchLot: {
-            not: {
-              in: ['', 'N/A', 'NA', '-']
-            }
-          }
-        },
-        select: {
-          batchLot: true
-        },
-        distinct: ['batchLot']
-      }),
-      // Check current inventory balances
-      prisma.inventoryBalance.findMany({
         where: {
           skuId: sku.id,
           batchLot: {
@@ -83,7 +68,6 @@ export async function GET(
     // Combine all batches and remove duplicates
     const allBatchLots = new Set<string>()
     transactionBatches.forEach(t => allBatchLots.add(t.batchLot))
-    balanceBatches.forEach(b => allBatchLots.add(b.batchLot))
     ledgerBatches.forEach(l => allBatchLots.add(l.batchLot))
     
     const allBatches = Array.from(allBatchLots).map(batchLot => ({ batchLot }))

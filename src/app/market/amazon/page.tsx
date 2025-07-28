@@ -188,8 +188,8 @@ export default function AmazonIntegrationPage() {
       <div className="space-y-6">
         <PageHeader
           title="Amazon Integration"
-          subtitle="Inventory overview by location"
-          description="Overview of inventory levels across all warehouse locations. Shows all SKUs including those with zero stock."
+          subtitle="Inventory overview by warehouse"
+          description="Overview of inventory levels across all warehouses. Shows all SKUs including those with zero stock."
           icon={Package2}
           iconColor="text-orange-600"
           bgColor="bg-orange-50"
@@ -342,7 +342,7 @@ export default function AmazonIntegrationPage() {
                 <p className="text-2xl font-bold text-blue-600 mt-1">
                   {totalCombined.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">units across all locations</p>
+                <p className="text-xs text-gray-500 mt-1">units across all warehouses</p>
               </div>
               <BarChart3 className="h-8 w-8 text-blue-400" />
             </div>
@@ -555,8 +555,8 @@ export default function AmazonIntegrationPage() {
         {/* Info Note */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> This page displays inventory levels across all warehouse locations. Showing {skusWithStock} of {totalSkus} SKUs with stock.
-            The total column shows the combined inventory across all locations.
+            <strong>Note:</strong> This page displays inventory levels across all warehouses. Showing {skusWithStock} of {totalSkus} SKUs with stock.
+            The total column shows the combined inventory across all warehouses.
           </p>
         </div>
 

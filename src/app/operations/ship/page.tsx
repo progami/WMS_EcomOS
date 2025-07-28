@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check } from 'lucide-react'
+import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check, Send } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'
@@ -68,6 +68,7 @@ export default function WarehouseShipPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [lastShipmentData, setLastShipmentData] = useState<any>(null)
+  const [shipDate, setShipDate] = useState(new Date().toISOString().slice(0, 10))
 
   const addItem = () => {
     setItems([
@@ -264,53 +265,39 @@ export default function WarehouseShipPage() {
 
   const fetchInventory = async (warehouseId?: string) => {
     try {
-      // Fetch directly from transaction ledger and calculate
+      // Fetch from inventory balances API - the single source of truth
       const url = warehouseId 
-        ? `/api/transactions/ledger?warehouseId=${warehouseId}&limit=10000`
-        : `/api/transactions/ledger?limit=10000`
+        ? `/api/inventory/balances?warehouseId=${warehouseId}`
+        : `/api/inventory/balances`
       
       const response = await fetch(url)
       if (response.ok) {
         const result = await response.json()
-        const transactions = result.transactions || []
+        // Handle both paginated and non-paginated responses
+        const balances = result.data || result || []
         
-        // Calculate balances from transactions
-        const balanceMap = new Map<string, any>()
+        // Transform to match the expected format
+        const inventory = balances.map((balance: any) => ({
+          id: `${balance.skuId}-${balance.batchLot}`,
+          skuId: balance.skuId,
+          batchLot: balance.batchLot,
+          currentCartons: balance.currentCartons,
+          currentUnits: balance.currentUnits,
+          sku: balance.sku,
+          warehouse: balance.warehouse,
+          warehouseId: balance.warehouseId,
+          shippingCartonsPerPallet: balance.shippingCartonsPerPallet,
+          storageCartonsPerPallet: balance.storageCartonsPerPallet
+        }))
         
-        for (const tx of transactions) {
-          const key = `${tx.skuId}-${tx.batchLot}`
-          
-          const current = balanceMap.get(key) || {
-            id: key,
-            skuId: tx.skuId,
-            batchLot: tx.batchLot,
-            currentCartons: 0,
-            currentUnits: 0,
-            sku: tx.sku,
-            warehouse: tx.warehouse,
-            warehouseId: tx.warehouseId,
-            shippingCartonsPerPallet: null,
-            storageCartonsPerPallet: null
-          }
-          
-          // Update quantities
-          current.currentCartons += tx.cartonsIn - tx.cartonsOut
-          current.currentUnits = current.currentCartons * (tx.sku?.unitsPerCarton || 1)
-          
-          // Capture pallet config from RECEIVE transactions
-          if (tx.transactionType === 'RECEIVE') {
-            if (tx.shippingCartonsPerPallet) current.shippingCartonsPerPallet = tx.shippingCartonsPerPallet
-            if (tx.storageCartonsPerPallet) current.storageCartonsPerPallet = tx.storageCartonsPerPallet
-          }
-          
-          balanceMap.set(key, current)
-        }
-        
-        // Convert to array and filter negative balances
-        const allInventory = Array.from(balanceMap.values()).filter(item => item.currentCartons >= 0)
-        
-        setInventory(allInventory)
+        setInventory(inventory)
       } else {
+        if (response.status === 401) {
+          toast.error('Session expired. Please log in again.')
+          window.location.href = '/auth/signin'
+        } else {
+          console.error('Failed to fetch inventory:', response.status)
+        }
         setInventory([])
       }
     } catch (error) {
@@ -337,7 +324,8 @@ export default function WarehouseShipPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const formData = new FormData(e.target as HTMLFormElement)
+    const form = e.currentTarget as HTMLFormElement
+    const formData = new FormData(form)
     const shipDate = formData.get('shipDate') as string
     
     // Validate date is not in future
@@ -396,27 +384,50 @@ export default function WarehouseShipPage() {
     setLoading(true)
     toast('Verifying current inventory levels...', { icon: 'ℹ️' })
     
+    // Get the warehouse ID from form data
+    const sourceWarehouseId = formData.get('sourceWarehouse') as string
+    
+    if (!sourceWarehouseId) {
+      toast.error('Please select a warehouse')
+      setLoading(false)
+      return
+    }
+    
     try {
       // Re-fetch current inventory for final validation
       const inventoryResponse = await fetch(
-        `/api/inventory/balances?warehouseId=${selectedWarehouseId}`
+        `/api/inventory/balances?warehouseId=${sourceWarehouseId}&showZeroStock=true`
       )
       
       if (!inventoryResponse.ok) {
-        toast.error('Failed to verify inventory. Please try again.')
+        if (inventoryResponse.status === 401) {
+          toast.error('Session expired. Please log in again.')
+          window.location.href = '/auth/signin'
+        } else {
+          toast.error('Failed to verify inventory. Please try again.')
+        }
         setLoading(false)
         return
       }
       
       const inventoryResult = await inventoryResponse.json()
+      
       const currentInventory = inventoryResult.data || inventoryResult || []
+      
       
       // Check each item against real-time inventory
       const inventoryIssues: string[] = []
       for (const item of validItems) {
-        const currentStock = currentInventory.find((inv: any) => 
-          inv.sku.skuCode === item.skuCode && inv.batchLot === item.batchLot
-        )
+        let currentStock
+        try {
+          currentStock = currentInventory.find((inv: any) => {
+            const skuMatch = inv.sku.skuCode === item.skuCode
+            const batchMatch = inv.batchLot === item.batchLot
+            return skuMatch && batchMatch
+          })
+        } catch (error) {
+          console.error('Error during find:', error)
+        }
         
         if (!currentStock) {
           inventoryIssues.push(`SKU ${item.skuCode} batch ${item.batchLot} no longer exists`)
@@ -443,7 +454,6 @@ export default function WarehouseShipPage() {
     const referenceNumber = formData.get('orderNumber') as string
     const date = shipDate
     const pickupDate = formData.get('pickupDate') as string
-    const sourceWarehouseId = formData.get('sourceWarehouse') as string
     const carrier = formData.get('carrier') as string
     const trackingNumber = formData.get('trackingNumber') as string
     const modeOfTransportation = formData.get('modeOfTransportation') as string
@@ -537,15 +547,36 @@ export default function WarehouseShipPage() {
               Process outbound shipments
             </p>
           </div>
-          <button
-            onClick={() => router.push('/operations/inventory')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/operations/inventory')}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="ship-form"
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Ship Goods
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="ship-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Header Information */}
           <div className="border rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Shipment Details</h3>
@@ -598,10 +629,23 @@ export default function WarehouseShipPage() {
                 <input
                   type="date"
                   name="shipDate"
+                  id="shipDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  value={shipDate}
                   max={new Date().toISOString().slice(0, 10)}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 10)}
+                  onChange={(e) => {
+                    setShipDate(e.target.value)
+                    // Update min date for pickup date when ship date changes
+                    const pickupInput = document.getElementById('pickupDate') as HTMLInputElement
+                    if (pickupInput && e.target.value) {
+                      pickupInput.min = e.target.value
+                      // If pickup date is before ship date, update it
+                      if (pickupInput.value && pickupInput.value < e.target.value) {
+                        pickupInput.value = e.target.value
+                      }
+                    }
+                  }}
                   required
                 />
               </div>
@@ -612,10 +656,10 @@ export default function WarehouseShipPage() {
                 <input
                   type="date"
                   name="pickupDate"
+                  id="pickupDate"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue={new Date().toISOString().slice(0, 16)}
-                  max={new Date().toISOString().slice(0, 16)}
-                  min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 16)}
+                  defaultValue={shipDate}
+                  min={shipDate}
                   required
                 />
               </div>
@@ -754,26 +798,37 @@ export default function WarehouseShipPage() {
                           disabled={!item.skuCode}
                         >
                           <option value="">
-                            {!item.skuCode ? "Select SKU first..." : "Select Batch..."}
+                            {!item.skuCode ? "Select SKU first..." : 
+                             !selectedWarehouseId ? "Select warehouse first..." :
+                             "Select Batch..."}
                           </option>
-                          {item.skuCode && Array.isArray(inventory) && inventory
-                            .filter(inv => inv.sku.skuCode === item.skuCode)
-                            .sort((a, b) => {
-                              // First sort by availability (available first), then by quantity
-                              if (a.currentCartons > 0 && b.currentCartons === 0) return -1
-                              if (a.currentCartons === 0 && b.currentCartons > 0) return 1
-                              return b.currentCartons - a.currentCartons
-                            })
-                            .map((inv) => (
-                              <option 
-                                key={`${inv.id}-${inv.batchLot}`} 
-                                value={inv.batchLot}
-                                className={inv.currentCartons === 0 ? 'text-red-500' : inv.currentCartons < 10 ? 'text-orange-600' : ''}
-                                disabled={inv.currentCartons === 0}
-                              >
-                                {inv.batchLot} ({inv.currentCartons} cartons{inv.currentCartons === 0 ? ' - OUT OF STOCK' : inv.currentCartons < 10 ? ' - Low Stock' : ''})
-                              </option>
-                            ))}
+                          {item.skuCode && selectedWarehouseId && Array.isArray(inventory) && (
+                            (() => {
+                              const availableBatches = inventory.filter(inv => 
+                                inv.sku.skuCode === item.skuCode && inv.currentCartons > 0
+                              )
+                              
+                              if (availableBatches.length === 0) {
+                                return (
+                                  <option value="" disabled>
+                                    No inventory available for this SKU
+                                  </option>
+                                )
+                              }
+                              
+                              return availableBatches
+                                .sort((a, b) => b.currentCartons - a.currentCartons)
+                                .map((inv) => (
+                                  <option 
+                                    key={`${inv.id}-${inv.batchLot}`} 
+                                    value={inv.batchLot}
+                                    className={inv.currentCartons < 10 ? 'text-orange-600' : ''}
+                                  >
+                                    {inv.batchLot} ({inv.currentCartons} cartons{inv.currentCartons < 10 ? ' - Low Stock' : ''})
+                                  </option>
+                                ))
+                            })()
+                          )}
                         </select>
                       </td>
                       <td className="px-4 py-3 w-28 text-right">
@@ -896,56 +951,46 @@ export default function WarehouseShipPage() {
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Shipping Notes</h3>
-            <textarea
-              name="notes"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={3}
-              placeholder="Any special instructions or notes..."
-            />
-          </div>
-
           {/* Attachments */}
           <div className="border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Required Documents</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload proof of pickup document (Max 5MB per file)
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Required Documents</h3>
+              <span className="text-sm text-gray-600">Max 5MB per file</span>
+            </div>
             
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Proof of Pickup */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">Proof of Pickup</h4>
-                    <p className="text-xs text-gray-600">Document confirming carrier pickup (BOL, pickup receipt, etc.)</p>
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm flex items-center gap-1">
+                      Proof of Pickup
+                      {proofOfPickupAttachment && (
+                        <span className="text-green-600">✓</span>
+                      )}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">BOL, pickup receipt</p>
                   </div>
-                  {proofOfPickupAttachment && (
-                    <span className="text-xs text-green-600 font-medium">✓ Uploaded</span>
-                  )}
                 </div>
                 {proofOfPickupAttachment ? (
-                  <div className="flex items-center justify-between bg-white p-2 rounded border">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{proofOfPickupAttachment.name}</span>
-                      <span className="text-xs text-gray-500">({(proofOfPickupAttachment.size / 1024).toFixed(1)} KB)</span>
+                  <div className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                    <div className="flex items-center gap-1 truncate">
+                      <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 truncate">{proofOfPickupAttachment.name}</span>
                     </div>
                     <button
                       type="button"
                       onClick={removeProofOfPickupAttachment}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-1"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer">
                     <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600">Click to upload</p>
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                      <p className="text-xs text-gray-600 mt-1">Upload</p>
                     </div>
                     <input
                       type="file"
@@ -958,85 +1003,69 @@ export default function WarehouseShipPage() {
               </div>
 
               {/* Other Attachments */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-sm mb-2">Additional Documents (Optional)</h4>
-                <div className="space-y-2">
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-6 w-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-sm text-gray-600">Click to upload additional documents</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, DOC, DOCX, XLS, XLSX</p>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                      onChange={(e) => {
-                        const files = e.target.files
-                        if (files) {
-                          Array.from(files).forEach(file => {
-                            const event = new Event('change') as any
-                            event.target = { files: [file] }
-                            handleFileUpload(event as React.ChangeEvent<HTMLInputElement>, 'other')
-                          })
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                  
-                  {attachments.length > 0 && (
-                    <div className="space-y-2 mt-2">
-                      {attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm text-gray-700">{file.name}</span>
-                            <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="border rounded-lg p-3 bg-gray-50 hover:shadow-sm transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">Additional Docs</h4>
+                    <p className="text-xs text-gray-600 mt-0.5">Optional files</p>
+                  </div>
                 </div>
+                <label className="cursor-pointer">
+                  <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
+                    <Upload className="h-4 w-4 text-gray-400 mx-auto" />
+                    <p className="text-xs text-gray-600 mt-1">Upload</p>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                    onChange={(e) => {
+                      const files = e.target.files
+                      if (files) {
+                        Array.from(files).forEach(file => {
+                          const event = new Event('change') as any
+                          event.target = { files: [file] }
+                          handleFileUpload(event as React.ChangeEvent<HTMLInputElement>, 'other')
+                        })
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                {attachments.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {attachments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                        <div className="flex items-center gap-1 truncate">
+                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                          <span className="text-gray-700 truncate">{file.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(index)}
+                          className="text-red-600 hover:text-red-800 ml-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => router.push('/operations/inventory')}
-              className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Process Shipment
-                </>
-              )}
-            </button>
+          {/* Notes */}
+          <div className="border rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Notes</h3>
+            <textarea
+              name="notes"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={3}
+              placeholder="Any additional notes or comments..."
+            />
           </div>
+
         </form>
       </div>
 

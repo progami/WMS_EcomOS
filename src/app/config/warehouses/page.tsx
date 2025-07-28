@@ -20,7 +20,7 @@ interface Warehouse {
   isActive: boolean
   _count: {
     users: number
-    inventoryBalances: number
+    inventoryTransactions: number
     invoices: number
   }
 }
@@ -54,7 +54,7 @@ export default function WarehouseSettingsPage() {
   }
 
   const handleEdit = (warehouseId: string) => {
-    router.push(`/config/locations/${warehouseId}/edit`)
+    router.push(`/config/warehouses/${warehouseId}/edit`)
   }
 
   const handleDelete = async (warehouse: Warehouse) => {
@@ -105,7 +105,7 @@ export default function WarehouseSettingsPage() {
         <PageHeader
           title="Warehouse Settings"
           subtitle="Manage warehouses and SKU configurations"
-          description="Configure warehouse locations, contact information, and operational settings. Each warehouse can have its own staff, inventory, cost rates, and invoicing. Active warehouses can receive shipments and generate invoices."
+          description="Configure warehouses, contact information, and operational settings. Each warehouse can have its own staff, inventory, cost rates, and invoicing. Active warehouses can receive shipments and generate invoices."
           icon={Building2}
           iconColor="text-teal-600"
           bgColor="bg-teal-50"
@@ -118,7 +118,7 @@ export default function WarehouseSettingsPage() {
                 onImportComplete={fetchWarehouses}
               />
               <Link
-                href="/config/locations/new"
+                href="/config/warehouses/new"
                 className="action-button"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -231,8 +231,8 @@ function WarehouseCard({ warehouse, onEdit, onDelete, onToggleActive }: Warehous
       
       <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
         <div className="text-center">
-          <p className="text-2xl font-bold">{_count.inventoryBalances}</p>
-          <p className="text-xs text-gray-600">SKUs in Stock</p>
+          <p className="text-2xl font-bold">{_count.inventoryTransactions}</p>
+          <p className="text-xs text-gray-600">Transactions</p>
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold">{_count.invoices}</p>

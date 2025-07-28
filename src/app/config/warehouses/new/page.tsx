@@ -1,28 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Building2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Building2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import Link from 'next/link'
 
-interface Warehouse {
-  id: string
-  code: string
-  name: string
-  address?: string
-  latitude?: number | null
-  longitude?: number | null
-  contactEmail?: string
-  contactPhone?: string
-  isActive: boolean
-}
-
-export default function EditWarehousePage({ params }: { params: { id: string } }) {
+export default function NewWarehousePage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [warehouse, setWarehouse] = useState<Warehouse | null>(null)
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -34,43 +20,6 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
     isActive: true
   })
   const [errors, setErrors] = useState<any>({})
-
-  useEffect(() => {
-    fetchWarehouse()
-  }, [params.id])
-
-  const fetchWarehouse = async () => {
-    try {
-      const response = await fetch('/api/warehouses')
-      if (!response.ok) throw new Error('Failed to fetch warehouses')
-      
-      const warehouses = await response.json()
-      const warehouse = warehouses.find((w: Warehouse) => w.id === params.id)
-      
-      if (warehouse) {
-        setWarehouse(warehouse)
-        setFormData({
-          code: warehouse.code,
-          name: warehouse.name,
-          address: warehouse.address || '',
-          latitude: warehouse.latitude?.toString() || '',
-          longitude: warehouse.longitude?.toString() || '',
-          contactEmail: warehouse.contactEmail || '',
-          contactPhone: warehouse.contactPhone || '',
-          isActive: warehouse.isActive
-        })
-      } else {
-        alert('Warehouse not found')
-        router.push('/admin/settings/warehouses')
-      }
-    } catch (error) {
-      // console.error('Error fetching warehouse:', error)
-      alert('Failed to load warehouse')
-      router.push('/admin/settings/warehouses')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const validateForm = () => {
     const newErrors: any = {}
@@ -106,52 +55,32 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
     
     if (!validateForm()) return
 
-    setSaving(true)
+    setLoading(true)
     try {
-      const updateData: any = {
-        name: formData.name,
-        address: formData.address || null,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        contactEmail: formData.contactEmail || null,
-        contactPhone: formData.contactPhone || null,
-        isActive: formData.isActive
-      }
-
-      // Only update code if it changed
-      if (formData.code !== warehouse?.code) {
-        updateData.code = formData.code.toUpperCase()
-      }
-
-      const response = await fetch(`/api/warehouses?id=${params.id}`, {
-        method: 'PATCH',
+      const response = await fetch('/api/warehouses', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify({
+          ...formData,
+          code: formData.code.toUpperCase(),
+          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+          longitude: formData.longitude ? parseFloat(formData.longitude) : null
+        })
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to update warehouse')
+        throw new Error(error.error || 'Failed to create warehouse')
       }
 
-      alert('Warehouse updated successfully!')
-      router.push('/config/locations')
+      alert('Warehouse created successfully!')
+      router.push('/config/warehouses')
     } catch (error: any) {
-      // console.error('Error updating warehouse:', error)
-      alert(error.message || 'Failed to update warehouse')
+      // console.error('Error creating warehouse:', error)
+      alert(error.message || 'Failed to create warehouse')
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
-  }
-
-  if (loading || !warehouse) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      </DashboardLayout>
-    )
   }
 
   return (
@@ -159,15 +88,15 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Link
-            href="/config/locations"
+            href="/config/warehouses"
             className="p-2 hover:bg-gray-100 rounded-md"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Edit Warehouse</h1>
+            <h1 className="text-3xl font-bold">Create New Warehouse</h1>
             <p className="text-muted-foreground">
-              Update warehouse information
+              Add a new warehouse to the system
             </p>
           </div>
         </div>
@@ -314,14 +243,6 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
                 Active warehouse (can receive transactions)
               </label>
             </div>
-
-            {formData.code !== warehouse.code && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  <strong>Warning:</strong> Changing the warehouse code may affect existing references and reports.
-                </p>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center justify-end gap-4 mt-6 pt-6 border-t">
@@ -333,18 +254,18 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
             </Link>
             <button
               type="submit"
-              disabled={saving}
+              disabled={loading}
               className="action-button"
             >
-              {saving ? (
+              {loading ? (
                 <>
                   <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                  Saving...
+                  Creating...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  Create Warehouse
                 </>
               )}
             </button>
@@ -355,12 +276,12 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
           <div className="flex items-start">
             <Building2 className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
             <div className="text-sm text-blue-800">
-              <p className="font-semibold mb-1">Warehouse Information:</p>
+              <p className="font-semibold mb-1">Warehouse Setup Tips:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li>Created: {new Date().toLocaleDateString()}</li>
-                <li>Status: {warehouse.isActive ? 'Active' : 'Inactive'}</li>
-                <li>Code changes require updating all references</li>
-                <li>Deactivating prevents new transactions but preserves history</li>
+                <li>Use a unique, memorable code that's easy to reference</li>
+                <li>Include complete contact information for billing inquiries</li>
+                <li>You can deactivate warehouses later without deleting data</li>
+                <li>After creation, configure SKU-specific settings for this warehouse</li>
               </ul>
             </div>
           </div>

@@ -10,7 +10,7 @@ export interface ColumnDefinition {
   fieldName: string // Database field name
   displayName: string // UI display name
   exportName: string // Export column header
-  group: 'datetime' | 'type' | 'location' | 'product' | 'quantity' | 'shipping' | 'metadata'
+  group: 'datetime' | 'type' | 'warehouse' | 'product' | 'quantity' | 'shipping' | 'metadata'
   order: number
   showInUI: boolean
   showInExport: boolean
@@ -71,12 +71,12 @@ export const INVENTORY_TRANSACTION_COLUMNS: ColumnDefinition[] = [
     showInExport: true
   },
 
-  // Location Group
+  // Warehouse Group
   {
     fieldName: 'warehouse',
     displayName: 'Warehouse',
     exportName: 'Warehouse',
-    group: 'location',
+    group: 'warehouse',
     order: 5,
     showInUI: true,
     showInExport: true,
@@ -335,7 +335,7 @@ export function getColumnByFieldName(fieldName: string): ColumnDefinition | unde
 }
 
 export function getColumnGroups(): string[] {
-  return ['datetime', 'type', 'location', 'product', 'quantity', 'shipping', 'metadata']
+  return ['datetime', 'type', 'warehouse', 'product', 'quantity', 'shipping', 'metadata']
 }
 
 // Standardized column ordering for Inventory Balances
@@ -344,7 +344,7 @@ export const INVENTORY_BALANCE_COLUMNS: ColumnDefinition[] = [
     fieldName: 'warehouse',
     displayName: 'Warehouse',
     exportName: 'Warehouse',
-    group: 'location',
+    group: 'warehouse',
     order: 1,
     showInUI: true,
     showInExport: true,

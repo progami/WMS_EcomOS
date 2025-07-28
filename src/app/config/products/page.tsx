@@ -23,7 +23,7 @@ interface SKU {
   packagingType?: string | null
   isActive: boolean
   _count: {
-    inventoryBalances: number
+    inventoryTransactions: number
     warehouseConfigs: number
   }
 }
