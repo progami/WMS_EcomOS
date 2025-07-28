@@ -139,7 +139,6 @@ export default function FinanceDashboardPage() {
         <PageHeader
           title="Finance Dashboard"
           subtitle={`Billing Period: ${billingStart.toLocaleDateString()} - ${billingEnd.toLocaleDateString()}`}
-          description="Monitor financial performance, track invoices, analyze costs, and manage billing reconciliation. View real-time metrics and ensure accurate 3PL cost management."
           icon={DollarSign}
           iconColor="text-emerald-600"
           bgColor="bg-emerald-50"

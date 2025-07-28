@@ -105,7 +105,6 @@ export default function WarehouseSettingsPage() {
         <PageHeader
           title="Warehouse Settings"
           subtitle="Manage warehouses and SKU configurations"
-          description="Configure warehouses, contact information, and operational settings. Each warehouse can have its own staff, inventory, cost rates, and invoicing. Active warehouses can receive shipments and generate invoices."
           icon={Building2}
           iconColor="text-teal-600"
           bgColor="bg-teal-50"

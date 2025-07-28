@@ -791,7 +791,7 @@ export default function WarehouseReceivePage() {
                       <td className="px-4 py-3 w-40">
                         <div className="relative">
                           <input
-                            type="number"
+                            type="text"
                             value={item.batchLot}
                             className="w-full px-2 py-1 border rounded bg-gray-100"
                             placeholder={item.loadingBatch ? "Loading..." : "Select SKU first"}

@@ -132,7 +132,6 @@ export default function EditWarehouseConfigPage() {
         <PageHeader
           title="Edit Warehouse Configuration"
           subtitle={`${config.warehouse.name} - ${config.sku.skuCode}`}
-          description="Update cartons per pallet settings. Note: You cannot change the warehouse or SKU. To change these, end this configuration and create a new one."
           icon={Building}
           iconColor="text-purple-600"
           bgColor="bg-purple-50"

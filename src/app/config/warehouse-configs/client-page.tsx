@@ -78,7 +78,6 @@ export default function WarehouseConfigsClientPage({
       <PageHeader
         title="Warehouse SKU Configurations"
         subtitle="Configure cartons per pallet for each warehouse and SKU"
-        description="Define how many cartons fit on a pallet for storage and shipping operations. These configurations determine pallet calculations throughout the system and are essential for accurate inventory tracking and cost calculations."
         icon={Settings}
         iconColor="text-purple-600"
         bgColor="bg-purple-50"

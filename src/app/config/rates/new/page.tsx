@@ -178,7 +178,6 @@ export default function NewRatePage() {
         <PageHeader
           title="New Cost Rate"
           subtitle="Add a new rate to the system"
-          description="Define cost rates for warehouse services. Ensure no overlapping rates exist for the same service in the same period."
           icon={DollarSign}
           iconColor="text-green-600"
           bgColor="bg-green-50"

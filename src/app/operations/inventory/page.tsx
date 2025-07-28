@@ -539,7 +539,6 @@ export default function UnifiedInventoryPage() {
         <PageHeader
           title="Inventory Ledger & Balances"
           subtitle="Inventory movements and current stock levels"
-          description="This combines the Excel Inventory Ledger (all movements) and calculated balances. Use the tabs to switch between the full inventory ledger and current inventory balances."
           icon={BookOpen}
           iconColor="text-green-600"
           bgColor="bg-green-50"

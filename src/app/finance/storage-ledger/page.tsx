@@ -76,7 +76,6 @@ export default function StorageLedgerPage() {
         <PageHeader
           title="Storage Ledger"
           subtitle="Weekly storage costs and billing calculations"
-          description="Track storage costs based on Monday snapshots with weekly calculations. Costs are aggregated monthly for billing periods (16th to 15th)."
           icon={DollarSign}
           iconColor="text-green-600"
           bgColor="bg-green-50"

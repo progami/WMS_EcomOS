@@ -32,7 +32,6 @@ export default function AmazonIntegrationPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         <PageHeader
           title="Amazon FBA Integration"
-          description="Connect and sync with Amazon FBA"
         />
 
         <div className="mt-8 flex flex-col items-center justify-center text-center py-16">
@@ -253,7 +252,6 @@ export default function AmazonIntegrationPage() {
         <PageHeader
           title="Amazon Integration"
           subtitle="Inventory overview by warehouse"
-          description="Overview of inventory levels across all warehouses. Shows all SKUs including those with zero stock."
           icon={Package2}
           iconColor="text-orange-600"
           bgColor="bg-orange-50"

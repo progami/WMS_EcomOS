@@ -117,7 +117,6 @@ export default function NewWarehouseConfigPage() {
         <PageHeader
           title="New Warehouse Configuration"
           subtitle="Set cartons per pallet for a SKU"
-          description="Configure how many cartons fit on a pallet for storage and shipping. These settings are critical for accurate billing calculations."
           icon={Building}
           iconColor="text-purple-600"
           bgColor="bg-purple-50"
