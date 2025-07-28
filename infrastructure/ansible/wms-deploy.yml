@@ -1,0 +1,51 @@
+---
+# Consolidated WMS deployment playbook - idempotent and modular
+- name: Deploy WMS Application
+  hosts: wms_servers
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+  
+  tasks:
+    - name: System Setup
+      import_tasks: tasks/system-setup.yml
+      tags: [system]
+
+    - name: Database Setup
+      import_tasks: tasks/database-setup.yml
+      tags: [database]
+
+    - name: Application Deployment
+      import_tasks: tasks/app-deploy.yml
+      tags: [app]
+
+    - name: Web Server Configuration
+      import_tasks: tasks/webserver-config.yml
+      tags: [webserver]
+
+    - name: SSL Configuration (if enabled)
+      import_tasks: tasks/ssl-setup.yml
+      when: enable_ssl | default(false)
+      tags: [ssl]
+
+    - name: Monitoring Setup (if enabled)
+      import_tasks: tasks/monitoring-setup.yml
+      when: enable_monitoring | default(false)
+      tags: [monitoring]
+
+  handlers:
+    - name: restart nginx
+      systemd:
+        name: nginx
+        state: restarted
+        daemon_reload: yes
+
+    - name: restart postgresql
+      systemd:
+        name: postgresql
+        state: restarted
+
+    - name: reload pm2
+      shell: pm2 reload all
+      become_user: "{{ app_user }}"
+      ignore_errors: yes

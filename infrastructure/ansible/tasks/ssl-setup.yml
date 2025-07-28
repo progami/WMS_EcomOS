@@ -1,0 +1,59 @@
+---
+# SSL setup tasks - idempotent
+- name: Check if SSL certificate exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+  register: ssl_cert_exists
+
+- name: Configure initial Nginx for Certbot
+  template:
+    src: nginx-initial.conf.j2
+    dest: /etc/nginx/sites-available/wms
+  when: not ssl_cert_exists.stat.exists
+  notify: restart nginx
+
+- name: Obtain SSL certificate
+  command: |
+    certbot certonly --nginx \
+    -d {{ domain_name }} \
+    {% if additional_domains is defined %}{% for domain in additional_domains %}-d {{ domain }} {% endfor %}{% endif %} \
+    --non-interactive \
+    --agree-tos \
+    --email {{ certbot_email }} \
+    --expand
+  when: not ssl_cert_exists.stat.exists
+  register: certbot_result
+
+- name: Generate strong DH parameters
+  command: openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
+  args:
+    creates: /etc/nginx/ssl/dhparam.pem
+
+- name: Configure Nginx with SSL
+  template:
+    src: nginx-ssl.conf.j2
+    dest: /etc/nginx/sites-available/wms
+    backup: yes
+  notify: restart nginx
+
+- name: Create SSL renewal hook script
+  copy:
+    content: |
+      #!/bin/bash
+      systemctl reload nginx
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+    mode: '0755'
+
+- name: Setup auto-renewal for SSL certificates
+  cron:
+    name: "Renew Let's Encrypt certificates"
+    job: "/usr/bin/certbot renew --quiet"
+    minute: "{{ 59 | random }}"
+    hour: "{{ 2 | random(start=0) }},{{ 14 | random(start=12) }}"
+    state: present
+
+- name: Test SSL renewal
+  command: certbot renew --dry-run
+  register: renewal_test
+  changed_when: false
+  failed_when: renewal_test.rc != 0

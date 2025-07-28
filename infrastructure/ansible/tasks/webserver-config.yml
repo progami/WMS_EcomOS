@@ -1,0 +1,84 @@
+---
+# Web server configuration tasks - idempotent
+- name: Create Nginx cache directory
+  file:
+    path: /var/cache/nginx
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Configure Nginx main settings
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    backup: yes
+  notify: restart nginx
+
+- name: Remove default Nginx site
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/sites-enabled/default
+    - /etc/nginx/sites-available/default
+  notify: restart nginx
+
+- name: Configure Nginx site for WMS
+  template:
+    src: "{{ nginx_template | default('nginx-site.conf.j2') }}"
+    dest: /etc/nginx/sites-available/wms
+    backup: yes
+  notify: restart nginx
+
+- name: Enable WMS site
+  file:
+    src: /etc/nginx/sites-available/wms
+    dest: /etc/nginx/sites-enabled/wms
+    state: link
+  notify: restart nginx
+
+- name: Create Nginx SSL directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: enable_ssl | default(false)
+
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test
+  changed_when: false
+  failed_when: nginx_test.rc != 0
+
+- name: Enable and start Nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Configure Nginx monitoring endpoint
+  blockinfile:
+    path: /etc/nginx/sites-available/wms
+    marker: "# {mark} ANSIBLE MANAGED MONITORING BLOCK"
+    insertafter: "server {"
+    block: |
+      location /nginx_status {
+          stub_status on;
+          access_log off;
+          allow 127.0.0.1;
+          deny all;
+      }
+  when: enable_monitoring | default(false)
+  notify: restart nginx
+
+- name: Setup Nginx log compression
+  cron:
+    name: "Compress old Nginx logs"
+    job: "find /var/log/nginx -name '*.log' -mtime +1 -exec gzip {} \\;"
+    minute: "0"
+    hour: "1"
+    state: present

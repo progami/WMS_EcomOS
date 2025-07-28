@@ -1,0 +1,165 @@
+---
+# Application deployment tasks - idempotent
+- name: Create application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  loop:
+    - "{{ app_dir }}/app"
+    - "{{ app_dir }}/.ssh"
+    - "{{ app_dir }}/logs"
+    - "{{ app_dir }}/tmp"
+
+- name: Setup SSH for GitHub (if deploy key provided)
+  block:
+    - name: Copy GitHub deploy key
+      copy:
+        src: "{{ github_deploy_key_path }}"
+        dest: "{{ app_dir }}/.ssh/github_deploy_key"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+      when: github_deploy_key_path is defined
+
+    - name: Configure SSH for GitHub
+      blockinfile:
+        path: "{{ app_dir }}/.ssh/config"
+        create: yes
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+        block: |
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/github_deploy_key
+            StrictHostKeyChecking no
+      when: github_deploy_key_path is defined
+
+- name: Clone/update repository
+  git:
+    repo: "{{ github_repo_url }}"
+    dest: "{{ app_dir }}/app"
+    version: "{{ git_branch | default('main') }}"
+    force: yes
+    accept_hostkey: yes
+  become_user: "{{ app_user }}"
+  register: git_result
+
+- name: Create/update .env file
+  template:
+    src: "{{ env_template | default('env.j2') }}"
+    dest: "{{ app_dir }}/app/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0600'
+    backup: yes
+  register: env_result
+
+- name: Create next.config.js (if base_path defined)
+  template:
+    src: next.config.j2
+    dest: "{{ app_dir }}/app/next.config.js"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+  when: base_path is defined
+
+- name: Check package.json changes
+  stat:
+    path: "{{ app_dir }}/app/package.json"
+    checksum_algorithm: sha256
+  register: package_json_before
+
+- name: Install/update npm dependencies
+  npm:
+    path: "{{ app_dir }}/app"
+    ci: yes
+    production: "{{ node_env == 'production' | default(true) }}"
+  become_user: "{{ app_user }}"
+  when: git_result.changed or env_result.changed
+
+- name: Generate Prisma client
+  command: npx prisma generate
+  args:
+    chdir: "{{ app_dir }}/app"
+  become_user: "{{ app_user }}"
+  when: git_result.changed
+
+- name: Check for pending migrations
+  command: npx prisma migrate status
+  args:
+    chdir: "{{ app_dir }}/app"
+  become_user: "{{ app_user }}"
+  register: migration_status
+  changed_when: false
+  failed_when: false
+
+- name: Run database migrations
+  command: npx prisma migrate deploy
+  args:
+    chdir: "{{ app_dir }}/app"
+  become_user: "{{ app_user }}"
+  environment:
+    DATABASE_URL: "postgresql://{{ db_user }}:{{ db_password }}@localhost:5432/{{ db_name }}"
+  when: 
+    - migration_status.stdout is search('Database schema is not up to date')
+    - auto_migrate | default(true)
+
+- name: Build application
+  command: npm run build
+  args:
+    chdir: "{{ app_dir }}/app"
+  become_user: "{{ app_user }}"
+  environment:
+    NODE_ENV: "{{ node_env | default('production') }}"
+    BASE_PATH: "{{ base_path | default('') }}"
+  when: git_result.changed or env_result.changed
+
+- name: Create PM2 ecosystem config
+  template:
+    src: ecosystem.config.j2
+    dest: "{{ app_dir }}/app/ecosystem.config.js"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+  register: pm2_config
+
+- name: Setup PM2 startup script
+  shell: |
+    pm2 startup systemd -u {{ app_user }} --hp {{ app_dir }}
+    systemctl enable pm2-{{ app_user }}
+  args:
+    creates: /etc/systemd/system/pm2-{{ app_user }}.service
+
+- name: Start/restart application with PM2
+  shell: |
+    cd {{ app_dir }}/app
+    pm2 stop ecosystem.config.js || true
+    pm2 delete ecosystem.config.js || true
+    pm2 start ecosystem.config.js
+    pm2 save --force
+  become_user: "{{ app_user }}"
+  when: git_result.changed or env_result.changed or pm2_config.changed
+
+- name: Check application health
+  uri:
+    url: "http://localhost:{{ app_port | default('3000') }}/api/health"
+    method: GET
+    status_code: 200
+    timeout: 30
+  retries: 5
+  delay: 10
+  register: health_check
+  until: health_check.status == 200
+
+- name: Setup log rotation
+  template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/wms
+    owner: root
+    group: root
+    mode: '0644'

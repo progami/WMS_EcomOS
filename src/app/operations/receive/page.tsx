@@ -481,7 +481,18 @@ export default function WarehouseReceivePage() {
         }),
       })
       
-      const data = await response.json()
+      let data;
+      const contentType = response.headers.get("content-type");
+      
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await response.json()
+      } else {
+        // If not JSON, likely an HTML error page
+        const text = await response.text()
+        console.error('Server returned non-JSON response:', text)
+        toast.error(`Server error: ${response.status} ${response.statusText}`)
+        return
+      }
       
       if (response.ok) {
         toast.success(`Receipt saved successfully! ${data.message}`)

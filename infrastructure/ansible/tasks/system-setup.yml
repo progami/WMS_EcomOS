@@ -1,0 +1,106 @@
+---
+# System setup tasks - idempotent
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install system dependencies
+  apt:
+    name:
+      - curl
+      - git
+      - nginx
+      - postgresql-{{ postgres_version | default('16') }}
+      - postgresql-contrib-{{ postgres_version | default('16') }}
+      - python3-psycopg2
+      - python3-pip
+      - build-essential
+      - certbot
+      - python3-certbot-nginx
+      - ufw
+      - jq
+      - htop
+      - vim
+    state: present
+    update_cache: yes
+
+- name: Create application user
+  user:
+    name: "{{ app_user }}"
+    system: yes
+    shell: /bin/bash
+    home: "{{ app_dir }}"
+    create_home: yes
+    state: present
+
+- name: Install Node.js
+  block:
+    - name: Check if Node.js is installed
+      command: which node
+      register: node_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Install Node.js repository
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_{{ node_version }}.x | bash -
+      when: node_check.rc != 0
+
+    - name: Install Node.js package
+      apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+- name: Install global npm packages
+  npm:
+    name: "{{ item }}"
+    global: yes
+    state: present
+  loop:
+    - pm2
+    - npm-check-updates
+  environment:
+    PATH: "/usr/bin:{{ ansible_env.PATH }}"
+
+- name: Configure system limits
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "{{ app_user }} soft nofile 65536"
+    - "{{ app_user }} hard nofile 65536"
+    - "{{ app_user }} soft nproc 4096"
+    - "{{ app_user }} hard nproc 4096"
+
+- name: Configure sysctl for production
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.core.somaxconn', value: '65535' }
+    - { name: 'net.ipv4.tcp_max_syn_backlog', value: '65535' }
+    - { name: 'net.ipv4.ip_local_port_range', value: '1024 65535' }
+    - { name: 'net.ipv4.tcp_tw_reuse', value: '1' }
+
+- name: Configure UFW firewall rules
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    state: enabled
+  loop:
+    - "22"
+    - "80"
+    - "443"
+    - "{{ app_port | default('3000') }}"
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

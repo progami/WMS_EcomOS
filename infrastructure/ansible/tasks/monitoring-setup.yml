@@ -1,0 +1,45 @@
+---
+# Monitoring setup tasks - optional
+- name: Install monitoring dependencies
+  apt:
+    name:
+      - prometheus-node-exporter
+      - python3-prometheus-client
+    state: present
+
+- name: Configure Node exporter
+  systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: yes
+
+- name: Create monitoring script for PM2
+  copy:
+    content: |
+      #!/bin/bash
+      pm2 list --json | jq -r '.[] | "\(.name),\(.pm2_env.status),\(.monit.memory),\(.monit.cpu)"'
+    dest: "{{ app_dir }}/monitoring/pm2-status.sh"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+
+- name: Setup health check endpoint monitoring
+  cron:
+    name: "Monitor WMS health"
+    user: "{{ app_user }}"
+    job: |
+      curl -f -s http://localhost:{{ app_port | default('3000') }}/api/health || \
+      echo "WMS health check failed at $(date)" >> {{ app_dir }}/logs/health-check.log
+    minute: "*/5"
+    state: present
+
+- name: Configure log aggregation
+  blockinfile:
+    path: /etc/rsyslog.conf
+    block: |
+      # WMS application logs
+      :programname, isequal, "wms" /var/log/wms/app.log
+      & stop
+    marker: "# {mark} ANSIBLE MANAGED WMS LOGGING"
+  notify: restart rsyslog
+  when: enable_centralized_logging | default(false)

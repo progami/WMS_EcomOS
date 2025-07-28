@@ -128,7 +128,7 @@ export function MainNav() {
       )}>
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 px-6 pb-4">
           <div className="flex h-16 shrink-0 items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/dashboard" scroll={false} className="flex items-center gap-2">
               <Package2 className="h-8 w-8 text-primary" />
               <span className={cn("text-xl font-bold transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>WMS</span>
             </Link>
@@ -159,6 +159,7 @@ export function MainNav() {
                           <li key={item.name}>
                             <Link
                               href={item.href}
+                              scroll={false}
                               className={cn(
                                 pathname.startsWith(item.href)
                                   ? 'bg-gray-100 text-primary dark:bg-gray-800'
@@ -190,6 +191,12 @@ export function MainNav() {
                 </ul>
               </li>
               <li className="mt-auto">
+                {/* Version Info */}
+                <div className="mb-4 px-2">
+                  <p className="text-xs text-gray-400 font-medium">WMS Version</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">v0.1.0</p>
+                </div>
+                
                 <div className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6">
                   <div className="flex-1">
                     <p className="text-xs text-gray-500">Signed in as</p>
@@ -251,7 +258,7 @@ export function MainNav() {
               </div>
               <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-900 px-6 pb-4">
                 <div className="flex h-16 shrink-0 items-center">
-                  <Link href="/dashboard" className="flex items-center gap-2">
+                  <Link href="/dashboard" scroll={false} className="flex items-center gap-2">
                     <Package2 className="h-8 w-8 text-primary" />
                     <span className="text-xl font-bold">WMS</span>
                   </Link>
@@ -272,6 +279,7 @@ export function MainNav() {
                                 <li key={item.name}>
                                   <Link
                                     href={item.href}
+                                    scroll={false}
                                     className={cn(
                                       pathname.startsWith(item.href)
                                         ? 'bg-gray-100 text-primary dark:bg-gray-800'
@@ -297,6 +305,13 @@ export function MainNav() {
                           </li>
                         ))}
                       </ul>
+                    </li>
+                    {/* Version Info - Mobile */}
+                    <li className="mt-auto">
+                      <div className="px-2 py-4 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-400 font-medium">WMS Version</p>
+                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">v0.1.0</p>
+                      </div>
                     </li>
                   </ul>
                 </nav>
