@@ -33,7 +33,7 @@ export abstract class BaseService {
 
     try {
       businessLogger.info(`Starting transaction`, {
-        transaction_id,
+        transaction_id: transactionId,
         service: this.constructor.name,
         user_id: this.session?.user?.id
       })
@@ -52,7 +52,7 @@ export abstract class BaseService {
 
       const duration = Date.now() - startTime
       perfLogger.log(`Transaction completed`, {
-        transaction_id,
+        transaction_id: transactionId,
         service: this.constructor.name,
         duration
       })
@@ -61,7 +61,7 @@ export abstract class BaseService {
     } catch (error) {
       const duration = Date.now() - startTime
       businessLogger.error(`Transaction failed`, {
-        transaction_id,
+        transaction_id: transactionId,
         service: this.constructor.name,
         error: error instanceof Error ? error.message : 'Unknown error',
         duration,
@@ -81,7 +81,7 @@ export abstract class BaseService {
     details?: Record<string, any>
   ): Promise<void> {
     try {
-      await this.prisma.audit_logs.create({
+      await this.prisma.auditLog.create({
         data: {
           user_id: this.session?.user?.id || 'system',
           action,
@@ -126,7 +126,7 @@ export abstract class BaseService {
     }
 
     // Check specific permission for the user
-    const userPermission = await this.prisma.users_permissions.findFirst({
+    const userPermission = await this.prisma.userPermission.findFirst({
       where: {
         user_id: this.session.user.id,
         permission: {
@@ -202,7 +202,7 @@ export abstract class BaseService {
    * Sanitize data for safe storage
    */
   protected sanitizeData<T extends Record<string, any>>(data: T): T {
-    const sanitized = { ...data }
+    const sanitized = { ...data } as any
     
     // Remove any potential script tags or dangerous content
     Object.keys(sanitized).forEach(key => {
@@ -213,7 +213,7 @@ export abstract class BaseService {
       }
     })
     
-    return sanitized
+    return sanitized as T
   }
 
   /**

@@ -291,7 +291,14 @@ export default function DashboardPage() {
 
 
   // Prepare data for sections
-  const marketData = {
+  const marketData = useDemoData ? {
+    data: {
+      amazonMetrics: dummyData.amazonMetrics,
+      reorderAlerts: dummyData.reorderAlerts,
+      plannedShipments: dummyData.plannedShipments,
+      inventoryTrend: dummyData.inventoryTrend
+    }
+  } : {
     data: {
       amazonMetrics: chartData?.amazonMetrics,
       reorderAlerts: chartData?.reorderAlerts,
@@ -300,7 +307,16 @@ export default function DashboardPage() {
     }
   }
 
-  const opsData = {
+  const opsData = useDemoData ? {
+    data: {
+      totalInventory: dummyData.totalInventory,
+      inventoryChange: dummyData.inventoryChange,
+      inventoryTrend: dummyData.inventoryTrendStatus,
+      activeSkus: dummyData.activeSkus,
+      warehouseDistribution: dummyData.warehouseDistribution,
+      recentTransactions: dummyData.recentTransactions
+    }
+  } : {
     data: {
       totalInventory: stats?.totalInventory,
       inventoryChange: stats?.inventoryChange,
@@ -311,7 +327,18 @@ export default function DashboardPage() {
     }
   }
 
-  const finData = {
+  const finData = useDemoData ? {
+    data: {
+      storageCost: dummyData.storageCost,
+      costChange: dummyData.costChange,
+      costTrend: dummyData.costTrendStatus,
+      pendingInvoices: dummyData.pendingInvoices,
+      overdueInvoices: dummyData.overdueInvoices,
+      reconciliationStatus: dummyData.reconciliationStatus,
+      recentInvoices: dummyData.recentInvoices,
+      costTrendData: dummyData.costTrend
+    }
+  } : {
     data: {
       storageCost: stats?.storageCost,
       costChange: stats?.costChange,
@@ -326,6 +353,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {useDemoData && <DemoWelcome />}
       <div className="space-y-6">
         {/* Header with Actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
