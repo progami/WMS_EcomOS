@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Disable autofill styling on login form */
 input:-webkit-autofill,
@@ -242,6 +240,11 @@ input:-webkit-autofill:active {
 /* Enhanced UI Styles */
 .gradient-bg {
   background-image: linear-gradient(to bottom right, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.05), hsl(var(--secondary) / 0.1));
+}
+
+/* Ensure all buttons have pointer cursor by default */
+button:not(:disabled) {
+  cursor: pointer;
 }
 
 .glass-effect {

@@ -131,7 +131,7 @@ export default function LandingPage() {
             <button
               onClick={handleTryDemo}
               disabled={isLoading}
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg cursor-pointer hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? (
                 <>
@@ -211,7 +211,7 @@ export default function LandingPage() {
           <button
             onClick={handleTryDemo}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-8 py-4 text-lg font-medium text-purple-600 bg-white rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-8 py-4 text-lg font-medium text-purple-600 bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
