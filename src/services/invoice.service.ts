@@ -119,7 +119,7 @@ export class InvoiceService extends BaseService {
                 resolvedBy: {
                   select: {
                     id: true,
-                    full_name: true,
+                    fullName: true,
                     email: true
                   }
                 }
@@ -128,7 +128,7 @@ export class InvoiceService extends BaseService {
             users_invoices_created_byTousers: {
               select: {
                 id: true,
-                full_name: true,
+                fullName: true,
                 email: true
               }
             }
@@ -179,7 +179,7 @@ export class InvoiceService extends BaseService {
             users_invoices_created_byTousers: {
               select: {
                 id: true,
-                full_name: true,
+                fullName: true,
                 email: true
               }
             }
@@ -235,7 +235,7 @@ export class InvoiceService extends BaseService {
             users_invoices_created_byTousers: {
               select: {
                 id: true,
-                full_name: true,
+                fullName: true,
                 email: true
               }
             }
