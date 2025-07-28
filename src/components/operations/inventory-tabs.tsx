@@ -22,20 +22,6 @@ export function InventoryTabs({ activeTab, onTabChange }: InventoryTabsProps) {
           <button
             type="button"
             role="tab"
-            aria-selected={activeTab === 'balances'}
-            onClick={handleTabClick('balances')}
-            className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'balances'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Package className="h-4 w-4 inline mr-2" />
-            Current Balances
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={activeTab === 'transactions'}
             onClick={handleTabClick('transactions')}
             className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
@@ -46,6 +32,20 @@ export function InventoryTabs({ activeTab, onTabChange }: InventoryTabsProps) {
           >
             <BookOpen className="h-4 w-4 inline mr-2" />
             Inventory Ledger
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'balances'}
+            onClick={handleTabClick('balances')}
+            className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'balances'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Package className="h-4 w-4 inline mr-2" />
+            Current Balances
           </button>
         </nav>
       </div>

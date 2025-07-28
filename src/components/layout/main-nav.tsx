@@ -82,30 +82,33 @@ const baseNavigation: NavSection[] = [
   },
 ]
 
-const adminOnlySection: NavSection = {
-  title: 'Admin',
-  items: [
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
-  ]
-}
 
 export function MainNav() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isTabletCollapsed, setIsTabletCollapsed] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuOpen && !(event.target as HTMLElement).closest('.user-menu-container')) {
+        setUserMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [userMenuOpen])
 
   if (!session) return null
 
   // Check if user has admin role
   const isAdmin = session.user.role === 'admin'
   
-  // Build navigation based on role
-  const userNavigation = [...baseNavigation]
-  if (isAdmin) {
-    userNavigation.push(adminOnlySection)
-  }
+  // Use base navigation for all users
+  const userNavigation = baseNavigation
 
   // Get current page name for mobile header
   const getCurrentPageName = () => {
@@ -124,31 +127,97 @@ export function MainNav() {
       {/* Desktop Navigation - responsive for tablets */}
       <div className={cn(
         "hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col transition-all duration-300",
-        isTabletCollapsed ? "md:w-16 lg:w-72" : "md:w-72"
+        isTabletCollapsed ? "md:w-16 lg:w-64" : "md:w-64"
       )}>
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 px-6 pb-4">
+        <div className="flex grow flex-col gap-y-3 overflow-y-auto border-r border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 px-4 pb-3">
           <div className="flex h-16 shrink-0 items-center justify-between">
-            <Link href="/dashboard" scroll={false} className="flex items-center gap-2">
-              <Package2 className="h-8 w-8 text-primary" />
-              <span className={cn("text-xl font-bold transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>WMS</span>
-            </Link>
-            {/* Tablet collapse button */}
-            <button
-              onClick={() => setIsTabletCollapsed(!isTabletCollapsed)}
-              className="hidden md:block lg:hidden p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" scroll={false} className="flex items-center gap-2">
+                <Package2 className="h-8 w-8 text-primary" />
+                <span className={cn("text-xl font-bold transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>WMS</span>
+              </Link>
+              {/* Version */}
+              <span className={cn("text-xs text-gray-500 transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>
+                v0.1.0
+              </span>
+            </div>
+            
+            {/* User info and tablet collapse */}
+            <div className="flex items-center gap-2">
+              {/* User avatar/menu */}
+              <div className={cn("relative transition-all duration-300 user-menu-container", isTabletCollapsed && "md:hidden lg:block")}>
+                <button 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-medium text-primary">
+                      {session.user.name?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </button>
+                {/* Dropdown menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg border dark:border-gray-700 py-1 z-50">
+                    <div className="px-3 py-2 border-b dark:border-gray-700">
+                      <p className="text-xs text-gray-500">Signed in as</p>
+                      <p className="text-sm font-medium truncate">{session.user.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
+                    </div>
+                    
+                    {/* Admin options */}
+                    {isAdmin && (
+                      <>
+                        <div className="py-1 border-b dark:border-gray-700">
+                          <Link
+                            href="/admin/users"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                          >
+                            <Users className="h-4 w-4" />
+                            Users
+                          </Link>
+                          <Link
+                            href="/admin/settings"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Settings
+                          </Link>
+                        </div>
+                      </>
+                    )}
+                    
+                    <button
+                      onClick={() => signOut({ callbackUrl: '/auth/login' })}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Tablet collapse button */}
+              <button
+                onClick={() => setIsTabletCollapsed(!isTabletCollapsed)}
+                className="hidden md:block lg:hidden p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
-                <ul role="list" className="-mx-2 space-y-6">
+                <ul role="list" className="-mx-2 space-y-3">
                   {userNavigation.map((section, sectionIdx) => (
                     <li key={sectionIdx}>
                       {section.title && (
                         <div className={cn(
-                          "px-2 pb-2 text-xs font-semibold leading-6 text-gray-400 uppercase tracking-wider transition-all duration-300",
+                          "px-2 pb-1 pt-2 text-xs font-semibold leading-5 text-gray-400 uppercase tracking-wider transition-all duration-300",
                           isTabletCollapsed && "md:hidden lg:block"
                         )}>
                           {section.title}
@@ -164,7 +233,7 @@ export function MainNav() {
                                 pathname.startsWith(item.href)
                                   ? 'bg-gray-100 text-primary dark:bg-gray-800'
                                   : 'text-gray-700 hover:text-primary hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800',
-                                'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                'group flex gap-x-3 rounded-md py-1.5 px-2 text-sm leading-5 font-medium'
                               )}
                             >
                               <item.icon
@@ -172,7 +241,7 @@ export function MainNav() {
                                   pathname.startsWith(item.href)
                                     ? 'text-primary'
                                     : 'text-gray-400 group-hover:text-primary',
-                                  'h-6 w-6 shrink-0'
+                                  'h-5 w-5 shrink-0'
                                 )}
                                 aria-hidden="true"
                               />
@@ -189,33 +258,6 @@ export function MainNav() {
                     </li>
                   ))}
                 </ul>
-              </li>
-              <li className="mt-auto">
-                {/* Version Info */}
-                <div className="mb-4 px-2">
-                  <p className="text-xs text-gray-400 font-medium">WMS Version</p>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">v0.1.0</p>
-                </div>
-                
-                <div className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500">Signed in as</p>
-                    <p className="text-sm font-medium">{session.user.name}</p>
-                    <p className="text-xs text-gray-500">{session.user.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => signOut({ callbackUrl: '/auth/login' })}
-                  className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 w-full"
-                >
-                  <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-primary" />
-                  <span className={cn(
-                    "transition-all duration-300",
-                    isTabletCollapsed && "md:hidden lg:inline"
-                  )}>
-                    Sign out
-                  </span>
-                </button>
               </li>
             </ul>
           </nav>
@@ -266,7 +308,7 @@ export function MainNav() {
                 <nav className="flex flex-1 flex-col">
                   <ul role="list" className="flex flex-1 flex-col gap-y-7">
                     <li>
-                      <ul role="list" className="-mx-2 space-y-6">
+                      <ul role="list" className="-mx-2 space-y-3">
                         {userNavigation.map((section, sectionIdx) => (
                           <li key={sectionIdx}>
                             {section.title && (
@@ -284,7 +326,7 @@ export function MainNav() {
                                       pathname.startsWith(item.href)
                                         ? 'bg-gray-100 text-primary dark:bg-gray-800'
                                         : 'text-gray-700 hover:text-primary hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800',
-                                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                      'group flex gap-x-3 rounded-md py-1.5 px-2 text-sm leading-5 font-medium'
                                     )}
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
@@ -293,7 +335,7 @@ export function MainNav() {
                                         pathname.startsWith(item.href)
                                           ? 'text-primary'
                                           : 'text-gray-400 group-hover:text-primary',
-                                        'h-6 w-6 shrink-0'
+                                        'h-5 w-5 shrink-0'
                                       )}
                                       aria-hidden="true"
                                     />
@@ -305,13 +347,6 @@ export function MainNav() {
                           </li>
                         ))}
                       </ul>
-                    </li>
-                    {/* Version Info - Mobile */}
-                    <li className="mt-auto">
-                      <div className="px-2 py-4 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-400 font-medium">WMS Version</p>
-                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">v0.1.0</p>
-                      </div>
                     </li>
                   </ul>
                 </nav>
