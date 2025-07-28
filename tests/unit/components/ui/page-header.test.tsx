@@ -20,17 +20,15 @@ describe('PageHeader Component', () => {
       expect(screen.getByText('Manage your warehouse inventory')).toHaveClass('text-muted-foreground');
     });
 
-    it('renders with description', () => {
+    it('renders without description (description prop not supported)', () => {
       render(
         <PageHeader
           title="Reports"
-          description="Generate and view various reports about your warehouse operations."
         />
       );
       
       expect(screen.getByText('Reports')).toBeInTheDocument();
-      expect(screen.getByText('About This Page:')).toBeInTheDocument();
-      expect(screen.getByText('Generate and view various reports about your warehouse operations.')).toBeInTheDocument();
+      // PageHeader doesn't support description prop
     });
 
     it('renders with all props', () => {
@@ -38,15 +36,14 @@ describe('PageHeader Component', () => {
         <PageHeader
           title="Analytics"
           subtitle="Business Intelligence"
-          description="View detailed analytics and insights."
-          icon={Info}
+          actions={<button>Export</button>}
         />
       );
       
       expect(screen.getByText('Analytics')).toBeInTheDocument();
       expect(screen.getByText('Business Intelligence')).toBeInTheDocument();
-      expect(screen.getByText('View detailed analytics and insights.')).toBeInTheDocument();
-      expect(document.querySelector('svg')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+      // PageHeader doesn't support icon or description props
     });
   });
 
@@ -82,46 +79,41 @@ describe('PageHeader Component', () => {
   });
 
   describe('Styling and customization', () => {
-    it('applies default colors', () => {
+    it('applies default container styling', () => {
       render(
         <PageHeader
           title="Test"
-          description="Test description"
-          icon={Info}
+          subtitle="Test subtitle"
         />
       );
       
-      const descriptionBox = screen.getByText('About This Page:').closest('.bg-blue-50');
-      expect(descriptionBox).toHaveClass('bg-blue-50', 'border', 'border-blue-200', 'rounded-lg', 'p-4');
+      const container = screen.getByText('Test').closest('.bg-white');
+      expect(container).toHaveClass('bg-white', 'border', 'rounded-lg', 'p-6');
       
-      const icon = document.querySelector('svg');
-      expect(icon).toHaveClass('text-blue-600');
+      const heading = screen.getByText('Test');
+      expect(heading).toHaveClass('text-3xl', 'font-bold', 'mb-2');
       
-      const text = screen.getByText('About This Page:').parentElement;
-      expect(text).toHaveClass('text-blue-800');
+      const subtitle = screen.getByText('Test subtitle');
+      expect(subtitle).toHaveClass('text-muted-foreground');
     });
 
-    it('applies custom colors', () => {
+    it('renders with proper layout structure', () => {
       render(
         <PageHeader
           title="Alert"
-          description="Important information"
-          icon={AlertCircle}
-          iconColor="text-red-600"
-          bgColor="bg-red-50"
-          borderColor="border-red-200"
-          textColor="text-red-800"
+          subtitle="Important information"
+          actions={<button>Action</button>}
         />
       );
       
-      const descriptionBox = screen.getByText('About This Page:').closest('.bg-red-50');
-      expect(descriptionBox).toHaveClass('bg-red-50', 'border', 'border-red-200', 'rounded-lg', 'p-4');
+      const container = screen.getByText('Alert').closest('.bg-white');
+      expect(container).toHaveClass('bg-white', 'border', 'rounded-lg', 'p-6');
       
-      const icon = document.querySelector('svg');
-      expect(icon).toHaveClass('text-red-600');
+      const flexContainer = screen.getByText('Alert').closest('.flex');
+      expect(flexContainer).toHaveClass('flex', 'items-center', 'justify-between', 'mb-4');
       
-      const text = screen.getByText('About This Page:').parentElement;
-      expect(text).toHaveClass('text-red-800');
+      const actionsContainer = screen.getByRole('button').parentElement;
+      expect(actionsContainer).toHaveClass('flex', 'items-center', 'gap-2');
     });
 
     it('maintains proper spacing', () => {
@@ -132,30 +124,29 @@ describe('PageHeader Component', () => {
     });
   });
 
-  describe('Icon rendering', () => {
-    it('renders icon when provided with description', () => {
+  describe('Edge cases', () => {
+    it('renders without subtitle or actions', () => {
       render(
         <PageHeader
-          title="Settings"
-          description="Configure your application settings"
-          icon={HelpCircle}
+          title="Minimal Header"
         />
       );
       
-      const icon = document.querySelector('svg');
-      expect(icon).toBeInTheDocument();
-      expect(icon).toHaveClass('h-5', 'w-5', 'mt-0.5', 'mr-3', 'flex-shrink-0');
+      expect(screen.getByText('Minimal Header')).toBeInTheDocument();
+      expect(screen.queryByText('text-muted-foreground')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
 
-    it('does not render icon container when no icon provided', () => {
+    it('renders with only actions', () => {
       render(
         <PageHeader
-          title="No Icon"
-          description="This has no icon"
+          title="With Actions Only"
+          actions={<button>Click me</button>}
         />
       );
       
-      expect(document.querySelector('svg')).not.toBeInTheDocument();
+      expect(screen.getByText('With Actions Only')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
     });
   });
 });
@@ -295,7 +286,6 @@ describe('HelpfulTips Component', () => {
           <PageHeader
             title="User Guide"
             subtitle="Learn how to use the system"
-            icon={HelpCircle}
           />
           <HelpfulTips
             tips={['Start with the basics', 'Practice regularly', 'Ask for help when needed']}
