@@ -89,6 +89,14 @@ const nextConfig = {
   
   // Webpack configuration
   webpack: (config, { isServer }) => {
+    // Fix for webpack module loading issues in Next.js 15
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'next/dist/shared/lib/router/utils/is-dynamic': require.resolve('next/dist/shared/lib/router/utils/is-dynamic'),
+      'next/dist/shared/lib/router/utils': require.resolve('next/dist/shared/lib/router/utils'),
+      'next/dist/client/link': require.resolve('next/dist/client/link'),
+    }
+    
     // Enable webpack stats for bundle analysis
     if (process.env.ANALYZE === 'true') {
       config.stats = 'verbose'
