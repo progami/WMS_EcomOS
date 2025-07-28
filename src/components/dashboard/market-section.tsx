@@ -54,7 +54,7 @@ export function MarketSection({ data, loading }: MarketSectionProps) {
             </div>
             <div className="h-64 sm:h-72 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.inventoryTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart data={data.inventoryTrend} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
                   <defs>
                     <linearGradient id="colorInventory" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
@@ -64,13 +64,15 @@ export function MarketSection({ data, loading }: MarketSectionProps) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 11 }}
                     tickFormatter={(value) => {
                       if (!value) return ''
                       const date = new Date(value)
                       if (isNaN(date.getTime())) return ''
-                      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      // Format as M/D for better spacing
+                      return `${date.getMonth() + 1}/${date.getDate()}`
                     }}
+                    interval="preserveStartEnd"
                   />
                   <YAxis 
                     tick={{ fontSize: 12 }}

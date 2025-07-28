@@ -351,20 +351,6 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
           </div>
         </form>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <Building2 className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-semibold mb-1">Warehouse Information:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Created: {new Date().toLocaleDateString()}</li>
-                <li>Status: {warehouse.isActive ? 'Active' : 'Inactive'}</li>
-                <li>Code changes require updating all references</li>
-                <li>Deactivating prevents new transactions but preserves history</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </div>
     </DashboardLayout>
   )

@@ -496,39 +496,6 @@ export default function FinanceInvoicesPage() {
           </div>
         )}
 
-        {/* Invoice Upload Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-2">Quick Invoice Upload</h3>
-          <p className="text-sm text-gray-600 mb-4">Upload warehouse invoices for processing and reconciliation</p>
-          <div 
-            className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center cursor-pointer hover:bg-blue-50 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="h-12 w-12 mx-auto text-blue-400 mb-4 animate-spin" />
-                <p className="text-gray-700">Uploading invoice...</p>
-              </>
-            ) : (
-              <>
-                <FileText className="h-12 w-12 mx-auto text-blue-400 mb-4" />
-                <p className="text-gray-700 mb-2">Drop invoice files here or click to browse</p>
-                <p className="text-sm text-gray-500 mb-4">Supports PDF, Excel, and CSV formats</p>
-                <button className="action-button">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Select Files
-                </button>
-              </>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.xlsx,.xls,.csv"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </div>
       </div>
     </DashboardLayout>
   )
