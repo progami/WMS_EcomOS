@@ -77,7 +77,7 @@ function generateWarehouseData(index: number) {
       latitude: warehouse.lat,
       longitude: warehouse.lng,
       contactEmail: `${warehouse.code.toLowerCase()}-ops@warehouse.example.com`,
-      contactPhone: faker.phone.number('+1-###-###-####'),
+      contactPhone: faker.phone.number({ style: 'international' }),
       isActive: true
     }
   }
@@ -88,8 +88,8 @@ function generateWarehouseData(index: number) {
     code,
     name: `${faker.company.name()} Warehouse`,
     address: faker.location.streetAddress({ useFullAddress: true }),
-    latitude: parseFloat(faker.location.latitude()),
-    longitude: parseFloat(faker.location.longitude()),
+    latitude: Number(faker.location.latitude()),
+    longitude: Number(faker.location.longitude()),
     contactEmail: faker.internet.email({ provider: 'warehouse.example.com' }),
     contactPhone: faker.phone.number('+1-###-###-####'),
     isActive: true
@@ -252,7 +252,6 @@ async function main() {
     console.log(`   - ${await prisma.user.count()} users`)
     console.log(`   - ${configCount} warehouse-SKU configurations`)
     console.log(`   - ${rateCount} cost rates`)
-    console.log(`   - ${balanceCount} inventory balances`)
     
     console.log('\n🔐 Demo credentials:')
     console.log('   Admin: admin@warehouse.example.com / admin123')

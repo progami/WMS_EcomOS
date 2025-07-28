@@ -60,11 +60,7 @@ export default function FeatureFlagsPage() {
       const data = await response.json();
       setFlags(data.flags);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load feature flags',
-        variant: 'destructive'
-      });
+      toast.error('Failed to load feature flags');
     } finally {
       setLoading(false);
     }
@@ -101,16 +97,9 @@ export default function FeatureFlagsPage() {
       setFlags([...flags, data.flag]);
       setSelectedFlag(data.flag);
       
-      toast({
-        title: 'Success',
-        description: 'Feature flag created successfully'
-      });
+      toast.success('Feature flag created successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create feature flag',
-        variant: 'destructive'
-      });
+      toast.error('Failed to create feature flag');
     } finally {
       setSaving(false);
     }
@@ -139,16 +128,9 @@ export default function FeatureFlagsPage() {
       setFlags(flags.map(f => f.id === data.flag.id ? data.flag : f));
       setSelectedFlag(data.flag);
       
-      toast({
-        title: 'Success',
-        description: 'Feature flag updated successfully'
-      });
+      toast.success('Feature flag updated successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update feature flag',
-        variant: 'destructive'
-      });
+      toast.error('Failed to update feature flag');
     } finally {
       setSaving(false);
     }
@@ -171,16 +153,9 @@ export default function FeatureFlagsPage() {
         setSelectedFlag(null);
       }
       
-      toast({
-        title: 'Success',
-        description: 'Feature flag deleted successfully'
-      });
+      toast.success('Feature flag deleted successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete feature flag',
-        variant: 'destructive'
-      });
+      toast.error('Failed to delete feature flag');
     } finally {
       setSaving(false);
     }
