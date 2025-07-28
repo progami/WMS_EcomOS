@@ -407,7 +407,7 @@ export class FinanceService extends BaseService {
     // Get recent invoices
     const recentInvoices = await this.prisma.invoice.findMany({
       take: 5,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         invoice_number: true,
@@ -420,7 +420,7 @@ export class FinanceService extends BaseService {
           }
         },
         disputes: {
-          orderBy: { created_at: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 1
         }
       }
@@ -429,7 +429,7 @@ export class FinanceService extends BaseService {
     // Get recent disputes
     const recentDisputes = await this.prisma.invoice_disputes.findMany({
       take: 5,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         invoice: {
           include: {
