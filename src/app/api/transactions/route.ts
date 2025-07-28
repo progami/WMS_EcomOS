@@ -3,8 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
-import { withTransaction, withRetry } from '@/lib/database/transaction-utils'
-import { InventoryService } from '@/lib/services/inventory-service'
 import { businessLogger, perfLogger } from '@/lib/logger/index'
 import { sanitizeForDisplay, validateAlphanumeric, validatePositiveInteger } from '@/lib/security/input-sanitization'
 import { triggerCostCalculation, shouldCalculateCosts, validateTransactionForCostCalculation } from '@/lib/triggers/inventory-transaction-triggers'
@@ -325,8 +323,7 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
     
     // Create transactions with proper database transaction and locking
-    const result = await withRetry(async () => {
-      return withTransaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         const transactions = [];
         
         // Pre-fetch all SKUs to reduce queries
@@ -431,7 +428,6 @@ export async function POST(request: NextRequest) {
         // No need to update a separate balance table
         
         return transactions;
-      }, { timeout: 30000, maxWait: 10000 }); // Increase timeout to 30 seconds
     });
 
     const duration = Date.now() - startTime;

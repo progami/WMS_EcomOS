@@ -1,5 +1,4 @@
-import { recordCacheOperation } from '../monitoring/monitoring-service'
-import { cacheLogger } from '../logger/edge'
+import { cacheLogger } from '../logger'
 
 export interface CacheService {
   get<T>(key: string): Promise<T | null>
@@ -45,7 +44,7 @@ export class InMemoryCacheService implements CacheService {
         this.stats.missTimes.shift()
       }
       
-      recordCacheOperation('get', key, false, duration)
+      // recordCacheOperation('get', key, false, duration)
       cacheLogger.debug(`Cache miss: ${key}`, { duration })
       return null
     }
@@ -57,7 +56,7 @@ export class InMemoryCacheService implements CacheService {
       this.stats.misses++
       this.stats.missTimes.push(duration)
       
-      recordCacheOperation('get', key, false, duration)
+      // recordCacheOperation('get', key, false, duration)
       cacheLogger.debug(`Cache miss (expired): ${key}`, { duration })
       return null
     }
@@ -71,7 +70,7 @@ export class InMemoryCacheService implements CacheService {
       this.stats.hitTimes.shift()
     }
     
-    recordCacheOperation('get', key, true, duration)
+    // recordCacheOperation('get', key, true, duration)
     return item.value as T
   }
 
@@ -96,7 +95,7 @@ export class InMemoryCacheService implements CacheService {
     this.currentSize += size
     
     const duration = performance.now() - startTime
-    recordCacheOperation('set', key, true, duration, { size, ttl: ttlSeconds })
+    // recordCacheOperation('set', key, true, duration, { size, ttl: ttlSeconds })
     
     cacheLogger.debug(`Cache set: ${key}`, { size, ttl: ttlSeconds, duration })
   }
@@ -115,7 +114,7 @@ export class InMemoryCacheService implements CacheService {
     }
     
     const duration = performance.now() - startTime
-    recordCacheOperation('invalidate', pattern, true, duration)
+    // recordCacheOperation('invalidate', pattern, true, duration)
     
     cacheLogger.info(`Cache invalidated: ${pattern}`, { 
       invalidatedCount, 
