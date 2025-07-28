@@ -14,3 +14,13 @@ export function validateTransactionForCostCalculation(transaction: any): boolean
   // Placeholder - validation logic would go here
   return true
 }
+
+export async function getPendingCostCalculations() {
+  // Placeholder - return empty array
+  return []
+}
+
+export async function triggerWeeklyStorageCalculation() {
+  // Placeholder - weekly storage calculation logic would go here
+  return Promise.resolve()
+}

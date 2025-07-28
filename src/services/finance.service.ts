@@ -41,12 +41,12 @@ export class FinanceService extends BaseService {
       const previousBillingPeriod = getBillingPeriod(prevDate)
 
       // Get warehouses based on filter
-      const warehouseWhere: Prisma.warehousesWhereInput = { is_active: true }
-      if (filters?.warehouse_id) {
-        warehouseWhere.id = filters.warehouse_id
+      const warehouseWhere: Prisma.WarehouseWhereInput = { isActive: true }
+      if (filters?.warehouseId) {
+        warehouseWhere.id = filters.warehouseId
       }
 
-      const warehouses = await this.prisma.warehouses.findMany({
+      const warehouses = await this.prisma.warehouse.findMany({
         where: warehouseWhere
       })
 
@@ -65,7 +65,7 @@ export class FinanceService extends BaseService {
       for (const [warehouseId, costs] of currentCostsMap) {
         for (const cost of costs) {
           currentTotalRevenue += cost.amount
-          const categoryKey = cost.cost_category2159
+          const categoryKey = cost.costCategory
           currentCostsByCategory.set(
             categoryKey, 
             (currentCostsByCategory.get(categoryKey) || 0) + cost.amount
@@ -86,13 +86,13 @@ export class FinanceService extends BaseService {
         : 0
 
       // Get invoice statistics
-      const invoiceStats = await this.getInvoiceStats(currentBillingPeriod, filters?.warehouse_id)
+      const invoiceStats = await this.getInvoiceStats(currentBillingPeriod, filters?.warehouseId)
       
       // Get recent activity
       const recentActivity = await this.getRecentFinancialActivity()
       
       // Get reconciliation stats
-      const reconStats = await this.getReconciliationStats(currentBillingPeriod, filters?.warehouse_id)
+      const reconStats = await this.getReconciliationStats(currentBillingPeriod, filters?.warehouseId)
 
       const duration = Date.now() - startTime
       perfLogger.log('Finance dashboard generated', {
@@ -138,12 +138,12 @@ export class FinanceService extends BaseService {
       const startTime = Date.now()
 
       // Get warehouses
-      const warehouseWhere: Prisma.warehousesWhereInput = { is_active: true }
-      if (params.warehouse_id) {
-        warehouseWhere.id = params.warehouse_id
+      const warehouseWhere: Prisma.WarehouseWhereInput = { isActive: true }
+      if (params.warehouseId) {
+        warehouseWhere.id = params.warehouseId
       }
 
-      const warehouses = await this.prisma.warehouses.findMany({
+      const warehouses = await this.prisma.warehouse.findMany({
         where: warehouseWhere
       })
 
@@ -165,13 +165,13 @@ export class FinanceService extends BaseService {
           for (const cost of costs) {
             const calculatedCost = await tx.calculated_costs.create({
               data: {
-                warehouse_id: warehouse.id,
+                warehouseId: warehouse.id,
                 billing_period_start: params.startDate,
                 billing_period_end: params.endDate,
-                cost_category: cost.cost_category5614,
-                cost_name: cost.cost_name5670,
+                cost_category: cost.costCategory,
+                cost_name: cost.costName,
                 quantity: cost.quantity,
-                unit_rate: cost.unit_rate5758,
+                unit_rate: cost.unitRate,
                 amount: cost.amount,
                 calculated_by: this.session?.user?.id || 'system'
               }
@@ -228,10 +228,10 @@ export class FinanceService extends BaseService {
       const { page, limit } = this.getPaginationParams(filters)
       const skip = (page - 1) * limit
 
-      const where: Prisma.storage_ledgerWhereInput = {}
+      const where: Prisma.StorageLedgerWhereInput = {}
       
-      if (filters.warehouse_id) {
-        where.warehouse_id = filters.warehouse_id
+      if (filters.warehouseId) {
+        where.warehouseId = filters.warehouseId
       }
       
       if (filters.startDate || filters.endDate) {
@@ -241,8 +241,8 @@ export class FinanceService extends BaseService {
       }
 
       const [total, ledgerEntries] = await Promise.all([
-        this.prisma.storage_ledger.count({ where }),
-        this.prisma.storage_ledger.findMany({
+        this.prisma.storageLedger.count({ where }),
+        this.prisma.storageLedger.findMany({
           where,
           skip,
           take: limit,
@@ -281,10 +281,10 @@ export class FinanceService extends BaseService {
       const { page, limit } = this.getPaginationParams(filters)
       const skip = (page - 1) * limit
 
-      const where: Prisma.calculated_costsWhereInput = {}
+      const where: Prisma.CalculatedCostWhereInput = {}
       
-      if (filters.warehouse_id) {
-        where.warehouse_id = filters.warehouse_id
+      if (filters.warehouseId) {
+        where.warehouseId = filters.warehouseId
       }
       
       if (filters.category) {
@@ -298,8 +298,8 @@ export class FinanceService extends BaseService {
       }
 
       const [total, costEntries] = await Promise.all([
-        this.prisma.calculated_costs.count({ where }),
-        this.prisma.calculated_costs.findMany({
+        this.prisma.calculatedCost.count({ where }),
+        this.prisma.calculatedCost.findMany({
           where,
           skip,
           take: limit,
@@ -324,7 +324,7 @@ export class FinanceService extends BaseService {
    * Private helper methods
    */
   private async getInvoiceStats(billingPeriod: { start: Date; end: Date }, warehouseId?: string) {
-    const invoiceWhere: Prisma.invoicesWhereInput = {
+    const invoiceWhere: Prisma.InvoiceWhereInput = {
       billing_period_start: {
         gte: billingPeriod.start,
         lte: billingPeriod.end
@@ -332,10 +332,10 @@ export class FinanceService extends BaseService {
     }
     
     if (warehouseId) {
-      invoiceWhere.warehouse_id = warehouse_id
+      invoiceWhere.warehouseId = warehouseId
     }
 
-    const invoiceStats = await this.prisma.invoices.groupBy({
+    const invoiceStats = await this.prisma.invoice.groupBy({
       by: ['status'],
       where: invoiceWhere,
       _count: true,
@@ -349,7 +349,7 @@ export class FinanceService extends BaseService {
     const disputedInvoices = invoiceStats.find(s => s.status === 'disputed') || { _count: 0, _sum: { total_amount: 0 } }
     
     // Get overdue invoices
-    const overdueInvoices = await this.prisma.invoices.findMany({
+    const overdueInvoices = await this.prisma.invoice.findMany({
       where: {
         ...invoiceWhere,
         status: 'pending',
@@ -405,7 +405,7 @@ export class FinanceService extends BaseService {
 
   private async getRecentFinancialActivity() {
     // Get recent invoices
-    const recentInvoices = await this.prisma.invoices.findMany({
+    const recentInvoices = await this.prisma.invoice.findMany({
       take: 5,
       orderBy: { created_at: 'desc' },
       select: {
@@ -427,7 +427,7 @@ export class FinanceService extends BaseService {
     })
 
     // Get recent disputes
-    const recentDisputes = await this.prisma.invoices_disputes.findMany({
+    const recentDisputes = await this.prisma.invoice_disputes.findMany({
       take: 5,
       orderBy: { created_at: 'desc' },
       include: {
@@ -470,7 +470,7 @@ export class FinanceService extends BaseService {
   }
 
   private async getReconciliationStats(billingPeriod: { start: Date; end: Date }, warehouseId?: string) {
-    const reconWhere: Prisma.invoice_reconciliationsWhereInput = {
+    const reconWhere: Prisma.InvoiceReconciliationWhereInput = {
       invoice: {
         billing_period_start: {
           gte: billingPeriod.start,
@@ -482,11 +482,11 @@ export class FinanceService extends BaseService {
     if (warehouseId) {
       reconWhere.invoice = {
         ...reconWhere.invoice,
-        warehouse_id: warehouse_id
+        warehouseId: warehouseId
       }
     }
 
-    const reconStats = await this.prisma.invoices_reconciliations.groupBy({
+    const reconStats = await this.prisma.invoiceReconciliation.groupBy({
       by: ['status'],
       where: reconWhere,
       _count: true

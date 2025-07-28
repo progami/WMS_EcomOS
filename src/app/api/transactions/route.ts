@@ -472,7 +472,7 @@ export async function POST(request: NextRequest) {
 
         if (validateTransactionForCostCalculation(transactionData)) {
           // Trigger cost calculation without awaiting
-          triggerCostCalculation(transactionData, session.user.id).catch(error => {
+          triggerCostCalculation(transactionData).catch(error => {
             // console.error(`Failed to trigger cost calculation for ${transaction.transactionId}:`, error);
             businessLogger.error('Cost calculation trigger failed', {
               transactionId: transaction.transactionId,

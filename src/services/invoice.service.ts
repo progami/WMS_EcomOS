@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client'
 // Validation schemas
 const createInvoiceSchema = z.object({
   invoice_number: z.string().min(1).transform(val => sanitizeForDisplay(val)),
-  warehouse_id: z.string().uuid(),
+  warehouseId: z.string().uuid(),
   billing_period_start: z.string().datetime(),
   billing_period_end: z.string().datetime(),
   invoice_date: z.string().datetime(),
@@ -68,7 +68,7 @@ export class InvoiceService extends BaseService {
       }
 
       // Build where clause
-      const where: Prisma.invoicesWhereInput = { ...warehouseFilter }
+      const where: Prisma.InvoiceWhereInput = { ...warehouseFilter }
       
       if (filters.search) {
         const escapedSearch = escapeRegex(sanitizeSearchQuery(filters.search))
@@ -99,8 +99,8 @@ export class InvoiceService extends BaseService {
 
       // Execute queries in parallel
       const [totalCount, invoices] = await Promise.all([
-        this.prisma.invoices.count({ where }),
-        this.prisma.invoices.findMany({
+        this.prisma.invoice.count({ where }),
+        this.prisma.invoice.findMany({
           where,
           skip,
           take: limit,
@@ -162,9 +162,9 @@ export class InvoiceService extends BaseService {
       const validatedData = createInvoiceSchema.parse(data)
 
       // Validate warehouse access
-      const warehouseFilter = this.getWarehouseFilter(validatedData.warehouse_id)
+      const warehouseFilter = this.getWarehouseFilter(validatedData.warehouseId)
       if (warehouseFilter === null || 
-          (warehouseFilter.warehouse_id && warehouseFilter.warehouse_id !== validatedData.warehouse_id)) {
+          (warehouseFilter.warehouseId && warehouseFilter.warehouseId !== validatedData.warehouseId)) {
         throw new Error('Access denied to this warehouse')
       }
 
@@ -189,14 +189,14 @@ export class InvoiceService extends BaseService {
         if (existingInvoice) {
           // Check if it's the same request (idempotent)
           const isSameRequest = 
-            existingInvoice.warehouse_id === validatedData.warehouse_id &&
+            existingInvoice.warehouseId === validatedData.warehouseId &&
             Number(existingInvoice.total_amount) === validatedData.total_amount &&
             existingInvoice.line_items.length === validatedData.line_items.length
 
           if (isSameRequest) {
             businessLogger.info('Idempotent invoice creation', {
               invoice_number: existingInvoice.invoice_number,
-              invoice_id: existingInvoice.id
+              invoiceId: existingInvoice.id
             })
             return { invoice: existingInvoice, idempotent: true }
           } else {
@@ -208,7 +208,7 @@ export class InvoiceService extends BaseService {
         const newInvoice = await tx.invoices.create({
           data: {
             invoice_number: validatedData.invoice_number,
-            warehouse_id: validatedData.warehouse_id,
+            warehouseId: validatedData.warehouseId,
             customer_id: this.session!.user.id,
             billing_period_start: new Date(validatedData.billing_period_start),
             billing_period_end: new Date(validatedData.billing_period_end),
@@ -245,7 +245,7 @@ export class InvoiceService extends BaseService {
         // Log audit trail
         await this.logAudit('INVOICE_CREATED', 'Invoice', newInvoice.id, {
           invoice_number: newInvoice.invoice_number,
-          warehouse_id: newInvoice.warehouse_id,
+          warehouseId: newInvoice.warehouseId,
           total_amount: newInvoice.total_amount,
           lineItemCount: validatedData.line_items.length
         })
@@ -255,9 +255,9 @@ export class InvoiceService extends BaseService {
 
       const duration = Date.now() - startTime
       businessLogger.info('Invoice created successfully', {
-        invoice_id: invoice.invoice.id,
+        invoiceId: invoice.invoice.id,
         invoice_number: invoice.invoice.invoice_number,
-        warehouse_id: invoice.invoice.warehouse_id,
+        warehouseId: invoice.invoice.warehouseId,
         total_amount: invoice.invoice.total_amount,
         duration,
         idempotent: invoice.idempotent
@@ -280,8 +280,8 @@ export class InvoiceService extends BaseService {
 
       const updatedInvoice = await this.executeInTransaction(async (tx) => {
         // Get current invoice
-        const currentInvoice = await tx.invoices.findUnique({
-          where: { id: invoice_id }
+        const currentInvoice = await tx.invoice.findUnique({
+          where: { id: invoiceId }
         })
 
         if (!currentInvoice) {
@@ -290,7 +290,7 @@ export class InvoiceService extends BaseService {
 
         // Update invoice
         const updated = await tx.invoices.update({
-          where: { id: invoice_id },
+          where: { id: invoiceId },
           data: {
             status: validatedData.status,
             due_date: validatedData.due_date ? new Date(validatedData.due_date) : undefined,
@@ -304,7 +304,7 @@ export class InvoiceService extends BaseService {
         })
 
         // Log audit trail
-        await this.logAudit('INVOICE_UPDATED', 'Invoice', invoice_id, {
+        await this.logAudit('INVOICE_UPDATED', 'Invoice', invoiceId, {
           previousStatus: currentInvoice.status,
           newStatus: validatedData.status,
           changes: validatedData
@@ -334,7 +334,7 @@ export class InvoiceService extends BaseService {
       const result = await this.executeInTransaction(async (tx) => {
         // Check if invoice exists and can be deleted
         const invoice = await tx.invoices.findUnique({
-          where: { id: invoice_id }
+          where: { id: invoiceId }
         })
 
         if (!invoice) {
@@ -347,11 +347,11 @@ export class InvoiceService extends BaseService {
 
         // Delete invoice (cascade will handle line items)
         await tx.invoices.delete({
-          where: { id: invoice_id }
+          where: { id: invoiceId }
         })
 
         // Log audit trail
-        await this.logAudit('INVOICE_DELETED', 'Invoice', invoice_id, {
+        await this.logAudit('INVOICE_DELETED', 'Invoice', invoiceId, {
           invoice_number: invoice.invoice_number,
           status: invoice.status
         })
@@ -379,7 +379,7 @@ export class InvoiceService extends BaseService {
 
       const updatedInvoice = await this.executeInTransaction(async (tx) => {
         const invoice = await tx.invoices.findUnique({
-          where: { id: invoice_id }
+          where: { id: invoiceId }
         })
 
         if (!invoice) {
@@ -391,14 +391,14 @@ export class InvoiceService extends BaseService {
         }
 
         const updated = await tx.invoices.update({
-          where: { id: invoice_id },
+          where: { id: invoiceId },
           data: {
             status: 'paid',
             updated_at: new Date()
           }
         })
 
-        await this.logAudit('INVOICE_ACCEPTED', 'Invoice', invoice_id, {
+        await this.logAudit('INVOICE_ACCEPTED', 'Invoice', invoiceId, {
           invoice_number: invoice.invoice_number,
           previousStatus: invoice.status
         })
@@ -421,7 +421,7 @@ export class InvoiceService extends BaseService {
 
       const result = await this.executeInTransaction(async (tx) => {
         const invoice = await tx.invoices.findUnique({
-          where: { id: invoice_id }
+          where: { id: invoiceId }
         })
 
         if (!invoice) {
@@ -434,7 +434,7 @@ export class InvoiceService extends BaseService {
 
         // Update invoice status
         const updated = await tx.invoices.update({
-          where: { id: invoice_id },
+          where: { id: invoiceId },
           data: {
             status: 'disputed',
             updated_at: new Date()
@@ -442,7 +442,7 @@ export class InvoiceService extends BaseService {
         })
 
         // Create dispute record
-        const dispute = await tx.invoices_disputes.create({
+        const dispute = await tx.invoiceDispute.create({
           data: {
             invoiceId,
             reason: sanitizeForDisplay(reason),
@@ -451,7 +451,7 @@ export class InvoiceService extends BaseService {
           }
         })
 
-        await this.logAudit('INVOICE_DISPUTED', 'Invoice', invoice_id, {
+        await this.logAudit('INVOICE_DISPUTED', 'Invoice', invoiceId, {
           invoice_number: invoice.invoice_number,
           reason,
           disputed_amount: dispute.disputed_amount
