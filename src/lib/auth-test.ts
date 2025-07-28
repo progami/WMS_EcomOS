@@ -5,7 +5,7 @@ import { authOptions as productionAuthOptions } from './auth'
 // Test user that will be used for all authenticated requests in test mode
 // Using demo-admin to match E2E test expectations
 const TEST_USER = {
-  id: 'demo-admin-id',
+  id: '4f64cbef-3e84-470e-a8d6-be3b5e7a1fe9', // Actual demo-admin ID from database
   email: 'demo-admin@warehouse.com',
   name: 'Demo Admin',
   role: 'admin' as UserRole,
