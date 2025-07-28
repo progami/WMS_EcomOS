@@ -203,13 +203,14 @@ DASHBOARD_REFACTOR_SUMMARY.md
 prisma/migrations_backup/
 
 # Serena cache
-.serena/cache/
+.serena/
 
 # Logs
 logs/*.log
 
 # Claude configuration
 CLAUDE.md
+.claude/
 wms-deployment-minimal.tar.gz
 # Screenshots and test artifacts
 *.png
