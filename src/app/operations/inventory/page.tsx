@@ -1385,13 +1385,6 @@ export default function UnifiedInventoryPage() {
                           // Helper function to render cell content based on field
                           const renderCell = () => {
                             switch (column.fieldName) {
-                              case 'transactionId':
-                                return (
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="font-mono text-gray-900">{transaction.transactionId || '-'}</div>
-                                  </td>
-                                )
-                              
                               case 'transactionDate':
                                 return (
                                   <td className="px-4 py-3 text-sm">
