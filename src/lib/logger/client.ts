@@ -18,52 +18,12 @@ class ClientLogger {
   private endpoint: string = '/api/logs/client';
 
   constructor() {
-    // Start flush timer
-    this.startFlushTimer();
-
-    // Flush on page unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        this.flush();
-      });
-
-      // Capture unhandled errors
-      window.addEventListener('error', (event) => {
-        this.error('Unhandled error', {
-          message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          error: event.error ? {
-            name: event.error.name,
-            message: event.error.message,
-            stack: event.error.stack,
-          } : null,
-        });
-      });
-
-      // Capture unhandled promise rejections
-      window.addEventListener('unhandledrejection', (event) => {
-        this.error('Unhandled promise rejection', {
-          reason: event.reason,
-          promise: event.promise,
-        });
-      });
-    }
+    // Disabled: API endpoint removed - no flush timer or event listeners
   }
 
   private startFlushTimer() {
-    if (typeof window === 'undefined') return;
-    
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
-    }
-
-    this.flushTimer = setInterval(() => {
-      if (this.buffer.length > 0) {
-        this.flush();
-      }
-    }, this.flushInterval);
+    // Disabled: API endpoint removed
+    return;
   }
 
   private createEntry(
@@ -129,14 +89,9 @@ class ClientLogger {
   }
 
   private addToBuffer(entry: ClientLogEntry) {
-    this.buffer.push(entry);
-
-    // Flush if buffer is full
-    if (this.buffer.length >= this.maxBufferSize) {
-      this.flush();
-    }
-
-    // Also log to console in development
+    // Don't add to buffer since we can't flush anyway
+    
+    // Only log to console in development
     if (process.env.NODE_ENV === 'development') {
       const consoleMethod = entry.level === 'error' ? 'error' : 
                           entry.level === 'warn' ? 'warn' : 
@@ -150,29 +105,9 @@ class ClientLogger {
   }
 
   async flush() {
-    if (this.buffer.length === 0) return;
-
-    const logs = [...this.buffer];
+    // Disabled: API endpoint removed
     this.buffer = [];
-
-    try {
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ logs }),
-      });
-
-      if (!response.ok) {
-        // Put logs back in buffer if send failed
-        this.buffer.unshift(...logs);
-      }
-    } catch (error) {
-      // Put logs back in buffer if send failed
-      this.buffer.unshift(...logs);
-      console.error('Failed to send logs to server:', error);
-    }
+    return;
   }
 
   // Logging methods

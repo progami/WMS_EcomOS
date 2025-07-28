@@ -12,38 +12,10 @@ export function initBrowserLogger() {
     debug: console.debug.bind(console)
   };
 
-  // Send log to server
+  // Send log to server - DISABLED
   const sendLog = async (level: string, args: any[]) => {
-    try {
-      // Convert arguments to string
-      const message = args.map(arg => {
-        if (typeof arg === 'object') {
-          try {
-            return JSON.stringify(arg);
-          } catch {
-            return String(arg);
-          }
-        }
-        return String(arg);
-      }).join(' ');
-
-      // Send to server
-      await fetch('/api/logs/browser', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          level,
-          message,
-          timestamp: new Date().toISOString(),
-          data: {
-            url: window.location.href,
-            userAgent: navigator.userAgent
-          }
-        })
-      });
-    } catch (error) {
-      // Silently fail to avoid infinite loops
-    }
+    // Disabled: API endpoint removed
+    return;
   };
 
   // Override console methods
