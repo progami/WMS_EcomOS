@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Disable autofill styling on login form */
 input:-webkit-autofill,
@@ -459,7 +457,8 @@ button:not(:disabled) {
 @layer utilities {
   /* Touch-friendly tap targets */
   .touch-target {
-    @apply min-h-[44px] min-w-[44px];
+    min-height: 44px;
+    min-width: 44px;
   }
   
   /* Responsive text truncation */
@@ -477,112 +476,361 @@ button:not(:disabled) {
   
   /* Responsive padding scales */
   .p-responsive {
-    @apply p-2 sm:p-3 md:p-4 lg:p-6;
+    padding: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .p-responsive {
+      padding: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .p-responsive {
+      padding: 1rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .p-responsive {
+      padding: 1.5rem;
+    }
   }
   
   .px-responsive {
-    @apply px-2 sm:px-3 md:px-4 lg:px-6;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .px-responsive {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .px-responsive {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .px-responsive {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
   }
   
   .py-responsive {
-    @apply py-2 sm:py-3 md:py-4 lg:py-6;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .py-responsive {
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .py-responsive {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .py-responsive {
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
   }
   
   /* Responsive font sizes */
   .text-responsive-xs {
-    @apply text-xs sm:text-sm;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  @media (min-width: 640px) {
+    .text-responsive-xs {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
   }
   
   .text-responsive-sm {
-    @apply text-sm sm:text-base;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .text-responsive-sm {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
   }
   
   .text-responsive-base {
-    @apply text-base sm:text-lg;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .text-responsive-base {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
   }
   
   .text-responsive-lg {
-    @apply text-lg sm:text-xl md:text-2xl;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+  @media (min-width: 640px) {
+    .text-responsive-lg {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .text-responsive-lg {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
   }
   
   .text-responsive-xl {
-    @apply text-xl sm:text-2xl md:text-3xl;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  @media (min-width: 640px) {
+    .text-responsive-xl {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .text-responsive-xl {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
   }
   
   /* Responsive icon sizes */
   .icon-xs {
-    @apply h-3 w-3 sm:h-4 sm:w-4;
+    height: 0.75rem;
+    width: 0.75rem;
+  }
+  @media (min-width: 640px) {
+    .icon-xs {
+      height: 1rem;
+      width: 1rem;
+    }
   }
   
   .icon-sm {
-    @apply h-4 w-4 sm:h-5 sm:w-5;
+    height: 1rem;
+    width: 1rem;
+  }
+  @media (min-width: 640px) {
+    .icon-sm {
+      height: 1.25rem;
+      width: 1.25rem;
+    }
   }
   
   .icon-md {
-    @apply h-5 w-5 sm:h-6 sm:w-6;
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .icon-md {
+      height: 1.5rem;
+      width: 1.5rem;
+    }
   }
   
   .icon-lg {
-    @apply h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8;
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .icon-lg {
+      height: 1.75rem;
+      width: 1.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .icon-lg {
+      height: 2rem;
+      width: 2rem;
+    }
   }
   
   /* Hide on mobile, show on larger screens */
   .hide-mobile {
-    @apply hidden sm:block;
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .hide-mobile {
+      display: block;
+    }
   }
   
   .hide-mobile-inline {
-    @apply hidden sm:inline;
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .hide-mobile-inline {
+      display: inline;
+    }
   }
   
   .hide-mobile-flex {
-    @apply hidden sm:flex;
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .hide-mobile-flex {
+      display: flex;
+    }
   }
   
   /* Show on mobile only */
   .show-mobile {
-    @apply block sm:hidden;
+    display: block;
+  }
+  @media (min-width: 640px) {
+    .show-mobile {
+      display: none;
+    }
   }
   
   .show-mobile-inline {
-    @apply inline sm:hidden;
+    display: inline;
+  }
+  @media (min-width: 640px) {
+    .show-mobile-inline {
+      display: none;
+    }
   }
   
   .show-mobile-flex {
-    @apply flex sm:hidden;
+    display: flex;
+  }
+  @media (min-width: 640px) {
+    .show-mobile-flex {
+      display: none;
+    }
   }
   
   /* Responsive spacing */
   .gap-responsive {
-    @apply gap-2 sm:gap-3 md:gap-4;
+    gap: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .gap-responsive {
+      gap: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .gap-responsive {
+      gap: 1rem;
+    }
   }
   
   .space-y-responsive > * + * {
-    @apply mt-2 sm:mt-3 md:mt-4;
+    margin-top: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .space-y-responsive > * + * {
+      margin-top: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .space-y-responsive > * + * {
+      margin-top: 1rem;
+    }
   }
   
   .space-x-responsive > * + * {
-    @apply ml-2 sm:ml-3 md:ml-4;
+    margin-left: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .space-x-responsive > * + * {
+      margin-left: 0.75rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .space-x-responsive > * + * {
+      margin-left: 1rem;
+    }
   }
   
   /* Responsive grid columns */
   .grid-responsive {
-    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  @media (min-width: 640px) {
+    .grid-responsive {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .grid-responsive {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1280px) {
+    .grid-responsive {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
   
   /* Responsive container widths */
   .container-responsive {
-    @apply w-full sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl;
+    width: 100%;
+  }
+  @media (min-width: 640px) {
+    .container-responsive {
+      max-width: 24rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .container-responsive {
+      max-width: 28rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-responsive {
+      max-width: 32rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .container-responsive {
+      max-width: 36rem;
+    }
   }
   
   /* Responsive border radius */
   .rounded-responsive {
-    @apply rounded sm:rounded-md md:rounded-lg;
+    border-radius: 0.25rem;
+  }
+  @media (min-width: 640px) {
+    .rounded-responsive {
+      border-radius: 0.375rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .rounded-responsive {
+      border-radius: 0.5rem;
+    }
   }
   
   /* Responsive shadows */
   .shadow-responsive {
-    @apply shadow-sm sm:shadow md:shadow-lg;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  @media (min-width: 640px) {
+    .shadow-responsive {
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    }
+  }
+  @media (min-width: 768px) {
+    .shadow-responsive {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
   }
   
   /* Tablet-specific utilities */
