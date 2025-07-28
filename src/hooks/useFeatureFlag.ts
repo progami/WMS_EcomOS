@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { logger } from '@/lib/logger/client';
+import { clientLogger } from '@/lib/logger/client';
 
 interface FeatureFlagCheck {
   enabled: boolean;
@@ -42,7 +42,7 @@ export function useFeatureFlag(flagName: string): FeatureFlagCheck {
           error: null
         });
       } catch (error) {
-        logger.error('Error checking feature flag', { flagName, error });
+        clientLogger.error('Error checking feature flag', { flagName, error });
         setState({
           enabled: false,
           source: 'default',

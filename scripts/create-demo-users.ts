@@ -36,8 +36,8 @@ async function createDemoUsers() {
         fullName: 'Demo Administrator',
         role: 'admin',
         isActive: true,
-        is_demo: true,
-        updated_at: new Date()
+        isDemo: true,
+        updatedAt: new Date()
       }
     })
     
@@ -59,8 +59,8 @@ async function createDemoUsers() {
         fullName: 'Demo Staff',
         role: 'staff',
         isActive: true,
-        is_demo: true,
-        updated_at: new Date()
+        isDemo: true,
+        updatedAt: new Date()
       }
     })
     
