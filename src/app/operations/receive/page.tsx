@@ -820,11 +820,11 @@ export default function WarehouseReceivePage() {
                           <input
                             type="text"
                             value={item.batchLot}
-                            className="w-full px-2 py-1 border rounded bg-gray-100"
-                            placeholder={item.loadingBatch ? "Loading..." : "Select SKU first"}
+                            onChange={(e) => updateItem(item.id, 'batchLot', e.target.value)}
+                            className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                            placeholder={item.loadingBatch ? "Loading..." : "Enter batch/lot"}
                             required
-                            readOnly
-                            title="Batch number is automatically assigned"
+                            title="Enter or modify the batch/lot number"
                           />
                           {item.loadingBatch && (
                             <div className="absolute right-2 top-1/2 -translate-y-1/2">
