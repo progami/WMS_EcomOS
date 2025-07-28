@@ -62,9 +62,7 @@ export default function WarehouseReceivePage() {
       storageCartonsPerPallet: 0,
       shippingCartonsPerPallet: 0,
       configLoaded: false,
-      loadingBatch: false,
-      isFirstBatch: false,
-      unitValue: 0
+      loadingBatch: false
     }
   ])
 
@@ -139,17 +137,8 @@ export default function WarehouseReceivePage() {
       const response = await fetch(`/api/skus/${encodeURIComponent(skuCode)}/next-batch`)
       if (response.ok) {
         const data = await response.json()
-        
-        // Check if this is the first batch for this SKU
-        const checkResponse = await fetch(`/api/inventory/ledger-based?skuCode=${encodeURIComponent(skuCode)}&warehouseId=${selectedWarehouseId}`)
-        let isFirstBatch = false
-        if (checkResponse.ok) {
-          const ledgerData = await checkResponse.json()
-          isFirstBatch = !ledgerData.data || ledgerData.data.length === 0
-        }
-        
         setItems(prevItems => prevItems.map(item => 
-          item.id === itemId ? { ...item, batchLot: data.suggestedBatchLot, loadingBatch: false, isFirstBatch } : item
+          item.id === itemId ? { ...item, batchLot: data.suggestedBatchLot, loadingBatch: false } : item
         ))
       }
     } catch (error) {
@@ -173,9 +162,7 @@ export default function WarehouseReceivePage() {
         storageCartonsPerPallet: 0,
         shippingCartonsPerPallet: 0,
         configLoaded: false,
-        loadingBatch: false,
-        isFirstBatch: false,
-        unitValue: 0
+        loadingBatch: false
       }
     ])
   }
@@ -446,11 +433,6 @@ export default function WarehouseReceivePage() {
       }
       if (item.units && (!Number.isInteger(item.units) || item.units < 0)) {
         toast.error(`Invalid units value for SKU ${item.skuCode}. Must be non-negative`)
-        return
-      }
-      // Validate unit value for first batch
-      if (item.isFirstBatch && (!item.unitValue || item.unitValue <= 0)) {
-        toast.error(`Please enter a unit value for SKU ${item.skuCode} as this is the first batch`)
         return
       }
     }
@@ -784,15 +766,6 @@ export default function WarehouseReceivePage() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Units
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div className="flex items-center justify-end gap-1">
-                        Unit Value
-                        <Tooltip 
-                          content="Value per unit (only for first batch)" 
-                          iconSize="sm"
-                        />
-                      </div>
-                    </th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -943,27 +916,6 @@ export default function WarehouseReceivePage() {
                           readOnly
                           title="Units are calculated based on cartons × units per carton"
                         />
-                      </td>
-                      <td className="px-4 py-3 w-32">
-                        {item.isFirstBatch ? (
-                          <input
-                            type="number"
-                            value={item.unitValue === 0 ? '' : item.unitValue}
-                            onChange={(e) => {
-                              const value = e.target.value
-                              const newValue = value === '' ? 0 : parseFloat(value) || 0
-                              updateItem(item.id, 'unitValue', newValue)
-                            }}
-                            className="w-full px-2 py-1 border rounded text-right focus:outline-none focus:ring-1 focus:ring-primary"
-                            min="0"
-                            step="0.0001"
-                            placeholder="0.00"
-                            title="Enter the value per unit for this first batch"
-                            required={item.isFirstBatch}
-                          />
-                        ) : (
-                          <span className="text-sm text-gray-500 italic">N/A</span>
-                        )}
                       </td>
                       <td className="px-4 py-3 w-12">
                         <button
