@@ -39,20 +39,6 @@ export function PageHeader({
           </div>
         )}
       </div>
-      
-      {description && (
-        <div className={`${bgColor} border ${borderColor} rounded-lg p-4`}>
-          <div className="flex items-start">
-            {Icon && (
-              <Icon className={`h-5 w-5 ${iconColor} mt-0.5 mr-3 flex-shrink-0`} />
-            )}
-            <div className={`text-sm ${textColor}`}>
-              <p className="font-semibold mb-1">About This Page:</p>
-              <p>{description}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -44,16 +44,6 @@ export default function AdminUsersPage() {
               Add User
             </Link>
           </div>
-          
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <Shield className="h-5 w-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="text-sm text-purple-800">
-                <p className="font-semibold mb-1">About This Page:</p>
-                <p>Create and manage user accounts for the warehouse management system. Assign roles and permissions, set warehouse access, and monitor user activity. Each role has specific permissions tailored to their responsibilities.</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Search */}
