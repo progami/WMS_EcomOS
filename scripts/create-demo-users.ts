@@ -9,7 +9,7 @@ async function createDemoUsers() {
     console.log('Creating demo users...')
     
     // Check if demo users already exist
-    const existingUsers = await prisma.users.findMany({
+    const existingUsers = await prisma.user.findMany({
       where: {
         username: { in: ['demo-admin', 'staff'] }
       }
@@ -27,7 +27,7 @@ async function createDemoUsers() {
     const adminPassword = process.env.DEMO_ADMIN_PASSWORD || 'DemoAdmin2024!'
     const adminHash = await bcrypt.hash(adminPassword, 10)
     
-    const adminUser = await prisma.users.create({
+    const adminUser = await prisma.user.create({
       data: {
         id: crypto.randomUUID(),
         username: 'demo-admin',
@@ -50,7 +50,7 @@ async function createDemoUsers() {
     const staffPassword = process.env.DEMO_STAFF_PASSWORD || 'DemoStaff2024!'
     const staffHash = await bcrypt.hash(staffPassword, 10)
     
-    const staffUser = await prisma.users.create({
+    const staffUser = await prisma.user.create({
       data: {
         id: crypto.randomUUID(),
         username: 'staff',
