@@ -3,20 +3,41 @@
 import dynamic from 'next/dynamic'
 
 // Lazy load heavy chart components to improve initial page load
-const createLazyChart = (chartName: string) =>
-  dynamic<any>(() => import('recharts').then((mod) => mod[chartName] as any), {
-    ssr: false,
-    loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
-  })
+// Fixed for Next.js 15 compatibility
+export const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
 
-// Lazy loaded chart components
-export const AreaChart = createLazyChart('AreaChart')
-export const BarChart = createLazyChart('BarChart')
-export const LineChart = createLazyChart('LineChart')
-export const PieChart = createLazyChart('PieChart')
-export const RadarChart = createLazyChart('RadarChart')
-export const ComposedChart = createLazyChart('ComposedChart')
-export const ScatterChart = createLazyChart('ScatterChart')
+export const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
+
+export const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
+
+export const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
+
+export const RadarChart = dynamic(() => import('recharts').then(mod => mod.RadarChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
+
+export const ComposedChart = dynamic(() => import('recharts').then(mod => mod.ComposedChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
+
+export const ScatterChart = dynamic(() => import('recharts').then(mod => mod.ScatterChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full animate-pulse bg-gray-100 rounded" />
+})
 
 // Re-export lightweight components directly
 export {
