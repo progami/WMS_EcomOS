@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { Package2, RefreshCw, Loader2, Search, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react'
+import { Package2, RefreshCw, Loader2, Search, TrendingUp, AlertTriangle, BarChart3, Construction, Hammer, Wrench } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 interface InventoryComparison {
@@ -25,6 +25,70 @@ interface InventoryComparison {
 export default function AmazonIntegrationPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
+
+  // TEMPORARY: Show under construction page
+  return (
+    <DashboardLayout>
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Amazon FBA Integration"
+          description="Connect and sync with Amazon FBA"
+        />
+
+        <div className="mt-8 flex flex-col items-center justify-center text-center py-16">
+          <div className="relative">
+            <Construction className="h-24 w-24 text-yellow-500 mb-6" />
+            <Hammer className="h-8 w-8 text-yellow-600 absolute -right-2 -top-2 animate-bounce" />
+            <Wrench className="h-8 w-8 text-yellow-600 absolute -left-2 bottom-0 animate-pulse" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Under Construction
+          </h2>
+          
+          <p className="text-gray-600 dark:text-gray-400 max-w-md mb-8">
+            We're working hard to bring you the Amazon FBA Integration module. 
+            This feature will allow you to sync inventory levels, manage FBA shipments, 
+            and track Amazon warehouse inventory in real-time.
+          </p>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 max-w-lg">
+            <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              Coming Soon Features:
+            </h3>
+            <ul className="text-left text-yellow-800 dark:text-yellow-200 space-y-2">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Real-time inventory sync with Amazon FBA</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Create and manage FBA shipment plans</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Track inventory across multiple Amazon warehouses</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Automated replenishment alerts</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>FBA fee calculations and analytics</span>
+              </li>
+            </ul>
+          </div>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-8">
+            Expected availability: Q2 2024
+          </p>
+        </div>
+      </div>
+    </DashboardLayout>
+  )
+
+  // Original code below (temporarily disabled)
   const [loading, setLoading] = useState(false)
   const [inventory, setInventory] = useState<InventoryComparison[]>([])
   const [searchTerm, setSearchTerm] = useState('')
