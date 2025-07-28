@@ -11,13 +11,6 @@ import {
 
 const financeModules = [
   {
-    title: 'Finance Dashboard',
-    description: 'Overview of financial metrics',
-    href: '/finance/dashboard',
-    icon: DollarSign,
-    color: 'bg-green-100 text-green-700'
-  },
-  {
     title: 'Invoices',
     description: 'Manage customer invoices',
     href: '/finance/invoices',
