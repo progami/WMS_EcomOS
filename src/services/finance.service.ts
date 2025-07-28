@@ -163,17 +163,17 @@ export class FinanceService extends BaseService {
 
           // Store calculated costs
           for (const cost of costs) {
-            const calculatedCost = await tx.calculated_costs.create({
+            const calculatedCost = await tx.calculatedCost.create({
               data: {
                 warehouseId: warehouse.id,
-                billing_period_start: params.startDate,
-                billing_period_end: params.endDate,
-                cost_category: cost.costCategory,
-                cost_name: cost.costName,
+                billingPeriodStart: params.startDate,
+                billingPeriodEnd: params.endDate,
+                costCategory: cost.costCategory,
+                costName: cost.costName,
                 quantity: cost.quantity,
-                unit_rate: cost.unitRate,
+                unitRate: cost.unitRate,
                 amount: cost.amount,
-                calculated_by: this.session?.user?.id || 'system'
+                calculatedBy: this.session?.user?.id || 'system'
               }
             })
             costResults.push(calculatedCost)
@@ -235,9 +235,9 @@ export class FinanceService extends BaseService {
       }
       
       if (filters.startDate || filters.endDate) {
-        where.week_ending_date = {}
-        if (filters.startDate) where.week_ending_date.gte = filters.startDate
-        if (filters.endDate) where.week_ending_date.lte = filters.endDate
+        where.weekEndingDate = {}
+        if (filters.startDate) where.weekEndingDate.gte = filters.startDate
+        if (filters.endDate) where.weekEndingDate.lte = filters.endDate
       }
 
       const [total, ledgerEntries] = await Promise.all([
@@ -251,9 +251,9 @@ export class FinanceService extends BaseService {
             sku: true
           },
           orderBy: [
-            { week_ending_date: 'desc' },
+            { weekEndingDate: 'desc' },
             { warehouse: { name: 'asc' } },
-            { sku: { sku_code: 'asc' } }
+            { sku: { skuCode: 'asc' } }
           ]
         })
       ])
@@ -288,13 +288,13 @@ export class FinanceService extends BaseService {
       }
       
       if (filters.category) {
-        where.cost_category = filters.category
+        where.costCategory = filters.category
       }
       
       if (filters.startDate || filters.endDate) {
-        where.billing_period_start = {}
-        if (filters.startDate) where.billing_period_start.gte = filters.startDate
-        if (filters.endDate) where.billing_period_start.lte = filters.endDate
+        where.billingPeriodStart = {}
+        if (filters.startDate) where.billingPeriodStart.gte = filters.startDate
+        if (filters.endDate) where.billingPeriodStart.lte = filters.endDate
       }
 
       const [total, costEntries] = await Promise.all([
@@ -307,9 +307,9 @@ export class FinanceService extends BaseService {
             warehouse: true
           },
           orderBy: [
-            { billing_period_start: 'desc' },
+            { billingPeriodStart: 'desc' },
             { warehouse: { name: 'asc' } },
-            { cost_category: 'asc' }
+            { costCategory: 'asc' }
           ]
         })
       ])
@@ -325,7 +325,7 @@ export class FinanceService extends BaseService {
    */
   private async getInvoiceStats(billingPeriod: { start: Date; end: Date }, warehouseId?: string) {
     const invoiceWhere: Prisma.InvoiceWhereInput = {
-      billing_period_start: {
+      billingPeriodStart: {
         gte: billingPeriod.start,
         lte: billingPeriod.end
       }
@@ -353,7 +353,7 @@ export class FinanceService extends BaseService {
       where: {
         ...invoiceWhere,
         status: 'pending',
-        due_date: {
+        dueDate: {
           lt: new Date()
         }
       },
@@ -427,7 +427,7 @@ export class FinanceService extends BaseService {
     })
 
     // Get recent disputes
-    const recentDisputes = await this.prisma.invoice_disputes.findMany({
+    const recentDisputes = await this.prisma.invoiceDispute.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -472,7 +472,7 @@ export class FinanceService extends BaseService {
   private async getReconciliationStats(billingPeriod: { start: Date; end: Date }, warehouseId?: string) {
     const reconWhere: Prisma.InvoiceReconciliationWhereInput = {
       invoice: {
-        billing_period_start: {
+        billingPeriodStart: {
           gte: billingPeriod.start,
           lte: billingPeriod.end
         }
