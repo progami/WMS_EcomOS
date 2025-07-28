@@ -547,12 +547,6 @@ export default function UnifiedInventoryPage() {
           textColor="text-green-800"
           actions={
             <div className="flex items-center gap-2">
-              <ImportButton 
-                entityName="inventoryTransactions" 
-                onImportComplete={() => {
-                  fetchData(true)
-                }}
-              />
               <Link
                 href="/operations/receive"
                 className="inline-flex items-center h-10 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
@@ -567,6 +561,13 @@ export default function UnifiedInventoryPage() {
                 <Truck className="h-4 w-4 mr-2" />
                 Ship Goods
               </Link>
+              <ImportButton 
+                entityName="inventoryTransactions" 
+                onImportComplete={() => {
+                  fetchData(true)
+                }}
+                buttonText="Import"
+              />
               <div className="relative">
                 <button 
                   type="button"
