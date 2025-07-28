@@ -78,7 +78,7 @@ const baseNavigation: NavSection[] = [
       { name: 'Warehouses', href: '/config/warehouses', icon: Building },
       { name: 'Cost Rates', href: '/config/rates', icon: DollarSign },
       { name: 'Invoice Templates', href: '/config/invoice-templates', icon: FileText },
-      { name: 'Reports & Analytics', href: '/config/reports', icon: BarChart3 },
+      { name: 'Reports & Analytics', href: '/finance/reports', icon: BarChart3 },
     ]
   },
 ]

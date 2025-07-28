@@ -19,6 +19,15 @@ export function useFeatureFlag(flagName: string): FeatureFlagCheck {
   });
 
   useEffect(() => {
+    // Feature flags API removed - return default values
+    setState({
+      enabled: false,
+      source: 'default',
+      loading: false,
+      error: null
+    });
+    
+    /* Disabled - API removed
     const checkFlag = async () => {
       try {
         setState(prev => ({ ...prev, loading: true, error: null }));
@@ -53,6 +62,7 @@ export function useFeatureFlag(flagName: string): FeatureFlagCheck {
     };
 
     checkFlag();
+    */
   }, [flagName, session?.user?.id]);
 
   return state;

@@ -115,24 +115,32 @@ export async function generateSimpleDemoData(config: DemoDataConfig) {
     inventoryMap.set(key, currentInventory - shipCartons)
   }
   
-  // 3. Create simple invoices
-  const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-  const lastMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0)
+  // 3. Create simple invoices with valid dates
+  const today = new Date()
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+  
+  // Ensure dates are valid
+  const billingStart = new Date(lastMonth.toISOString())
+  const billingEnd = new Date(lastMonthEnd.toISOString())
+  const invoiceDate = new Date(billingEnd.toISOString())
+  const issueDate = new Date(billingEnd.getTime() + 5 * 24 * 60 * 60 * 1000)
+  const dueDate = new Date(billingEnd.getTime() + 35 * 24 * 60 * 60 * 1000)
   
   for (const warehouse of warehouses) {
     const invoice = await tx.invoice.create({
       data: {
-        invoiceNumber: `INV-2024-${warehouse.code}`,
+        invoiceNumber: `INV-${new Date().getFullYear()}-${warehouse.code}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`,
         warehouseId: warehouse.id,
         customerId: adminUserId,
-        billingPeriodStart: lastMonth,
-        billingPeriodEnd: lastMonthEnd,
-        invoiceDate: lastMonthEnd,
-        issueDate: new Date(lastMonthEnd.getTime() + 5 * 24 * 60 * 60 * 1000),
-        dueDate: new Date(lastMonthEnd.getTime() + 35 * 24 * 60 * 60 * 1000),
-        subtotal: 2500,
-        taxAmount: 500,
-        totalAmount: 3000,
+        billingPeriodStart: billingStart,
+        billingPeriodEnd: billingEnd,
+        invoiceDate: invoiceDate,
+        issueDate: issueDate,
+        dueDate: dueDate,
+        subtotal: 2500.00,
+        taxAmount: 500.00,
+        totalAmount: 3000.00,
         currency: 'GBP',
         status: 'pending',
         createdById: adminUserId,
@@ -141,15 +149,15 @@ export async function generateSimpleDemoData(config: DemoDataConfig) {
       }
     })
     
-    // Create line items
+    // Create line items with valid numeric values
     await tx.invoiceLineItem.create({
       data: {
         invoiceId: invoice.id,
         costCategory: 'Storage',
         costName: 'Pallet Storage',
         quantity: 50,
-        unitRate: 25,
-        amount: 1250,
+        unitRate: 25.00,
+        amount: 1250.00,
       }
     })
     
@@ -159,8 +167,8 @@ export async function generateSimpleDemoData(config: DemoDataConfig) {
         costCategory: 'Carton',
         costName: 'Processing Fees',
         quantity: 500,
-        unitRate: 2.5,
-        amount: 1250,
+        unitRate: 2.50,
+        amount: 1250.00,
       }
     })
   }
