@@ -19,6 +19,10 @@
       import_tasks: tasks/app-deploy.yml
       tags: [app]
 
+    - name: S3 CORS Configuration
+      import_tasks: tasks/s3-cors-setup.yml
+      tags: [s3, cors]
+
     - name: Web Server Configuration
       import_tasks: tasks/webserver-config.yml
       tags: [webserver]
