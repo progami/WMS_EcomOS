@@ -73,17 +73,14 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     // Check main heading
     await expect(page.locator('h1')).toContainText('Dashboard')
     
-    // Check Market section is visible
-    await expect(page.locator('h2:has-text("Market")')).toBeVisible()
+    // Check Inventory Levels section is visible
+    await expect(page.locator('h2:has-text("Inventory Levels")')).toBeVisible()
     
-    // Check charts are rendered
-    await expect(page.locator('text="Inventory Levels Trend"')).toBeVisible()
+    // Check chart is rendered (the chart is in the Inventory Levels section)
+    // No longer has a separate "Inventory Levels Trend" text
     await expect(page.locator('.recharts-responsive-container').first()).toBeVisible()
     
-    // Check quick action links - they might be in different sections
-    const quickActions = page.locator('a:has-text("Plan New Shipment"), a:has-text("Receive"), a:has-text("Ship")');
-    const actionCount = await quickActions.count();
-    expect(actionCount).toBeGreaterThan(0);
+    // Quick actions were removed from the dashboard
   })
 
   test('Dashboard data updates and displays correctly', async ({ page }) => {
@@ -217,7 +214,7 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     
     // Check layout adjusts
     await expect(page.locator('h1')).toBeVisible()
-    await expect(page.locator('h2:has-text("Market")')).toBeVisible()
+    await expect(page.locator('h2:has-text("Inventory Levels")')).toBeVisible()
     
     // Test mobile view
     await page.setViewportSize({ width: 375, height: 667 })
