@@ -6,9 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session) {
@@ -19,7 +20,7 @@ export async function GET(
     }
 
     const config = await prisma.warehouseSkuConfig.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         warehouse: true,
         sku: true
@@ -45,9 +46,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session || session.user.role !== 'admin') {
@@ -61,7 +63,7 @@ export async function PUT(
     
     // Get existing config to preserve warehouse and SKU
     const existing = await prisma.warehouseSkuConfig.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     if (!existing) {
@@ -77,7 +79,7 @@ export async function PUT(
         where: {
           warehouseId: existing.warehouseId,
           skuId: existing.skuId,
-          NOT: { id: params.id }
+          NOT: { id }
         },
         orderBy: { effectiveDate: 'asc' }
       })
@@ -111,7 +113,7 @@ export async function PUT(
 
     // Update configuration
     const config = await prisma.warehouseSkuConfig.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         storageCartonsPerPallet: data.storageCartonsPerPallet,
         shippingCartonsPerPallet: data.shippingCartonsPerPallet,

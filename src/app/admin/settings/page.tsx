@@ -18,7 +18,7 @@ import {
   Download,
   Info,
   FileText,
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader, HelpfulTips } from '@/components/ui/page-header'
 import { toast } from 'react-hot-toast'

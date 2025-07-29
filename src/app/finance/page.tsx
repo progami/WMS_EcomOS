@@ -7,7 +7,7 @@ import {
   Calendar, 
   BarChart3,
   ArrowRight
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 const financeModules = [
   {

@@ -1,4 +1,4 @@
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from '@/lib/lucide-icons'
 import Link from 'next/link'
 
 export default function InternalServerError() {

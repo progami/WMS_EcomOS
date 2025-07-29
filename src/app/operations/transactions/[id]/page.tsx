@@ -14,7 +14,7 @@ import {
   History,
   AlertCircle,
   ArrowLeft
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
 

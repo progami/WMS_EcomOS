@@ -25,7 +25,7 @@ import {
   Eye,
   AlertTriangle,
   FileSpreadsheet,
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 

@@ -7,16 +7,17 @@ export const dynamic = 'force-dynamic'
 // GET /api/skus/[id] - Get a single SKU by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const sku = await prisma.sku.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         warehouseConfigs: true,
         _count: {
@@ -44,9 +45,10 @@ export async function GET(
 // PUT /api/skus/[id] - Update a SKU
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -66,7 +68,7 @@ export async function PUT(
     const existingSku = await prisma.sku.findFirst({
       where: {
         skuCode: body.skuCode,
-        NOT: { id: params.id }
+        NOT: { id }
       }
     })
 
@@ -79,7 +81,7 @@ export async function PUT(
 
     // Update the SKU
     const updatedSku = await prisma.sku.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         skuCode: body.skuCode,
         asin: body.asin,
@@ -109,9 +111,10 @@ export async function PUT(
 // DELETE /api/skus/[id] - Delete or deactivate a SKU
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -119,7 +122,7 @@ export async function DELETE(
 
     // Check if SKU has related data
     const sku = await prisma.sku.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -136,7 +139,7 @@ export async function DELETE(
     // If SKU has related data, deactivate instead of delete
     if (sku._count.warehouseConfigs > 0) {
       const deactivatedSku = await prisma.sku.update({
-        where: { id: params.id },
+        where: { id },
         data: { isActive: false }
       })
       
@@ -148,7 +151,7 @@ export async function DELETE(
 
     // Otherwise, delete the SKU
     await prisma.sku.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({

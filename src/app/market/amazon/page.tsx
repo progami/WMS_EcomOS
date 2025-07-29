@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { Package2, RefreshCw, Loader2, Search, TrendingUp, AlertTriangle, BarChart3, Construction, Hammer, Wrench } from 'lucide-react'
+import { Package2, RefreshCw, Loader2, Search, TrendingUp, AlertTriangle, BarChart3, Construction, Hammer, Wrench } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 
 interface InventoryComparison {

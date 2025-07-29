@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { Building, Save, X } from 'lucide-react'
+import { Building, Save, X } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 
 interface Warehouse {

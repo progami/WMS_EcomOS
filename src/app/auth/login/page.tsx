@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'react-hot-toast'
-import { Package2 } from 'lucide-react'
+import { Package2 } from '@/lib/lucide-icons'
 import { withBasePath } from '@/lib/utils/base-path'
 
 export default function LoginPage() {

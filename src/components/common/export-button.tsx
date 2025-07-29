@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileText, FileSpreadsheet, File } from 'lucide-react'
+import { Download, FileText, FileSpreadsheet, File } from '@/lib/lucide-icons'
 
 interface ExportButtonProps {
   endpoint: string
@@ -49,21 +49,41 @@ export function ExportButton({
       const response = await fetch(url)
       
       if (response.ok) {
-        const blob = await response.blob()
-        const objectUrl = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = objectUrl
-        a.download = `${fileName}_${new Date().toISOString().split('T')[0]}.${format}`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(objectUrl)
-        document.body.removeChild(a)
+        const contentType = response.headers.get('content-type')
+        
+        // Check if response is JSON (new S3-based format) or direct file download
+        if (contentType?.includes('application/json')) {
+          const data = await response.json()
+          if (data.downloadUrl) {
+            // S3-based export - open the presigned URL
+            const a = document.createElement('a')
+            a.href = data.downloadUrl
+            a.download = data.filename || `${fileName}_${new Date().toISOString().split('T')[0]}.${format}`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+          } else {
+            alert('Export failed: No download URL provided')
+          }
+        } else {
+          // Legacy direct file download
+          const blob = await response.blob()
+          const objectUrl = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = objectUrl
+          a.download = `${fileName}_${new Date().toISOString().split('T')[0]}.${format}`
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(objectUrl)
+          document.body.removeChild(a)
+        }
         
         if (onExport) {
           onExport(format)
         }
       } else {
-        alert('Export failed')
+        const errorData = await response.json().catch(() => null)
+        alert(errorData?.error || 'Export failed')
       }
     } catch (error) {
       // console.error('Export error:', error)

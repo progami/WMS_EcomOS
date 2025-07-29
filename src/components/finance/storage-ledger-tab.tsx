@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Calendar, Download, Package, DollarSign, BarChart3, ChevronDown, ChevronRight } from 'lucide-react'
+import { Calendar, Download, Package, DollarSign, BarChart3, ChevronDown, ChevronRight } from '@/lib/lucide-icons'
 import { EmptyState } from '@/components/ui/empty-state'
 import { toast } from 'react-hot-toast'
 import { formatCurrency } from '@/lib/utils'

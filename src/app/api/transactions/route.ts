@@ -341,7 +341,18 @@ export async function POST(request: NextRequest) {
 
           // Generate transaction ID in format similar to Excel data
           const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-          const sequenceNum: number = transactions.length + 1
+          
+          // Get the count of existing transactions for today to determine sequence number
+          const existingTransactionsCount = await tx.inventoryTransaction.count({
+            where: {
+              transactionId: {
+                startsWith: `${warehouse.code}-${txType.slice(0, 3)}-${timestamp}`
+              }
+            }
+          })
+          
+          // Use existing count + current batch position + 1
+          const sequenceNum: number = existingTransactionsCount + transactions.length + 1
           const transactionId = `${warehouse.code}-${txType.slice(0, 3)}-${timestamp}-${sequenceNum.toString().padStart(3, '0')}`
       
           // Calculate pallet values

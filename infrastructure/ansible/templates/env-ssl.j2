@@ -14,5 +14,17 @@ DATABASE_URL=postgresql://{{ db_user }}:{{ db_password }}@localhost:5432/{{ db_n
 DEMO_ADMIN_PASSWORD={{ demo_admin_password }}
 DEMO_STAFF_PASSWORD={{ demo_staff_password }}
 
+# AWS S3 Configuration (Using EC2 IAM Role)
+S3_BUCKET_NAME={{ s3_bucket_name }}
+S3_BUCKET_REGION={{ s3_bucket_region | default('us-east-1') }}
+S3_USE_ACCELERATED_ENDPOINT={{ s3_use_accelerated_endpoint | default('false') }}
+S3_FORCE_PATH_STYLE={{ s3_force_path_style | default('false') }}
+S3_PRESIGNED_URL_EXPIRY={{ s3_presigned_url_expiry | default('3600') }}
+
+# CloudFront CDN (if configured)
+{% if cloudfront_domain is defined %}
+CLOUDFRONT_DOMAIN={{ cloudfront_domain }}
+{% endif %}
+
 # Optional: Additional configurations
 # NEXT_PUBLIC_API_URL=https://{{ domain_name }}{{ base_path }}

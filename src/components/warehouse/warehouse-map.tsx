@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin } from 'lucide-react'
+import { MapPin } from '@/lib/lucide-icons'
 
 interface Warehouse {
   id: string

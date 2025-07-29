@@ -10,7 +10,7 @@ import {
   BarChart3,
   ArrowRight,
   BookOpen
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 interface GuideStep {
   title: string

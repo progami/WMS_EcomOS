@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, Calendar, FileText, Package } from 'lucide-react'
+import { Download, Calendar, FileText, Package } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon } from '@/lib/lucide-icons'
 
 interface Warehouse {
   id: string

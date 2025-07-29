@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Calendar,
   FileSpreadsheet
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 interface FinSectionProps {
   data?: {
@@ -172,40 +172,6 @@ export function FinSection({ data, loading }: FinSectionProps) {
         </div>
       )}
 
-      {/* Financial Actions - Streamlined into compact row */}
-      <div className="border rounded-lg p-4">
-        <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
-        <div className="flex flex-wrap gap-2">
-          <Link 
-            href="/finance/invoices" 
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <FileText className="h-4 w-4 text-yellow-600" />
-            <span>Invoices</span>
-          </Link>
-          <Link 
-            href="/finance/reconciliation" 
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Calculator className="h-4 w-4 text-indigo-600" />
-            <span>Reconciliation</span>
-          </Link>
-          <Link 
-            href="/finance/storage-ledger" 
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <Calendar className="h-4 w-4 text-blue-600" />
-            <span>Storage Ledger</span>
-          </Link>
-          <Link 
-            href="/finance/cost-ledger" 
-            className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <FileSpreadsheet className="h-4 w-4 text-green-600" />
-            <span>Cost Ledger</span>
-          </Link>
-        </div>
-      </div>
     </div>
   )
 }

@@ -1,247 +1,206 @@
 import crypto from 'crypto';
-import { sanitizeFilename } from './input-sanitization';
 
-export interface FileValidationOptions {
+interface FileValidationOptions {
   maxSizeMB?: number;
-  allowedTypes?: string[];
   allowedMimeTypes?: string[];
-  scanForMacros?: boolean;
-  checkMagicNumbers?: boolean;
+  allowedExtensions?: string[];
 }
 
-const DEFAULT_OPTIONS: FileValidationOptions = {
-  maxSizeMB: 10,
-  allowedTypes: ['.xlsx', '.xls', '.csv'],
-  allowedMimeTypes: [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel',
-    'text/csv',
-    'application/csv'
-  ],
-  scanForMacros: true,
-  checkMagicNumbers: true
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+// Default allowed file types for different contexts
+const DEFAULT_ALLOWED_TYPES = {
+  document: {
+    mimeTypes: [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+    ],
+    extensions: ['pdf', 'jpg', 'jpeg', 'png', 'xlsx', 'xls', 'csv'],
+  },
+  image: {
+    mimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+    extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+  },
+  export: {
+    mimeTypes: [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/pdf',
+    ],
+    extensions: ['xlsx', 'xls', 'csv', 'pdf'],
+  },
 };
 
-// Magic numbers for file type detection
-const MAGIC_NUMBERS = {
-  xlsx: [0x50, 0x4B, 0x03, 0x04], // ZIP format (XLSX)
-  xls: [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1], // OLE format
-  csv: [], // Text file, no specific magic number
-  exe: [0x4D, 0x5A], // MZ header
-  script: [0x23, 0x21], // Shebang #!
-};
-
+/**
+ * Validate file before upload
+ */
 export async function validateFile(
-  file: File | Buffer,
-  filename: string,
+  file: File | { name: string; size: number; type: string },
+  context: string,
   options: FileValidationOptions = {}
-): Promise<{ valid: boolean; error?: string }> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  
-  // Sanitize filename
-  const cleanFilename = sanitizeFilename(filename);
-  if (cleanFilename !== filename) {
-    return { valid: false, error: 'Invalid filename' };
+): Promise<ValidationResult> {
+  // Determine context defaults
+  const contextDefaults = context.includes('export') 
+    ? DEFAULT_ALLOWED_TYPES.export
+    : context.includes('image')
+    ? DEFAULT_ALLOWED_TYPES.image
+    : DEFAULT_ALLOWED_TYPES.document;
+
+  const maxSizeMB = options.maxSizeMB || 10; // Default 10MB
+  const allowedMimeTypes = options.allowedMimeTypes || contextDefaults.mimeTypes;
+  const allowedExtensions = options.allowedExtensions || contextDefaults.extensions;
+
+  // Check file size
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    return {
+      valid: false,
+      error: `File size exceeds ${maxSizeMB}MB limit`,
+    };
   }
 
   // Check file extension
-  const ext = filename.toLowerCase().split('.').pop();
-  if (!ext || !opts.allowedTypes?.includes(`.${ext}`)) {
-    return { valid: false, error: 'Invalid file type' };
-  }
-
-  // Check file size
-  const size = file instanceof File ? file.size : file.length;
-  if (size > (opts.maxSizeMB! * 1024 * 1024)) {
-    return { valid: false, error: `File too large (max ${opts.maxSizeMB}MB)` };
+  const fileName = file.name.toLowerCase();
+  const extension = fileName.split('.').pop();
+  
+  if (!extension || !allowedExtensions.includes(extension)) {
+    return {
+      valid: false,
+      error: `File type .${extension} is not allowed. Allowed types: ${allowedExtensions.join(', ')}`,
+    };
   }
 
   // Check MIME type
-  if (file instanceof File && opts.allowedMimeTypes) {
-    if (!opts.allowedMimeTypes.includes(file.type)) {
-      return { valid: false, error: 'Invalid MIME type' };
+  if (!allowedMimeTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: `File MIME type ${file.type} is not allowed`,
+    };
+  }
+
+  // Additional security checks for file name
+  const securityIssues = checkFileNameSecurity(file.name);
+  if (securityIssues) {
+    return {
+      valid: false,
+      error: securityIssues,
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Check filename for security issues
+ */
+function checkFileNameSecurity(fileName: string): string | null {
+  // Check for path traversal attempts
+  if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+    return 'Invalid file name: contains path characters';
+  }
+
+  // Check for null bytes
+  if (fileName.includes('\0')) {
+    return 'Invalid file name: contains null bytes';
+  }
+
+  // Check for control characters
+  if (/[\x00-\x1f\x80-\x9f]/.test(fileName)) {
+    return 'Invalid file name: contains control characters';
+  }
+
+  // Check length
+  if (fileName.length > 255) {
+    return 'File name too long (max 255 characters)';
+  }
+
+  return null;
+}
+
+/**
+ * Generate secure filename
+ */
+export function generateSecureFilename(originalName: string): string {
+  // Extract extension
+  const extension = originalName.split('.').pop()?.toLowerCase() || '';
+  
+  // Generate timestamp and random hash
+  const timestamp = Date.now();
+  const hash = crypto.randomBytes(8).toString('hex');
+  
+  // Sanitize original name (remove extension and special chars)
+  const baseName = originalName
+    .replace(/\.[^/.]+$/, '') // Remove extension
+    .replace(/[^a-zA-Z0-9-_]/g, '_') // Replace special chars
+    .replace(/_{2,}/g, '_') // Replace multiple underscores
+    .replace(/^_+|_+$/g, '') // Trim underscores
+    .slice(0, 50); // Limit length
+
+  // Construct secure filename
+  return `${baseName}_${timestamp}_${hash}.${extension}`;
+}
+
+/**
+ * Check if file is likely malicious based on content
+ */
+export async function scanFileContent(
+  buffer: Buffer,
+  mimeType: string
+): Promise<ValidationResult> {
+  // Check for common malware signatures (basic implementation)
+  const malwareSignatures = [
+    Buffer.from('4D5A'), // PE executable
+    Buffer.from('7F454C46'), // ELF executable
+    Buffer.from('CAFEBABE'), // Java class file
+    Buffer.from('504B0304'), // ZIP (could be disguised executable)
+  ];
+
+  // Only check if not expected to be ZIP-based format
+  const zipBasedFormats = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+
+  if (!zipBasedFormats.includes(mimeType)) {
+    for (const signature of malwareSignatures) {
+      if (buffer.subarray(0, signature.length).equals(signature)) {
+        return {
+          valid: false,
+          error: 'File appears to contain executable code',
+        };
+      }
     }
   }
 
-  // Check magic numbers
-  if (opts.checkMagicNumbers) {
-    const buffer = file instanceof File 
-      ? Buffer.from(await file.arrayBuffer())
-      : file;
-    
-    if (!checkMagicNumbers(buffer, ext)) {
-      return { valid: false, error: 'File content does not match extension' };
-    }
-  }
-
-  // Check for macros in Excel files
-  if (opts.scanForMacros && (ext === 'xlsx' || ext === 'xlsm' || ext === 'xls')) {
-    const buffer = file instanceof File 
-      ? Buffer.from(await file.arrayBuffer())
-      : file;
-    
-    if (containsMacros(buffer)) {
-      return { valid: false, error: 'File contains macros' };
-    }
-  }
-
-  // Check for zip bombs
-  if (ext === 'xlsx') {
-    const buffer = file instanceof File 
-      ? Buffer.from(await file.arrayBuffer())
-      : file;
-    
-    if (await isZipBomb(buffer)) {
-      return { valid: false, error: 'Suspicious compression ratio detected' };
+  // Check for embedded scripts in PDFs
+  if (mimeType === 'application/pdf') {
+    const pdfContent = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
+    if (/<script|\/JavaScript|\/JS/i.test(pdfContent)) {
+      return {
+        valid: false,
+        error: 'PDF contains potentially malicious scripts',
+      };
     }
   }
 
   return { valid: true };
 }
 
-function checkMagicNumbers(buffer: Buffer, extension: string): boolean {
-  const expectedMagic = MAGIC_NUMBERS[extension as keyof typeof MAGIC_NUMBERS];
-  
-  if (!expectedMagic || expectedMagic.length === 0) {
-    return true; // No magic number to check (e.g., CSV)
-  }
-
-  // Check if file starts with expected magic number
-  for (let i = 0; i < expectedMagic.length; i++) {
-    if (buffer[i] !== expectedMagic[i]) {
-      // Special case: XLSX files are ZIP files
-      if (extension === 'xlsx') {
-        return checkMagicNumbers(buffer, 'zip');
-      }
-      return false;
-    }
-  }
-
-  // Check for executable magic numbers
-  const exeMagic = MAGIC_NUMBERS.exe;
-  const scriptMagic = MAGIC_NUMBERS.script;
-  
-  if (buffer.length >= exeMagic.length) {
-    const isExe = exeMagic.every((byte, i) => buffer[i] === byte);
-    if (isExe) return false;
-  }
-  
-  if (buffer.length >= scriptMagic.length) {
-    const isScript = scriptMagic.every((byte, i) => buffer[i] === byte);
-    if (isScript) return false;
-  }
-
-  return true;
+/**
+ * Get file type category
+ */
+export function getFileCategory(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType === 'text/csv') return 'spreadsheet';
+  if (mimeType.includes('word')) return 'document';
+  return 'other';
 }
-
-function containsMacros(buffer: Buffer): boolean {
-  // Check for VBA project signature
-  const vbaSignature = Buffer.from('vbaProject.bin');
-  if (buffer.includes(vbaSignature)) {
-    return true;
-  }
-
-  // Check for macro-enabled Excel signature
-  const macroSignatures = [
-    Buffer.from('Attribute VB_Name'),
-    Buffer.from('_VBA_PROJECT'),
-    Buffer.from('ThisWorkbook'),
-    Buffer.from('Sheet1')
-  ];
-
-  return macroSignatures.some(sig => buffer.includes(sig));
-}
-
-async function isZipBomb(buffer: Buffer): Promise<boolean> {
-  // Simple heuristic: Check compression ratio
-  // Real implementation would need to parse ZIP structure
-  
-  try {
-    // For XLSX files, check if it's suspiciously small
-    if (buffer.length < 1000) {
-      // Very small XLSX files might be zip bombs
-      return true;
-    }
-
-    // Check for repeated patterns that compress too well
-    const sample = buffer.slice(0, 1000);
-    const compressed = zlib.gzipSync(sample);
-    const ratio = sample.length / compressed.length;
-    
-    return ratio > 100; // Suspicious compression ratio
-  } catch {
-    return false;
-  }
-}
-
-export function generateSecureFilename(originalName: string): string {
-  const timestamp = Date.now();
-  const randomStr = crypto.randomBytes(8).toString('hex');
-  const ext = originalName.split('.').pop()?.toLowerCase() || '';
-  const baseName = originalName.split('.')[0].substring(0, 50); // Limit length
-  
-  const safeName = sanitizeFilename(baseName);
-  return `${safeName}_${timestamp}_${randomStr}.${ext}`;
-}
-
-export function detectPolyglot(buffer: Buffer): boolean {
-  // Check for multiple file format signatures
-  const signatures = [
-    { name: 'jpeg', magic: [0xFF, 0xD8, 0xFF] },
-    { name: 'png', magic: [0x89, 0x50, 0x4E, 0x47] },
-    { name: 'gif', magic: [0x47, 0x49, 0x46] },
-    { name: 'zip', magic: [0x50, 0x4B, 0x03, 0x04] },
-    { name: 'pdf', magic: [0x25, 0x50, 0x44, 0x46] }
-  ];
-
-  let matchCount = 0;
-  
-  for (const sig of signatures) {
-    // Check at different positions in the file
-    for (let offset = 0; offset < Math.min(buffer.length - sig.magic.length, 1000); offset++) {
-      const matches = sig.magic.every((byte, i) => buffer[offset + i] === byte);
-      if (matches) {
-        matchCount++;
-        if (matchCount > 1) {
-          return true; // Multiple format signatures found
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-export async function scanFileContent(
-  buffer: Buffer,
-  filename: string
-): Promise<{ safe: boolean; warnings: string[] }> {
-  const warnings: string[] = [];
-
-  // Check for suspicious patterns
-  const suspiciousPatterns = [
-    { pattern: /<script/i, message: 'Contains script tags' },
-    { pattern: /javascript:/i, message: 'Contains javascript protocol' },
-    { pattern: /vbscript:/i, message: 'Contains vbscript protocol' },
-    { pattern: /on\w+\s*=/i, message: 'Contains event handlers' },
-    { pattern: /eval\s*\(/i, message: 'Contains eval function' },
-    { pattern: /document\.write/i, message: 'Contains document.write' },
-    { pattern: /\.exe|\.bat|\.cmd|\.com|\.pif|\.scr/i, message: 'References executable files' }
-  ];
-
-  const text = buffer.toString('utf8', 0, Math.min(buffer.length, 10000));
-  
-  for (const { pattern, message } of suspiciousPatterns) {
-    if (pattern.test(text)) {
-      warnings.push(message);
-    }
-  }
-
-  return {
-    safe: warnings.length === 0,
-    warnings
-  };
-}
-
-// Import required at the top
-import * as zlib from 'zlib';

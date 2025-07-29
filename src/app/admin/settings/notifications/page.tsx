@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Mail, MessageSquare, Smartphone, Save } from 'lucide-react'
+import { Bell, Mail, MessageSquare, Smartphone, Save } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'

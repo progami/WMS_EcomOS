@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@/lib/lucide-icons'
 
 interface WorkflowStep {
   title: string

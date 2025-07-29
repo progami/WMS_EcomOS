@@ -234,13 +234,12 @@ describe('ErrorBoundary Component', () => {
         </ErrorBoundary>
       );
       
-      expect(mockFallback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(Error),
-          reset: expect.any(Function),
-        }),
-        expect.any(Object)
-      );
+      expect(mockFallback).toHaveBeenCalled();
+      const callArgs = mockFallback.mock.calls[0][0];
+      expect(callArgs).toHaveProperty('error');
+      expect(callArgs).toHaveProperty('reset');
+      expect(callArgs.error).toBeInstanceOf(Error);
+      expect(typeof callArgs.reset).toBe('function');
     });
   });
 

@@ -26,8 +26,19 @@ const port = process.env.PORT || '3002';
 
 console.log(`Starting Next.js dev server on port ${port}...`);
 
+// Get additional arguments passed to the script
+const extraArgs = process.argv.slice(2);
+
+// Check if --turbo flag is explicitly passed
+const useTurbo = extraArgs.includes('--turbo');
+
 // Run next dev with the specified port
-const child = spawn('npx', ['next', 'dev', '-p', port], {
+// Note: Temporarily disabled --turbo by default due to HMR issues with lucide-react
+const args = ['next', 'dev', '-p', port, ...extraArgs];
+if (!extraArgs.length) {
+  console.log('Note: Running without Turbopack. Use "npm run dev -- --turbo" to enable Turbopack.');
+}
+const child = spawn('npx', args, {
   stdio: 'inherit'
 });
 

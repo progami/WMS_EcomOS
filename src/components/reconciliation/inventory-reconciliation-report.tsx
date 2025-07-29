@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, XCircle, RefreshCw } from '@/lib/lucide-icons';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ReconciliationReport {

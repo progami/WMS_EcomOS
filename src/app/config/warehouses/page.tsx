@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit, Trash2, Building2, Package, Settings as SettingsIcon, Loader2, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Building2, Package, Settings as SettingsIcon, Loader2, MapPin } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { ImportButton } from '@/components/ui/import-button'

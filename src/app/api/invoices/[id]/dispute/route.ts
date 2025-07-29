@@ -7,9 +7,9 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // POST /api/invoices/[id]/dispute - Dispute an invoice or specific line items
@@ -23,7 +23,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const body = await request.json();
     const { 
       disputedLineItems, // Array of { reconciliationId, reason, suggestedAmount }
@@ -195,7 +195,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
 
     // Get invoice with reconciliations
     const invoice = await prisma.invoice.findUnique({

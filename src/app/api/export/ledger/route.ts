@@ -5,7 +5,9 @@ import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
 import { generateExportConfig, applyExportConfig } from '@/lib/dynamic-export'
 import { inventoryTransactionConfig } from '@/lib/export-configurations'
+import { getS3Service } from '@/services/s3.service'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60 // Allow up to 60 seconds for large exports
 
 export async function GET(request: NextRequest) {
   try {
@@ -191,12 +193,44 @@ export async function GET(request: NextRequest) {
         ? `inventory_ledger_full_export_${dateStr}.xlsx`
         : `inventory_ledger_${dateStr}.xlsx`
 
-    // Return file
-    return new NextResponse(buf, {
-      headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="${filename}"`
-      }
+    // Upload to S3 for temporary storage
+    const s3Service = getS3Service()
+    const s3Key = s3Service.generateKey(
+      { 
+        type: 'export-temp', 
+        userId: session.user.id, 
+        exportType: 'inventory-ledger' 
+      },
+      filename
+    )
+    
+    // Upload with 24 hour expiration
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24)
+    
+    await s3Service.uploadFile(buf, s3Key, {
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      metadata: {
+        exportType: 'inventory-ledger',
+        userId: session.user.id,
+        filename: filename,
+        viewMode: viewMode,
+      },
+      expiresAt: expiresAt,
+    })
+    
+    // Get presigned URL for download
+    const presignedUrl = await s3Service.getPresignedUrl(s3Key, 'get', {
+      responseContentDisposition: `attachment; filename="${filename}"`,
+      expiresIn: 3600, // 1 hour
+    })
+
+    // Return URL instead of file directly
+    return NextResponse.json({
+      success: true,
+      downloadUrl: presignedUrl,
+      filename: filename,
+      expiresIn: 3600,
     })
   } catch (error) {
     // console.error('Export error:', error)

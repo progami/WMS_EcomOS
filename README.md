@@ -21,7 +21,8 @@ npm install
 
 # Setup environment
 cp .env.example .env.local
-# Edit .env.local with your database credentials
+# Edit .env.local with your database and AWS S3 credentials
+# See docs/s3-configuration.md for S3 setup guide
 
 # Initialize database
 npm run db:push

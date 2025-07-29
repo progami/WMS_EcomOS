@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { validateFile, generateSecureFilename, scanFileContent } from '@/lib/security/file-upload';
+import { validateFile, scanFileContent } from '@/lib/security/file-upload';
 import { sanitizeForExcel } from '@/lib/security/input-sanitization';
 import { checkRateLimit, rateLimitConfigs } from '@/lib/security/rate-limiter';
 import * as XLSX from 'xlsx';
@@ -30,11 +30,9 @@ export async function POST(request: NextRequest) {
 
     // Validate file
     const buffer = Buffer.from(await file.arrayBuffer());
-    const validation = await validateFile(buffer, file.name, {
+    const validation = await validateFile(file, 'export', {
       maxSizeMB: 10,
-      allowedTypes: ALLOWED_TYPES,
-      scanForMacros: true,
-      checkMagicNumbers: true
+      allowedExtensions: ALLOWED_TYPES.map(t => t.slice(1))
     });
 
     if (!validation.valid) {
@@ -45,10 +43,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Additional content scanning
-    const contentScan = await scanFileContent(buffer, file.name);
-    if (!contentScan.safe) {
+    const contentScan = await scanFileContent(buffer, file.type);
+    if (!contentScan.valid) {
       return NextResponse.json(
-        { error: 'File contains suspicious content', warnings: contentScan.warnings },
+        { error: contentScan.error || 'File contains suspicious content' },
         { status: 400 }
       );
     }

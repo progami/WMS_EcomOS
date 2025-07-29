@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Beaker, Sparkles, Trash2, AlertTriangle } from 'lucide-react'
+import { Beaker, Sparkles, Trash2, AlertTriangle } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 
 interface DemoModeToggleProps {

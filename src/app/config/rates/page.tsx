@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { DollarSign, Plus, Edit2, Calendar, AlertCircle, Filter, X } from 'lucide-react'
+import { DollarSign, Plus, Edit2, Calendar, AlertCircle, Filter, X } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'react-hot-toast'

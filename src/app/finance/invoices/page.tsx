@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Download, FileText, Plus, Search, Eye, CreditCard, AlertCircle, Check, X, Loader2, Upload } from 'lucide-react'
+import { Download, FileText, Plus, Search, Eye, CreditCard, AlertCircle, Check, X, Loader2, Upload } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'

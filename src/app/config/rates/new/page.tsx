@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { DollarSign, Save, X, AlertCircle } from 'lucide-react'
+import { DollarSign, Save, X, AlertCircle } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 import { fetchWithCSRF } from '@/lib/fetch-with-csrf'
 
