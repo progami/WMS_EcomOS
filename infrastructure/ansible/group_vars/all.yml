@@ -32,7 +32,7 @@ ssl_key_path: "/etc/letsencrypt/live/targonglobal.com/privkey.pem"
 
 # AWS S3 Configuration
 # Note: S3 bucket name will be passed from Terraform outputs
-# s3_bucket_name: will be set dynamically
+s3_bucket_name: wms-production-459288913318
 s3_bucket_region: us-east-1
 s3_use_accelerated_endpoint: false
 s3_force_path_style: false

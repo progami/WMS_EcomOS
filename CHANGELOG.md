@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-07-29
+
+### Added
+- GitHub deployments integration for tracking deployment history
+- Production S3 configuration deployment via Ansible
+- PM2 ecosystem config updated with S3 environment variables
+
+### Fixed
+- Environment variable loading issue in PM2 - now properly configured in ecosystem.config.js
+- GitHub deployments API integration now properly tracks deployment status
+
+### Infrastructure
+- Successfully deployed S3 configuration to production environment
+- S3 bucket: wms-production-459288913318 (us-east-1)
+- IAM role-based authentication configured for EC2 instance
+
 ## [0.2.0] - 2025-07-29
 
 ### Added

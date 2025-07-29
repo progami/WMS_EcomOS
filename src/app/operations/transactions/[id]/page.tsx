@@ -17,6 +17,7 @@ import {
 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
+import { useS3Upload } from '@/hooks/use-s3-upload'
 
 interface Transaction {
   id: string
@@ -56,7 +57,9 @@ interface Attachment {
   name: string
   type: string
   size: number
-  data?: string
+  data?: string // For backward compatibility
+  s3Key?: string // S3 key for new uploads
+  s3Url?: string // Presigned URL for viewing
   category: string
 }
 
@@ -116,6 +119,20 @@ export default function TransactionDetailPage() {
     transactionCertificate: null,
     customDeclaration: null,
     proofOfPickup: null
+  })
+  
+  // S3 Upload hook
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({})
+  const [currentUploadCategory, setCurrentUploadCategory] = useState<string | null>(null)
+  const { uploadToS3, isUploading } = useS3Upload({
+    onProgress: (progress) => {
+      if (currentUploadCategory) {
+        setUploadProgress(prev => ({ ...prev, [currentUploadCategory]: progress.percentage }))
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
   })
 
   useEffect(() => {
@@ -216,20 +233,39 @@ export default function TransactionDetailPage() {
       return
     }
     
-    const reader = new FileReader()
-    reader.onload = () => {
-      const attachment: Attachment = {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        data: reader.result as string,
-        category
-      }
+    // Show upload progress for this category
+    setUploadProgress(prev => ({ ...prev, [category]: 0 }))
+    setCurrentUploadCategory(category)
+    
+    try {
+      // Upload to S3
+      const result = await uploadToS3(file, {
+        type: 'transaction',
+        transactionId: params.id as string,
+        documentType: category
+      })
       
-      setAttachments(prev => ({ ...prev, [category]: attachment }))
-      toast.success(`${getCategoryLabel(category)} uploaded`)
+      if (result) {
+        const attachment: Attachment = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          s3Key: result.s3Key,
+          s3Url: result.viewUrl,
+          category
+        }
+        
+        setAttachments(prev => ({ ...prev, [category]: attachment }))
+        toast.success(`${getCategoryLabel(category)} uploaded`)
+      }
+    } finally {
+      // Clear progress
+      setUploadProgress(prev => {
+        const newProgress = { ...prev }
+        delete newProgress[category]
+        return newProgress
+      })
     }
-    reader.readAsDataURL(file)
   }
 
   const getCategoryLabel = (category: string): string => {
@@ -778,6 +814,7 @@ export default function TransactionDetailPage() {
                     onUpload={handleFileUpload}
                     onRemove={() => setAttachments(prev => ({ ...prev, commercialInvoice: null }))}
                     disabled={!editMode}
+                    uploadProgress={uploadProgress.commercialInvoice}
                   />
                   <AttachmentField
                     label="Bill of Lading"
@@ -786,6 +823,7 @@ export default function TransactionDetailPage() {
                     onUpload={handleFileUpload}
                     onRemove={() => setAttachments(prev => ({ ...prev, billOfLading: null }))}
                     disabled={!editMode}
+                    uploadProgress={uploadProgress.billOfLading}
                   />
                   <AttachmentField
                     label="Packing List"
@@ -794,6 +832,7 @@ export default function TransactionDetailPage() {
                     onUpload={handleFileUpload}
                     onRemove={() => setAttachments(prev => ({ ...prev, packingList: null }))}
                     disabled={!editMode}
+                    uploadProgress={uploadProgress.packingList}
                   />
                   <AttachmentField
                     label="Delivery Note"
@@ -802,6 +841,7 @@ export default function TransactionDetailPage() {
                     onUpload={handleFileUpload}
                     onRemove={() => setAttachments(prev => ({ ...prev, deliveryNote: null }))}
                     disabled={!editMode}
+                    uploadProgress={uploadProgress.deliveryNote}
                   />
                   <AttachmentField
                     label="Cube Master Stacking Style for Storage Pallets"
@@ -811,6 +851,7 @@ export default function TransactionDetailPage() {
                     onRemove={() => setAttachments(prev => ({ ...prev, cubeMaster: null }))}
                     disabled={!editMode}
                     bgColor="bg-blue-50"
+                    uploadProgress={uploadProgress.cubeMaster}
                   />
                   <AttachmentField
                     label="Transaction Certificate (TC) GRS"
@@ -820,6 +861,7 @@ export default function TransactionDetailPage() {
                     onRemove={() => setAttachments(prev => ({ ...prev, transactionCertificate: null }))}
                     disabled={!editMode}
                     bgColor="bg-green-50"
+                    uploadProgress={uploadProgress.transactionCertificate}
                   />
                   <AttachmentField
                     label="Custom Declaration Document (CDS)"
@@ -829,6 +871,7 @@ export default function TransactionDetailPage() {
                     onRemove={() => setAttachments(prev => ({ ...prev, customDeclaration: null }))}
                     disabled={!editMode}
                     bgColor="bg-yellow-50"
+                    uploadProgress={uploadProgress.customDeclaration}
                   />
                 </>
               )}
@@ -841,6 +884,7 @@ export default function TransactionDetailPage() {
                   onUpload={handleFileUpload}
                   onRemove={() => setAttachments(prev => ({ ...prev, proofOfPickup: null }))}
                   disabled={!editMode}
+                  uploadProgress={uploadProgress.proofOfPickup}
                 />
               )}
             </div>
@@ -921,7 +965,8 @@ function AttachmentField({
   onUpload, 
   onRemove, 
   disabled,
-  bgColor = 'bg-gray-50'
+  bgColor = 'bg-gray-50',
+  uploadProgress
 }: {
   label: string
   category: string
@@ -930,6 +975,7 @@ function AttachmentField({
   onRemove: () => void
   disabled: boolean
   bgColor?: string
+  uploadProgress?: number
 }) {
   return (
     <div className={`border rounded-lg p-4 ${bgColor}`}>
@@ -960,18 +1006,33 @@ function AttachmentField({
         </div>
       ) : (
         !disabled && (
-          <label className="cursor-pointer">
-            <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-              <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-              <p className="text-xs text-gray-600">Click to upload</p>
+          uploadProgress !== undefined ? (
+            <div className="border-2 border-blue-300 rounded p-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                <span className="text-xs text-blue-600">Uploading...</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="bg-blue-600 h-1.5 rounded-full transition-all"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
             </div>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-              onChange={(e) => onUpload(e, category)}
-              className="hidden"
-            />
-          </label>
+          ) : (
+            <label className="cursor-pointer">
+              <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
+                <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-600">Click to upload</p>
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                onChange={(e) => onUpload(e, category)}
+                className="hidden"
+              />
+            </label>
+          )
         )
       )}
     </div>
