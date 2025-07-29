@@ -192,8 +192,8 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     // Wait for charts to render
     await page.waitForSelector('.recharts-responsive-container', { timeout: 10000 })
     
-    // Check if inventory trend chart is displayed
-    await expect(page.locator('text="Inventory Levels Trend"')).toBeVisible()
+    // Check if inventory chart section is displayed
+    await expect(page.locator('h2:has-text("Inventory Levels")')).toBeVisible()
     
     // Check date range selector
     const dateRangeButton = page.locator('button:has-text("Year to Date")')
