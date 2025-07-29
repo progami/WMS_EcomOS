@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileText, FileSpreadsheet, File } from 'lucide-react'
+import { Download, FileText, FileSpreadsheet, File } from '@/lib/lucide-icons'
 
 interface ExportButtonProps {
   endpoint: string

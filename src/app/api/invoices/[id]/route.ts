@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 // GET /api/invoices/[id] - Get invoice details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,8 +17,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const invoice = await prisma.invoice.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         warehouse: {
           select: {
@@ -106,7 +107,7 @@ export async function GET(
 // PUT /api/invoices/[id] - Update invoice
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -114,6 +115,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await req.json()
     
     // Extract version for optimistic locking
@@ -123,7 +125,7 @@ export async function PUT(
     
     // Validate that invoice exists
     const existingInvoice = await prisma.invoice.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     if (!existingInvoice) {
@@ -170,7 +172,7 @@ export async function PUT(
     try {
       const updatedInvoice = await prisma.invoice.update({
         where: { 
-          id: params.id,
+          id: id,
           // Add version check in the WHERE clause for atomic operation
           ...(clientVersion ? {
             updatedAt: new Date(clientVersion)
@@ -199,7 +201,7 @@ export async function PUT(
     await prisma.auditLog.create({
       data: {
         tableName: 'invoices',
-        recordId: params.id,
+        recordId: id,
         action: 'UPDATE',
         changes: {
           before: {
@@ -242,9 +244,10 @@ export async function PUT(
 // DELETE /api/invoices/[id] - Delete invoice
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session || !['admin', 'staff'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -252,7 +255,7 @@ export async function DELETE(
 
     // Check if invoice exists and can be deleted
     const invoice = await prisma.invoice.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     if (!invoice) {
@@ -279,14 +282,14 @@ export async function DELETE(
 
     // Delete invoice (cascade will handle line items and reconciliations)
     await prisma.invoice.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     // Log the deletion
     await prisma.auditLog.create({
       data: {
         tableName: 'invoices',
-        recordId: params.id,
+        recordId: id,
         action: 'DELETE',
         changes: {
           deletedInvoice: {

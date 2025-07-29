@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Download } from 'lucide-react'
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Download } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 import { getImportConfig } from '@/lib/import-config'
 import { Button } from '@/components/ui/button'

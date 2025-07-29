@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from '@/lib/lucide-icons'
 
 export default function UnauthorizedPage() {
   return (

@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon } from '@/lib/lucide-icons'
 
 interface SectionHeaderProps {
   title: string

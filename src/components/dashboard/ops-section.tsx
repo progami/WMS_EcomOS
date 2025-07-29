@@ -7,7 +7,7 @@ import {
   Warehouse,
   TrendingUp,
   TrendingDown
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { format } from 'date-fns'
 import {
   BarChart,

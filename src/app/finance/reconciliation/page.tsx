@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calculator, AlertCircle, CheckCircle, XCircle, FileText, Save, MessageSquare, Loader2, Upload, ChevronDown, ChevronRight } from 'lucide-react'
+import { Calculator, AlertCircle, CheckCircle, XCircle, FileText, Save, MessageSquare, Loader2, Upload, ChevronDown, ChevronRight } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'

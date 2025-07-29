@@ -8,7 +8,7 @@ import {
   FileText,
   Warehouse,
   ArrowRight
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 const configModules = [
   {

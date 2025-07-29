@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package2, Plus, Save, X, AlertCircle, Upload, FileText, Loader2 } from 'lucide-react'
+import { Package2, Plus, Save, X, AlertCircle, Upload, FileText, Loader2 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'

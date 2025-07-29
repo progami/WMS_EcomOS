@@ -1,6 +1,6 @@
 'use client'
 
-import { Package, BookOpen, Calendar } from 'lucide-react'
+import { Package, BookOpen, Calendar } from '@/lib/lucide-icons'
 
 interface InventoryTabsProps {
   activeTab: 'balances' | 'transactions'

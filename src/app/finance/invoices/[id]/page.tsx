@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Download, Edit, Trash2, AlertCircle, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react'
+import { ArrowLeft, Download, Edit, Trash2, AlertCircle, CheckCircle, XCircle, Clock, DollarSign } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import Link from 'next/link'
 
@@ -65,20 +65,27 @@ interface Summary {
   totalDifference: number
 }
 
-export default function InvoiceDetailPage({ params }: { params: { id: string } }) {
+export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'details' | 'reconciliation'>('details')
+  const [id, setId] = useState<string>('')
 
   useEffect(() => {
-    fetchInvoice()
-  }, [params.id])
+    params.then(p => setId(p.id))
+  }, [params])
+
+  useEffect(() => {
+    if (id) {
+      fetchInvoice()
+    }
+  }, [id])
 
   const fetchInvoice = async () => {
     try {
-      const response = await fetch(`/api/invoices/${params.id}`)
+      const response = await fetch(`/api/invoices/${id}`)
       if (!response.ok) throw new Error('Failed to fetch invoice')
       
       const data = await response.json()
@@ -97,7 +104,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     if (!confirm(`Update invoice status to ${newStatus}?`)) return
 
     try {
-      const response = await fetch(`/api/invoices/${params.id}`, {
+      const response = await fetch(`/api/invoices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -121,7 +128,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     if (!paymentReference) return
 
     try {
-      const response = await fetch(`/api/invoices/${params.id}/accept`, {
+      const response = await fetch(`/api/invoices/${id}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -151,7 +158,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     if (!reason) return
 
     try {
-      const response = await fetch(`/api/invoices/${params.id}/dispute`, {
+      const response = await fetch(`/api/invoices/${id}/dispute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -179,7 +186,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     if (!confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) return
 
     try {
-      const response = await fetch(`/api/invoices/${params.id}`, {
+      const response = await fetch(`/api/invoices/${id}`, {
         method: 'DELETE'
       })
 
@@ -198,7 +205,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
   const handleExport = async () => {
     try {
-      const response = await fetch(`/api/export?type=invoices&invoiceId=${params.id}`)
+      const response = await fetch(`/api/export?type=invoices&invoiceId=${id}`)
       if (!response.ok) throw new Error('Export failed')
       
       const blob = await response.blob()
@@ -329,7 +336,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             {invoice.status !== 'paid' && (
               <>
                 <Link
-                  href={`/finance/invoices/${params.id}/edit`}
+                  href={`/finance/invoices/${id}/edit`}
                   className="secondary-button"
                 >
                   <Edit className="h-4 w-4 mr-2" />

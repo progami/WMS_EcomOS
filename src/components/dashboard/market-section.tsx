@@ -8,7 +8,7 @@ import {
   ArrowRight,
   AlertTriangle,
   Calendar
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import {
   AreaChart,
   ResponsiveContainer,

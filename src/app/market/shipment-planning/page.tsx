@@ -7,8 +7,8 @@ import {
   Package, TrendingUp, Truck, Mail, Calendar, AlertCircle, 
   RefreshCw, ChevronRight, Clock, Building, BarChart3,
   ArrowUp, ArrowDown, Send, FileText, Check, X, Search,
-  ShoppingCart, Settings, Link as LinkIcon
-} from 'lucide-react'
+  ShoppingCart, Settings, Link2 as LinkIcon
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { toast } from 'react-hot-toast'

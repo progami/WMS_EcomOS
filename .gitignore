@@ -257,3 +257,6 @@ e2e-results/
 playwright-report/
 playwright-results.xml
 test-results/
+tests/performance-results.xml
+tests/test-results.json
+tests/screenshots/

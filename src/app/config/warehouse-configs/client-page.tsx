@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Building, Package2, Settings, AlertCircle, Edit, Plus } from 'lucide-react'
+import { Building, Package2, Settings, AlertCircle, Edit, Plus } from '@/lib/lucide-icons'
 import { PageHeader } from '@/components/ui/page-header'
 import { ImportButton } from '@/components/ui/import-button'
 import { useRouter } from 'next/navigation'

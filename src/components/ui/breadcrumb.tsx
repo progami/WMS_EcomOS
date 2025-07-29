@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Home } from 'lucide-react'
+import { ChevronRight, Home } from '@/lib/lucide-icons'
 import { useSession } from 'next-auth/react'
 
 export function Breadcrumb() {

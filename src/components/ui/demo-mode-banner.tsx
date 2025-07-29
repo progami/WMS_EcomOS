@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Info, Trash2, Sparkles } from 'lucide-react'
+import { X, Info, Trash2, Sparkles } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 

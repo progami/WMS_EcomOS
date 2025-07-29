@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Calendar,
   FileSpreadsheet
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 interface FinSectionProps {
   data?: {

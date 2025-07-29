@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Building, Globe, Clock, Save } from 'lucide-react'
+import { Building, Globe, Clock, Save } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
 

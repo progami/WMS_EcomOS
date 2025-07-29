@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
+import { AlertTriangle, RefreshCw, Home } from '@/lib/lucide-icons'
 import Link from 'next/link'
 
 export default function Error({

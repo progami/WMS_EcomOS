@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Plus, Trash2, Save, Calculator } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, Calculator } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import Link from 'next/link'
 

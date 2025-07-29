@@ -6,9 +6,9 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // POST /api/invoices/[id]/accept - Accept an invoice and mark for payment
@@ -22,7 +22,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const invoiceId = params.id;
+    const { id: invoiceId } = await params;
     const body = await request.json();
     const { 
       paymentMethod, 

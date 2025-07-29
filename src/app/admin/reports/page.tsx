@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { TrendingUp, DollarSign, FileText, Package } from 'lucide-react'
+import { TrendingUp, DollarSign, FileText, Package } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { AdminReportsClient } from './client-page'
 import { prisma } from '@/lib/prisma'

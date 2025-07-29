@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { HelpCircle, Info } from 'lucide-react'
+import { HelpCircle, Info } from '@/lib/lucide-icons'
 
 interface TooltipProps {
   content: string

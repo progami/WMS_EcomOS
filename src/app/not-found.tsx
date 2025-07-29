@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
-import { AlertCircle, ArrowLeft, Home } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Home } from '@/lib/lucide-icons'
 
 export default function NotFound() {
   return (

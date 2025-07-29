@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Building2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Building2, Loader2 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import Link from 'next/link'
 
@@ -18,7 +18,7 @@ interface Warehouse {
   isActive: boolean
 }
 
-export default function EditWarehousePage({ params }: { params: { id: string } }) {
+export default function EditWarehousePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -34,10 +34,17 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
     isActive: true
   })
   const [errors, setErrors] = useState<any>({})
+  const [id, setId] = useState<string>('')
 
   useEffect(() => {
-    fetchWarehouse()
-  }, [params.id])
+    params.then(p => setId(p.id))
+  }, [params])
+
+  useEffect(() => {
+    if (id) {
+      fetchWarehouse()
+    }
+  }, [id])
 
   const fetchWarehouse = async () => {
     try {
@@ -45,7 +52,7 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
       if (!response.ok) throw new Error('Failed to fetch warehouses')
       
       const warehouses = await response.json()
-      const warehouse = warehouses.find((w: Warehouse) => w.id === params.id)
+      const warehouse = warehouses.find((w: Warehouse) => w.id === id)
       
       if (warehouse) {
         setWarehouse(warehouse)
@@ -123,7 +130,7 @@ export default function EditWarehousePage({ params }: { params: { id: string } }
         updateData.code = formData.code.toUpperCase()
       }
 
-      const response = await fetch(`/api/warehouses?id=${params.id}`, {
+      const response = await fetch(`/api/warehouses?id=${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)

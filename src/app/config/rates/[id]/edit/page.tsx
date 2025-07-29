@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { DollarSign, Save, X, Calendar, AlertCircle } from 'lucide-react'
+import { DollarSign, Save, X, Calendar, AlertCircle } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 
 interface CostRate {

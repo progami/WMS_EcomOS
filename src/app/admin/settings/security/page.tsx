@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, Lock, Key, UserX, AlertTriangle, Save, Eye, EyeOff } from 'lucide-react'
+import { Shield, Lock, Key, UserX, AlertTriangle, Save, Eye, EyeOff } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'

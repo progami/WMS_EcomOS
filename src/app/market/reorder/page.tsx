@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { Construction, Bell, AlertTriangle } from 'lucide-react'
+import { Construction, Bell, AlertTriangle } from '@/lib/lucide-icons'
 
 export default async function ReorderAlertsPage() {
   const session = await getServerSession(authOptions)

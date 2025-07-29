@@ -1,6 +1,6 @@
 // Dashboard sub-components to reduce main component size
 import { ReactNode } from 'react'
-import { LucideIcon } from 'lucide-react'
+import { LucideIcon } from '@/lib/lucide-icons'
 
 // Export the component interfaces for reuse
 export interface EnhancedDashboardCardProps {

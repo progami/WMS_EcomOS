@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session) {
@@ -28,7 +29,7 @@ export async function POST(
 
     // Get the transaction
     const transaction = await prisma.inventoryTransaction.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!transaction) {
@@ -36,7 +37,7 @@ export async function POST(
     }
 
     // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'uploads', 'transactions', params.id)
+    const uploadDir = join(process.cwd(), 'uploads', 'transactions', id)
     await mkdir(uploadDir, { recursive: true })
 
     // Save the file
@@ -60,7 +61,7 @@ export async function POST(
     }
 
     await prisma.inventoryTransaction.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         attachments: updatedAttachments
       }
@@ -81,9 +82,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session) {
@@ -91,7 +93,7 @@ export async function GET(
     }
 
     const transaction = await prisma.inventoryTransaction.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         attachments: true
       }

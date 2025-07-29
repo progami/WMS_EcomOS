@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Calendar,
   ChevronDown
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { DemoWelcome } from '@/components/ui/demo-welcome'
 import { SectionHeader } from '@/components/dashboard/section-header'

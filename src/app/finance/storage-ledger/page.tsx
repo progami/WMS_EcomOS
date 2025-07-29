@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Search, Filter, Download, Calendar, DollarSign } from 'lucide-react'
+import { Search, Filter, Download, Calendar, DollarSign } from '@/lib/lucide-icons'
 import { toast } from 'react-hot-toast'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'

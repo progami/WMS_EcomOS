@@ -15,7 +15,7 @@ import {
   Shield,
   Zap,
   Users
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 
 export default function LandingPage() {
   const router = useRouter()

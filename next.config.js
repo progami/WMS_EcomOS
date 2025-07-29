@@ -8,12 +8,17 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Note: This config supports both Webpack (for production builds) and Turbopack (for development).
+  // The webpack configuration below is ignored when using Turbopack (--turbo flag).
   // Base path configuration - set BASE_PATH env var if needed
   basePath: process.env.BASE_PATH || '',
   assetPrefix: process.env.BASE_PATH || '',
   
+  // Fix for Next.js 15 module resolution and HMR issues
+  transpilePackages: ['lucide-react'],
+  
+  
   // Production optimizations
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
   
@@ -88,8 +93,9 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   },
   
-  // Webpack configuration
-  webpack: (config, { isServer }) => {
+  // Webpack configuration (for production builds)
+  // Turbopack ignores this configuration when running with --turbo
+  webpack: (config, { isServer, dev }) => {
     // Enable webpack stats for bundle analysis
     if (process.env.ANALYZE === 'true') {
       config.stats = 'verbose'
@@ -100,15 +106,38 @@ const nextConfig = {
         console.log('You can also install @next/bundle-analyzer for detailed analysis\n')
       }
     }
+    
+    // Fix for Next.js 15 webpack error with Link component and lucide-react
+    if (!isServer && dev) {
+      config.optimization = {
+        ...config.optimization,
+        concatenateModules: false,
+        // Ensure modules are not being incorrectly tree-shaken
+        usedExports: false,
+        // Keep module ids stable
+        moduleIds: 'named',
+        chunkIds: 'named',
+      }
+      
+      // Add rule to handle lucide-react ESM modules
+      config.module.rules.push({
+        test: /lucide-react/,
+        sideEffects: false,
+      })
+    }
+    
     return config
   },
+  
   
   // Enable experimental features for production optimization
   experimental: {
     // optimizeCss: true, // Disabled to avoid critters dependency issue
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', '@radix-ui/react-icons', '@radix-ui/react-dialog', '@radix-ui/react-select'],
-    serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
   },
+  
+  // Server external packages (moved from experimental in Next.js 15)
+  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   
   // Additional production optimizations
   compiler: {

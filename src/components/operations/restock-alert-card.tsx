@@ -2,7 +2,7 @@ import React from 'react'
 import { 
   AlertCircle, Package, TrendingUp, Clock, 
   Truck, ArrowRight, Info, Calculator
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { Tooltip } from '@/components/ui/tooltip'
 
 interface RestockAlertCardProps {

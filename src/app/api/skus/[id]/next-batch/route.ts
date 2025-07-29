@@ -6,9 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(
       )
     }
 
-    const skuCode = params.id // Using id parameter but it contains skuCode
+    const skuCode = id // Using id parameter but it contains skuCode
     
     // Get the SKU
     const sku = await prisma.sku.findFirst({

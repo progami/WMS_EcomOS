@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from '@/lib/lucide-icons'
 
 const errorMessages: Record<string, string> = {
   Configuration: 'There is a problem with the server configuration.',

@@ -14,7 +14,7 @@ import {
   Download,
   TrendingUp,
   TrendingDown
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'

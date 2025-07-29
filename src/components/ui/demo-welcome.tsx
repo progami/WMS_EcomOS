@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Sparkles, CheckCircle2, Info } from 'lucide-react'
+import { X, Sparkles, CheckCircle2, Info } from '@/lib/lucide-icons'
 
 export function DemoWelcome() {
   const [isVisible, setIsVisible] = useState(false)

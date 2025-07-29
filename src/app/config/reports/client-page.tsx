@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Package } from 'lucide-react'
+import { FileText, Package } from '@/lib/lucide-icons'
 import { ReportGenerator } from '@/components/reports/report-generator'
 
 export function AdminReportsClient() {

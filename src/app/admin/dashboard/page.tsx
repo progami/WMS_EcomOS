@@ -28,7 +28,7 @@ import {
   Zap,
   FileSpreadsheet,
   TrendingDown
-} from 'lucide-react'
+} from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { DemoWelcome } from '@/components/ui/demo-welcome'

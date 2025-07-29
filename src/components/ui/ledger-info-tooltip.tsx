@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react'
+import { Info } from '@/lib/lucide-icons'
 import { Tooltip } from './tooltip'
 
 export function LedgerInfoTooltip() {

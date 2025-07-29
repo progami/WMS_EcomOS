@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { FileText, Download, DollarSign, TrendingUp, Package2, Calendar } from 'lucide-react'
+import { FileText, Download, DollarSign, TrendingUp, Package2, Calendar } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 
 export default async function FinanceReportsPage() {

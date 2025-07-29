@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check, Send } from 'lucide-react'
+import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check, Send } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'

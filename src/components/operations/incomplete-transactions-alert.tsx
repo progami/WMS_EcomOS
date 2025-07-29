@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AlertCircle, Upload, X } from 'lucide-react';
+import { AlertCircle, Upload, X } from '@/lib/lucide-icons';
 
 interface IncompleteTransaction {
   id: string;
