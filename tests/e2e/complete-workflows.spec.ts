@@ -423,7 +423,7 @@ test.describe('Complete User Workflows', () => {
       await loginAsAdmin(page);
       
       const navigationTests = [
-        { menu: 'Dashboard', url: '/admin/dashboard', title: 'Admin Dashboard' },
+        { menu: 'Settings', url: '/admin/settings', title: 'System Settings' },
         { menu: 'Inventory', url: '/admin/inventory', title: 'Inventory Management' },
         { menu: 'Reports', url: '/admin/reports', title: 'Reports' },
         { menu: 'Users', url: '/admin/users', title: 'User Management' },
@@ -475,7 +475,6 @@ test.describe('Complete User Workflows', () => {
       
       // Try to access admin pages directly
       const adminPages = [
-        '/admin/dashboard',
         '/admin/users',
         '/admin/settings',
         '/admin/reports'

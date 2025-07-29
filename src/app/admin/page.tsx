@@ -9,6 +9,6 @@ export default async function AdminPage() {
     redirect('/unauthorized')
   }
   
-  // Redirect to admin dashboard by default
-  redirect('/admin/dashboard')
+  // Redirect to admin settings by default
+  redirect('/admin/settings')
 }

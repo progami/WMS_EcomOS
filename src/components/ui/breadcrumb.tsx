@@ -62,7 +62,7 @@ export function Breadcrumb() {
   })
 
   // Determine home link based on user role
-  const homeLink = session?.user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
+  const homeLink = '/dashboard'
 
   return (
     <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-4">

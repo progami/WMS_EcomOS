@@ -375,46 +375,8 @@ describe('Dashboard and Reports API Endpoints', () => {
     })
   })
 
-  describe('GET /api/admin/dashboard', () => {
-    it('should return admin dashboard data for admin users', async () => {
-      // Create test users
-      await createTestUser(prisma, 'staff')
-      await createTestUser(prisma, 'staff')
-      await createTestUser(prisma, 'staff')
-
-      // Create audit logs
-      await prisma.auditLog.create({
-        data: {
-          userId: adminUser.id,
-          action: 'CREATE',
-          tableName: 'skus',
-          recordId: 'test-sku-id',
-          changes: { created: true }
-        }
-      })
-
-      const response = await request
-        .get('/api/admin/dashboard')
-        .withAuth('admin', adminUser.id)
-
-      expect(response.status).toBe(200)
-      expect(response.body).toHaveProperty('userStats')
-      expect(response.body.userStats).toHaveProperty('totalUsers')
-      expect(response.body.userStats).toHaveProperty('activeUsers')
-      expect(response.body.userStats).toHaveProperty('usersByRole')
-      expect(response.body).toHaveProperty('systemHealth')
-      expect(response.body).toHaveProperty('recentActivity')
-    })
-
-    it('should return 403 for non-admin users', async () => {
-      const response = await request
-        .get('/api/admin/dashboard')
-        .withAuth('staff', regularUser.id)
-
-      expect(response.status).toBe(403)
-      expect(response.body).toHaveProperty('error', 'Forbidden')
-    })
-  })
+  // Admin dashboard tests removed - admin dashboard page no longer exists
+  // Admin users should use /admin/settings instead
 
   describe('GET /api/finance/reports', () => {
     it.skip('should generate cost analysis report - skipped: costLedger model not in schema', async () => {

@@ -314,7 +314,6 @@ test.describe('User Workflow Tests with Demo Data', () => {
     
     // Check if we have admin access by trying to navigate to admin pages
     const adminPages = [
-      '/admin/dashboard',
       '/admin/users',
       '/admin/settings'
     ];
