@@ -1,0 +1,45 @@
+---
+- name: Update WMS Environment File
+  hosts: wms_servers
+  become: yes
+  vars:
+    app_user: wms
+    app_dir: /home/wms
+  vars_files:
+    - group_vars/all.yml
+  
+  tasks:
+    - name: Backup current .env file
+      copy:
+        src: "{{ app_dir }}/app/.env"
+        dest: "{{ app_dir }}/app/.env.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+      become_user: "{{ app_user }}"
+
+    - name: Update .env file with S3 configuration
+      lineinfile:
+        path: "{{ app_dir }}/app/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: no
+      loop:
+        - { key: "S3_BUCKET_NAME", value: "{{ s3_bucket_name }}" }
+        - { key: "S3_BUCKET_REGION", value: "{{ s3_bucket_region }}" }
+      when: s3_bucket_name is defined
+      become_user: "{{ app_user }}"
+
+    - name: Restart application
+      command: pm2 restart wms-app
+      become_user: "{{ app_user }}"
+      
+    - name: Check application status
+      command: pm2 list
+      become_user: "{{ app_user }}"
+      register: pm2_status
+
+    - name: Display application status
+      debug:
+        var: pm2_status.stdout_lines
