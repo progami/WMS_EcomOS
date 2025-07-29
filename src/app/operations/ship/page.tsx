@@ -7,6 +7,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
+import { useS3Upload } from '@/hooks/use-s3-upload'
 
 interface Sku {
   id: string
@@ -47,13 +48,17 @@ interface Attachment {
   name: string
   type: string
   size: number
-  data?: string
+  data?: string // For backward compatibility
+  s3Key?: string // S3 key for new uploads
+  s3Url?: string // Presigned URL for viewing
   category: 'proof_of_pickup' | 'other'
+  isUploading?: boolean // Flag to show uploading state
 }
 
 export default function WarehouseShipPage() {
   const router = useRouter()
   const { data: session } = useSession()
+  const { uploadToS3, isUploading: uploadInProgress, progress } = useS3Upload()
   const [loading, setLoading] = useState(false)
   const [skus, setSkus] = useState<Sku[]>([])
   const [skuLoading, setSkuLoading] = useState(true)
@@ -91,27 +96,68 @@ export default function WarehouseShipPage() {
       return
     }
     
-    // Convert to base64
-    const reader = new FileReader()
-    reader.onload = () => {
+    // Create temporary attachment object to show it's uploading
+    const tempAttachment: Attachment = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      category,
+      isUploading: true
+    }
+    
+    // Update specific attachment state to show uploading
+    if (category === 'proof_of_pickup') {
+      setProofOfPickupAttachment(tempAttachment)
+    } else {
+      setAttachments([...attachments, tempAttachment])
+    }
+    
+    try {
+      // Upload to S3 - we'll use a temporary transaction ID
+      const tempTransactionId = `ship-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      const result = await uploadToS3(file, {
+        type: 'transaction',
+        transactionId: tempTransactionId,
+        documentType: category
+      })
+      
+      if (!result) {
+        throw new Error('Upload failed')
+      }
+      
       const attachment: Attachment = {
         name: file.name,
         type: file.type,
         size: file.size,
-        data: reader.result as string,
+        s3Key: result.key,
+        s3Url: result.url,
         category
       }
       
-      // Update specific attachment state
+      // Update specific attachment state with S3 info
       if (category === 'proof_of_pickup') {
         setProofOfPickupAttachment(attachment)
       } else {
-        setAttachments([...attachments, attachment])
+        // For 'other' attachments, we need to update the array
+        setAttachments(prev => {
+          const filtered = prev.filter(a => a.name !== file.name || !a.isUploading)
+          return [...filtered, attachment]
+        })
       }
       
       toast.success(`${category === 'proof_of_pickup' ? 'Proof of Pickup' : 'Document'} uploaded`)
+    } catch (error) {
+      console.error('Upload error:', error)
+      
+      // Remove the uploading attachment on error
+      if (category === 'proof_of_pickup') {
+        setProofOfPickupAttachment(null)
+      } else {
+        setAttachments(prev => prev.filter(a => a.name !== file.name || !a.isUploading))
+      }
+      
+      toast.error(`Failed to upload ${file.name}`)
     }
-    reader.readAsDataURL(file)
   }
 
   const removeProofOfPickupAttachment = () => {
