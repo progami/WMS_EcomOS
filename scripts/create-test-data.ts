@@ -65,9 +65,9 @@ async function createTestData() {
       systemUser = await prisma.user.create({
         data: {
           email: 'system@warehouse.com',
-          name: 'System User',
+          fullName: 'System User',
           passwordHash: passwordHash,
-          role: 'ADMIN',
+          role: 'admin',
           warehouseId: warehouse.id,
           isActive: true,
         }
