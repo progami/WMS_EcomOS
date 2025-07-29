@@ -174,7 +174,7 @@ export default function AdminSettingsPage() {
         <div className="border rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4">System Information</h3>
           <div className="grid gap-4 md:grid-cols-2">
-            <InfoItem label="Version" value="0.2.0" />
+            <InfoItem label="Version" value="0.2.1" />
             <InfoItem label="Database" value="PostgreSQL 15.4" />
             <InfoItem label="Environment" value="Development" />
             <InfoItem label="Last Backup" value="Never" />
