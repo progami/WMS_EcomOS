@@ -138,7 +138,7 @@ export function MainNav() {
               </Link>
               {/* Version */}
               <span className={cn("text-xs text-gray-500 transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>
-                v0.1.0
+                v0.2.0
               </span>
             </div>
             
