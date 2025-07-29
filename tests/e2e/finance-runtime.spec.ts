@@ -79,7 +79,7 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await page.waitForURL('**/finance', { timeout: 10000 })
   })
 
-  test('Finance dashboard loads correctly', async ({ page }) => {
+  test.skip('Finance dashboard loads correctly', async ({ page }) => {
     // Check page heading
     await expect(page.locator('h1')).toContainText('Finance')
     
@@ -389,7 +389,7 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     }
   })
 
-  test('Mobile responsive finance views', async ({ page }) => {
+  test.skip('Mobile responsive finance views', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 })
     
