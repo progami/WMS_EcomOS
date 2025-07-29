@@ -6,7 +6,7 @@
     app_user: wms
     app_dir: /opt/wms
     node_version: "20"
-    postgres_version: "16"
+    postgres_version: "14"
     
   tasks:
     - name: Update apt cache

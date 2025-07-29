@@ -9,3 +9,14 @@ root_volume_size = 30
 
 # Environment
 environment = "production"
+
+# S3 Configuration
+# Leave empty for auto-generated bucket name
+s3_bucket_name = ""
+
+# CORS allowed origins (update with your domain)
+cors_allowed_origins = [
+  "http://localhost:3000",
+  "https://localhost:3000",
+  "https://yourdomain.com"
+]

@@ -41,7 +41,10 @@ ansible-deploy: ## Deploy application with Ansible
 		cp ~/.ssh/wms-deploy-key.pem ~/.ssh/github_deploy; \
 		chmod 600 ~/.ssh/github_deploy; \
 	fi
-	cd ansible && ansible-playbook playbook.yml -v
+	@echo "Getting S3 bucket name from Terraform..."
+	S3_BUCKET_NAME=$$(cd terraform && terraform output -raw s3_bucket_name); \
+	cd ansible && ansible-playbook playbook.yml -v \
+		-e "s3_bucket_name=$$S3_BUCKET_NAME"
 
 deploy: apply ansible-deploy ## Full deployment (infrastructure + application)
 	@echo "Full deployment completed!"

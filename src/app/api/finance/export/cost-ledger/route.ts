@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { createReadStream } from 'fs'
 import * as XLSX from 'xlsx'
+import { getS3Service } from '@/services/s3.service'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60 // Allow up to 60 seconds for large exports
 
 export async function GET(request: NextRequest) {
   try {
@@ -135,21 +133,49 @@ export async function GET(request: NextRequest) {
     const detailWs = XLSX.utils.aoa_to_sheet(detailData)
     XLSX.utils.book_append_sheet(wb, detailWs, 'Transaction Details')
 
-    // Write to temporary file
+    // Generate buffer
     const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
     const fileName = `cost-ledger-${new Date().toISOString().split('T')[0]}.xlsx`
-    const filePath = join(tmpdir(), fileName)
     
-    await writeFile(filePath, buffer)
-
-    // Create response with file
-    const fileStream = createReadStream(filePath)
-    const response = new NextResponse(fileStream as any)
+    // Upload to S3 for temporary storage
+    const s3Service = getS3Service()
+    const s3Key = s3Service.generateKey(
+      { 
+        type: 'export-temp', 
+        userId: session.user.id, 
+        exportType: 'cost-ledger' 
+      },
+      fileName
+    )
     
-    response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response.headers.set('Content-Disposition', `attachment; filename="${fileName}"`)
+    // Upload with 24 hour expiration
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24)
+    
+    await s3Service.uploadFile(buffer, s3Key, {
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      metadata: {
+        exportType: 'cost-ledger',
+        userId: session.user.id,
+        filename: fileName,
+        groupBy: searchParams.get('groupBy') || 'month',
+      },
+      expiresAt: expiresAt,
+    })
+    
+    // Get presigned URL for download
+    const presignedUrl = await s3Service.getPresignedUrl(s3Key, 'get', {
+      responseContentDisposition: `attachment; filename="${fileName}"`,
+      expiresIn: 3600, // 1 hour
+    })
 
-    return response
+    // Return URL instead of file directly
+    return NextResponse.json({
+      success: true,
+      downloadUrl: presignedUrl,
+      filename: fileName,
+      expiresIn: 3600,
+    })
   } catch (error) {
     // console.error('Export cost ledger error:', error)
     return NextResponse.json({ 

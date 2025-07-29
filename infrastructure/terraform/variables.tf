@@ -33,3 +33,15 @@ variable "environment" {
   type        = string
   default     = "production"
 }
+
+variable "s3_bucket_name" {
+  description = "Name of the S3 bucket for file storage (leave empty for auto-generated name)"
+  type        = string
+  default     = ""
+}
+
+variable "cors_allowed_origins" {
+  description = "CORS allowed origins for S3 bucket"
+  type        = list(string)
+  default     = ["http://localhost:3000", "https://localhost:3000"]
+}
