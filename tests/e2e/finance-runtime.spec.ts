@@ -79,49 +79,24 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await page.waitForURL('**/finance', { timeout: 10000 })
   })
 
-  test.skip('Finance dashboard loads correctly', async ({ page }) => {
+  test('Finance dashboard loads correctly', async ({ page }) => {
     // Check page heading
     await expect(page.locator('h1')).toContainText('Finance')
     
-    // The finance page shows a grid of module cards instead of tabs
-    // Check for finance module links
-    // Finance dashboard link might be optional
-    const finDashLink = page.locator('a:has-text("Finance Dashboard")');
-    const hasFinDash = await finDashLink.isVisible({ timeout: 5000 }).catch(() => false);
+    // Check page description
+    await expect(page.locator('text=Manage invoicing, billing, and financial reconciliation')).toBeVisible()
     
-    // If not visible, we're already on finance dashboard
-    if (!hasFinDash) {
-      await expect(page.locator('h1')).toContainText('Finance');
-    } else {
-      await expect(finDashLink).toBeVisible();
-    }
-    const invoicesLink = page.locator('a:has-text("Invoices")');
-    if (await invoicesLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(invoicesLink).toBeVisible();
-    }
-    const reconciliationLink = page.locator('a:has-text("Reconciliation")');
-    if (await reconciliationLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(reconciliationLink).toBeVisible();
-    }
-    const ledgerLink = page.locator('a:has-text("Storage Ledger")');
-    if (await ledgerLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(ledgerLink).toBeVisible();
-    }
-    const costLedgerLink = page.locator('a:has-text("Cost Ledger")');
-    if (await costLedgerLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(costLedgerLink).toBeVisible();
-    }
+    // The finance page shows a grid of module cards
+    // Check for specific finance module cards by their h3 titles
+    await expect(page.locator('main h3:has-text("Invoices")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reconciliation")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Storage Ledger")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Cost Ledger")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reports")')).toBeVisible()
     
-    // Navigate to the Finance Dashboard if link exists
-    if (await finDashLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await finDashLink.click();
-      await page.waitForURL('**/finance/dashboard', { timeout: 15000 });
-    }
-    
-    // Check KPI cards
-    await expect(page.locator('text=Total Revenue')).toBeVisible()
-    await expect(page.locator('text=Outstanding Invoices')).toBeVisible()
-    await expect(page.locator('text=Collection Rate')).toBeVisible()
+    // Check billing cycle information box
+    await expect(page.locator('text=Billing Cycle')).toBeVisible()
+    await expect(page.locator('text=16th of each month to the 15th of the following month')).toBeVisible()
   })
 
   test('Invoice list and filtering', async ({ page }) => {
@@ -389,7 +364,7 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     }
   })
 
-  test.skip('Mobile responsive finance views', async ({ page }) => {
+  test('Mobile responsive finance views', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 })
     
@@ -397,53 +372,22 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await expect(page.locator('h1')).toBeVisible()
     
     // Finance module cards should be visible and stack on mobile
-    // Finance dashboard link might not be visible on mobile
-    const finDashMobile = page.locator('a:has-text("Finance Dashboard")');
-    const hasFinDashMobile = await finDashMobile.isVisible({ timeout: 5000 }).catch(() => false);
+    await expect(page.locator('h1')).toContainText('Finance')
     
-    // Check for any finance-related content
-    const hasFinanceContent = await page.locator('text=/finance|invoice|cost/i').first().isVisible();
-    expect(hasFinDashMobile || hasFinanceContent).toBeTruthy();
-    const invoicesMobileLink = page.locator('a:has-text("Invoices")');
-    if (await invoicesMobileLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await expect(invoicesMobileLink).toBeVisible();
-    }
+    // Check that finance module cards are visible by their titles
+    await expect(page.locator('main h3:has-text("Invoices")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reconciliation")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Storage Ledger")')).toBeVisible()
     
-    // Navigate to Finance Dashboard if available
-    if (hasFinDashMobile) {
-      await page.click('a:has-text("Finance Dashboard")')
-      await page.waitForURL('**/finance/dashboard')
-      
-      // KPI cards should stack
-      await expect(page.locator('text=Total Revenue')).toBeVisible()
-      
-      // Go back to finance
-      await page.goto('/finance')
-    }
+    // Navigate to invoices by clicking the specific invoices card link
+    await page.locator('main a[href="/finance/invoices"]').first().click()
+    await page.waitForURL('**/finance/invoices')
+    await page.waitForLoadState('domcontentloaded')
     
-    // Navigate to invoices - handle mobile navigation
-    // First check if we need to open mobile menu
-    const mobileMenuButton = page.locator('button[aria-label="Open menu"], button:has-text("Menu"), [data-testid="mobile-menu"]').first()
-    if (await mobileMenuButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await mobileMenuButton.click()
-      await page.waitForTimeout(500)
-    }
+    // Check that we're on the invoices page
+    await expect(page.locator('h1')).toContainText('Invoice Management')
     
-    // Try to find and click Invoices link
-    const invoicesLink = page.locator('a:has-text("Invoices")').first()
-    if (await invoicesLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await invoicesLink.click()
-      await page.waitForURL('**/finance/invoices')
-    } else {
-      // If not visible, navigate directly
-      await page.goto('/finance/invoices')
-      await page.waitForLoadState('domcontentloaded')
-    }
-    
-    // Table should be scrollable or card view
-    const hasTable = await page.locator('table').isVisible()
-    const hasCards = await page.locator('[data-testid="invoice-card"]').first().isVisible().catch(() => false)
-    
-    expect(hasTable || hasCards).toBeTruthy()
+    // Verify the page has loaded properly by checking the h1 is visible
+    await expect(page.locator('h1:has-text("Invoice Management")')).toBeVisible({ timeout: 10000 })
   })
 })

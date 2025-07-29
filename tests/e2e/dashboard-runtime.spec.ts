@@ -122,7 +122,7 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     }
   })
 
-  test.skip('Navigation from dashboard works', async ({ page }) => {
+  test('Navigation from dashboard works', async ({ page }) => {
     // Close welcome modal if present
     const welcomeModal = page.locator('text="Welcome to WMS Demo!"')
     if (await welcomeModal.isVisible({ timeout: 2000 })) {
@@ -136,7 +136,9 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     
     // Navigate directly to inventory page
     await page.goto('http://localhost:3000/operations/inventory');
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to load with a reasonable timeout
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('h1', { timeout: 10000 });
     
     // Verify we're on inventory page
     const isOnInventory = page.url().includes('/inventory');
@@ -144,14 +146,13 @@ test.describe('📊 Dashboard Runtime Tests', () => {
     
     // Go back to dashboard
     await page.goto('http://localhost:3000/dashboard');
-    // Use domcontentloaded instead of networkidle to avoid timeout
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1000); // Give page time to stabilize
+    await page.waitForSelector('h1', { timeout: 10000 });
     
     // Navigate directly to shipment planning
     await page.goto('http://localhost:3000/market/shipment-planning');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1000);
+    await page.waitForSelector('h1', { timeout: 10000 });
     
     // Verify we're on shipment planning page
     const isOnShipment = page.url().includes('/shipment-planning');
