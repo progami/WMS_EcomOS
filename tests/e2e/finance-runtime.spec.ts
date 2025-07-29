@@ -388,6 +388,7 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await expect(page.locator('h1')).toContainText('Invoice Management')
     
     // Table should be visible (might be scrollable on mobile)
-    await expect(page.locator('table, [data-testid="invoice-list"], text=/invoice/i').first()).toBeVisible({ timeout: 10000 })
+    const tableOrInvoice = page.locator('table').or(page.locator('[data-testid="invoice-list"]')).or(page.locator('text=/invoice/i'))
+    await expect(tableOrInvoice.first()).toBeVisible({ timeout: 10000 })
   })
 })
