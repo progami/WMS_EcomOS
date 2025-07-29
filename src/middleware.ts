@@ -5,6 +5,13 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  // Redirect /operations to /operations/inventory
+  if (pathname === '/operations') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/operations/inventory'
+    return NextResponse.redirect(url)
+  }
+  
   // Public routes that don't require authentication
   const publicRoutes = [
     '/',
