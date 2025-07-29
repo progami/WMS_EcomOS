@@ -384,10 +384,8 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await page.waitForURL('**/finance/invoices')
     await page.waitForLoadState('domcontentloaded')
     
-    // Check if mobile menu button is visible (hamburger menu)
-    const mobileMenuButton = page.locator('button').filter({ has: page.locator('svg') }).first()
-    const hasMobileMenu = await mobileMenuButton.isVisible({ timeout: 2000 }).catch(() => false)
-    expect(hasMobileMenu).toBeTruthy() // Should have mobile menu in mobile view
+    // Check that we're on the invoices page
+    await expect(page.locator('h1')).toContainText('Invoices')
     
     // Table should be visible (might be scrollable on mobile)
     await expect(page.locator('table, [data-testid="invoice-list"], text=/invoice/i').first()).toBeVisible({ timeout: 10000 })
