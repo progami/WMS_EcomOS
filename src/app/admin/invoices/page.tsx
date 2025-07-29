@@ -57,12 +57,20 @@ export default function AdminInvoicesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
+                id="invoice-search"
+                name="search"
+                aria-label="Search invoices by number or warehouse"
                 placeholder="Search by invoice number or warehouse..."
                 className="pl-10 pr-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
-          <select className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+          <select 
+            id="status-filter"
+            name="status"
+            aria-label="Filter invoices by status"
+            className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          >
             <option>All Statuses</option>
             <option>Pending</option>
             <option>Reconciled</option>

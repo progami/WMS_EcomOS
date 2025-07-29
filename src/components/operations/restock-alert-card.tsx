@@ -99,6 +99,7 @@ export function RestockAlertCard({
               type="checkbox"
               checked={isSelected}
               onChange={(e) => onSelect(e.target.checked)}
+              aria-label={`Select ${skuCode} for batch operation`}
               className="rounded border-gray-300 text-primary focus:ring-primary"
             />
           )}
@@ -234,6 +235,7 @@ export function RestockAlertRow({
             type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect(e.target.checked)}
+            aria-label={`Select ${skuCode} row`}
             className="rounded border-gray-300 text-primary focus:ring-primary"
           />
         </td>
