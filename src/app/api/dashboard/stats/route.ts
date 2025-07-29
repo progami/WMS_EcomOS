@@ -206,6 +206,7 @@ export async function GET() {
     // Chart Data: Inventory Trend (last 30 days)
     const thirtyDaysAgoForTrend = new Date()
     thirtyDaysAgoForTrend.setDate(thirtyDaysAgoForTrend.getDate() - 30)
+    thirtyDaysAgoForTrend.setHours(0, 0, 0, 0)
     
     // Get daily inventory snapshots
     const inventoryTrendData = await prisma.inventoryTransaction.groupBy({
@@ -258,7 +259,10 @@ export async function GET() {
     
     // Fill in all days including those without transactions
     const currentDate = new Date(thirtyDaysAgoForTrend)
-    while (currentDate <= now) {
+    const endDate = new Date(now)
+    endDate.setHours(23, 59, 59, 999)
+    
+    while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0]
       const dayTransactions = transactionMap.get(dateKey)
       
@@ -271,8 +275,8 @@ export async function GET() {
         inventory: Math.max(0, runningBalance),
       })
       
-      // Create new date object for next iteration
-      currentDate.setDate(currentDate.getDate() + 1)
+      // Move to next day - create new date to avoid mutation issues
+      currentDate.setTime(currentDate.getTime() + 24 * 60 * 60 * 1000)
     }
 
     // Chart Data: Cost Trend (last 12 weeks)

@@ -207,17 +207,6 @@ export function OpsSection({ data, loading }: OpsSectionProps) {
         </div>
       )}
 
-      {/* Quick Actions - Streamlined to core daily operations */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Link href="/operations/receive" className="flex items-center justify-center gap-2 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <Package className="h-5 w-5 text-primary" />
-          <span className="font-medium">Receive</span>
-        </Link>
-        <Link href="/operations/ship" className="flex items-center justify-center gap-2 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <Package2 className="h-5 w-5 text-primary" />
-          <span className="font-medium">Ship</span>
-        </Link>
-      </div>
     </div>
   )
 }

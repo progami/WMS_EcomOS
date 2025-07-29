@@ -7,9 +7,6 @@ import { useClientLogger } from '@/hooks/useClientLogger'
 import { 
   Package2, 
   TrendingUp, 
-  DollarSign,
-  Package,
-  RefreshCw,
   Calendar,
   ChevronDown
 } from '@/lib/lucide-icons'
@@ -17,8 +14,6 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { DemoWelcome } from '@/components/ui/demo-welcome'
 import { SectionHeader } from '@/components/dashboard/section-header'
 import { MarketSection } from '@/components/dashboard/market-section'
-import { OpsSection } from '@/components/dashboard/ops-section'
-import { FinSection } from '@/components/dashboard/fin-section'
 import { toast } from 'react-hot-toast'
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
@@ -85,9 +80,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [chartData, setChartData] = useState<ChartData | null>(null)
   const [loadingStats, setLoadingStats] = useState(true)
-  const [hasFetched, setHasFetched] = useState(false)
-  const [autoRefresh, setAutoRefresh] = useState(false)
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
   const [selectedTimeRange, setSelectedTimeRange] = useState('yearToDate')
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false)
   const [hasError, setHasError] = useState(false)
@@ -197,39 +189,12 @@ export default function DashboardPage() {
   }, [selectedTimeRange, timeRanges, logAction, logPerformance, logError])
 
 
+  // Fetch data when authenticated or when time range changes
   useEffect(() => {
-    // Only fetch if we haven't already
-    if (!hasFetched && status === 'authenticated') {
-      setHasFetched(true)
+    if (status === 'authenticated') {
       fetchDashboardStats()
     }
-  }, [hasFetched, status, fetchDashboardStats])
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-    
-    if (autoRefresh && !useDemoData) {
-      interval = setInterval(() => {
-        fetchDashboardStats()
-      }, 30000) // Refresh every 30 seconds
-      setRefreshInterval(interval)
-    } else if (refreshInterval) {
-      clearInterval(refreshInterval)
-      setRefreshInterval(null)
-    }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
-    }
-  }, [autoRefresh, fetchDashboardStats, useDemoData])
-
-  useEffect(() => {
-    if (status === 'authenticated' && hasFetched && !useDemoData) {
-      fetchDashboardStats()
-    }
-  }, [selectedTimeRange, status, hasFetched, fetchDashboardStats, useDemoData])
+  }, [status, selectedTimeRange, fetchDashboardStats])
 
   // Show loading only while checking authentication
   if (status === 'loading') {
@@ -368,65 +333,20 @@ export default function DashboardPage() {
               )}
             </div>
             
-            {/* Auto Refresh Toggle (not for demo) */}
-            {!useDemoData && (
-              <>
-                <button
-                  onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 border rounded-lg transition-all min-h-[44px] ${
-                    autoRefresh 
-                      ? 'bg-green-50 border-green-300 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400' 
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 ${autoRefresh ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline text-xs sm:text-sm">{autoRefresh ? 'Auto-refreshing' : 'Auto-refresh'}</span>
-                </button>
-                
-                {/* Manual Refresh */}
-                <button
-                  onClick={() => fetchDashboardStats()}
-                  disabled={loadingStats}
-                  className="p-2 sm:p-2.5 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px]"
-                >
-                  <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 ${loadingStats ? 'animate-spin' : ''}`} />
-                </button>
-              </>
-            )}
           </div>
         </div>
 
 
         {/* Main Dashboard Sections */}
         <div className="grid gap-6">
-          {/* Market Section */}
+          {/* Market Section - Inventory Level Graph Only */}
           <div className="border rounded-lg p-6 bg-white dark:bg-gray-900">
             <SectionHeader 
-              title="Market" 
+              title="Inventory Levels" 
               icon={TrendingUp} 
-              description="Order planning, shipments, and marketplace integrations"
+              description="Daily inventory trend for the last 30 days"
             />
             <MarketSection data={marketData.data} loading={loadingStats} />
-          </div>
-
-          {/* Operations Section */}
-          <div className="border rounded-lg p-6 bg-white dark:bg-gray-900">
-            <SectionHeader 
-              title="Operations" 
-              icon={Package} 
-              description="Warehouse inventory and operational activities"
-            />
-            <OpsSection data={opsData.data} loading={loadingStats} />
-          </div>
-
-          {/* Finance Section */}
-          <div className="border rounded-lg p-6 bg-white dark:bg-gray-900">
-            <SectionHeader 
-              title="Finance" 
-              icon={DollarSign} 
-              description="Invoices, costs, and financial reconciliation"
-            />
-            <FinSection data={finData.data} loading={loadingStats} />
           </div>
         </div>
 
