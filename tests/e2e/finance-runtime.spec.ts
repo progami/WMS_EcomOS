@@ -87,13 +87,12 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     await expect(page.locator('text=Manage invoicing, billing, and financial reconciliation')).toBeVisible()
     
     // The finance page shows a grid of module cards
-    // Check for finance module cards (not sidebar links) by checking they're inside main
-    const financeCards = page.locator('main').locator('.grid').locator('a')
-    await expect(financeCards.filter({ hasText: 'Invoices' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Reconciliation' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Storage Ledger' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Cost Ledger' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Reports' })).toBeVisible()
+    // Check for specific finance module cards by their h3 titles
+    await expect(page.locator('main h3:has-text("Invoices")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reconciliation")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Storage Ledger")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Cost Ledger")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reports")')).toBeVisible()
     
     // Check billing cycle information box
     await expect(page.locator('text=Billing Cycle')).toBeVisible()
@@ -375,14 +374,13 @@ test.describe('💰 Finance & Invoice Runtime Tests', () => {
     // Finance module cards should be visible and stack on mobile
     await expect(page.locator('h1')).toContainText('Finance')
     
-    // Check that finance module cards are visible in the grid
-    const financeCards = page.locator('main').locator('.grid').locator('a')
-    await expect(financeCards.filter({ hasText: 'Invoices' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Reconciliation' })).toBeVisible()
-    await expect(financeCards.filter({ hasText: 'Storage Ledger' })).toBeVisible()
+    // Check that finance module cards are visible by their titles
+    await expect(page.locator('main h3:has-text("Invoices")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Reconciliation")')).toBeVisible()
+    await expect(page.locator('main h3:has-text("Storage Ledger")')).toBeVisible()
     
-    // Navigate to invoices by clicking the card
-    await financeCards.filter({ hasText: 'Invoices' }).click()
+    // Navigate to invoices by clicking the specific invoices card link
+    await page.locator('main a[href="/finance/invoices"]').first().click()
     await page.waitForURL('**/finance/invoices')
     await page.waitForLoadState('domcontentloaded')
     
