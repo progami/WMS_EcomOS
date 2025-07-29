@@ -129,8 +129,8 @@ export default function WarehouseShipPage() {
         name: file.name,
         type: file.type,
         size: file.size,
-        s3Key: result.key,
-        s3Url: result.url,
+        s3Key: result.s3Key,
+        s3Url: result.viewUrl,
         category
       }
       
