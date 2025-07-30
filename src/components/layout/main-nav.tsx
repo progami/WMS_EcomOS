@@ -137,8 +137,17 @@ export function MainNav() {
                 <span className={cn("text-xl font-bold transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>WMS</span>
               </Link>
               {/* Version */}
-              <span className={cn("text-xs text-gray-500 transition-all duration-300", isTabletCollapsed && "md:hidden lg:inline")}>
-                v0.2.1
+              <span 
+                className={cn("text-xs text-gray-500 transition-all duration-300 cursor-help", isTabletCollapsed && "md:hidden lg:inline")}
+                title={`Last updated: ${new Date().toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}`}
+              >
+                v0.2.2
               </span>
             </div>
             
