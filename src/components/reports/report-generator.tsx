@@ -192,33 +192,47 @@ export function ReportGenerator({
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Report Type</label>
+              <label htmlFor="custom-report-type" className="block text-sm font-medium mb-2">Report Type</label>
               <select 
+                id="custom-report-type"
+                name="reportType"
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 value={customReportType}
                 onChange={(e) => setCustomReportType(e.target.value)}
+                aria-label="Select report type"
+                aria-describedby="custom-report-type-help"
               >
                 {customReportTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
+              <span id="custom-report-type-help" className="sr-only">Choose the type of report you want to generate</span>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Date Range</label>
+              <label htmlFor="custom-date-range" className="block text-sm font-medium mb-2">Date Range</label>
               <input
+                id="custom-date-range"
+                name="dateRange"
                 type="month"
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 value={customPeriod}
                 onChange={(e) => setCustomPeriod(e.target.value)}
+                aria-label="Select month and year for report"
+                aria-describedby="custom-date-range-help"
               />
+              <span id="custom-date-range-help" className="sr-only">Select the month and year for the report period</span>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Warehouse</label>
+            <label htmlFor="custom-warehouse" className="block text-sm font-medium mb-2">Warehouse</label>
             <select 
+              id="custom-warehouse"
+              name="warehouse"
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               value={customWarehouseId}
               onChange={(e) => setCustomWarehouseId(e.target.value)}
+              aria-label="Select warehouse for report"
+              aria-describedby="custom-warehouse-help"
             >
               <option value="">All Warehouses</option>
               {warehouses.map(warehouse => (
@@ -227,19 +241,25 @@ export function ReportGenerator({
                 </option>
               ))}
             </select>
+            <span id="custom-warehouse-help" className="sr-only">Select which warehouse to include in the report, or choose all warehouses</span>
           </div>
           {showCustomFormat && (
             <div>
-              <label className="block text-sm font-medium mb-2">Export Format</label>
+              <label htmlFor="custom-export-format" className="block text-sm font-medium mb-2">Export Format</label>
               <select 
+                id="custom-export-format"
+                name="exportFormat"
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 value={customFormat}
                 onChange={(e) => setCustomFormat(e.target.value)}
+                aria-label="Select export format"
+                aria-describedby="custom-export-format-help"
               >
                 <option value="xlsx">Excel (.xlsx)</option>
                 <option value="csv">CSV (.csv)</option>
                 <option value="pdf">PDF (.pdf)</option>
               </select>
+              <span id="custom-export-format-help" className="sr-only">Choose the file format for the exported report</span>
             </div>
           )}
           <button

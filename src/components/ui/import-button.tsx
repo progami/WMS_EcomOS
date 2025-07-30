@@ -170,10 +170,12 @@ export function ImportButton({ entityName, onImportComplete, className = '', but
 
                   {/* File upload */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor={`import-file-${entityName}`} className="block text-sm font-medium text-gray-700 mb-2">
                       Select Excel file
                     </label>
                     <input
+                      id={`import-file-${entityName}`}
+                      name="importFile"
                       type="file"
                       accept=".xlsx,.xls"
                       onChange={handleFileChange}
@@ -184,7 +186,12 @@ export function ImportButton({ entityName, onImportComplete, className = '', but
                         file:bg-primary file:text-white
                         hover:file:bg-primary-dark
                         file:cursor-pointer"
+                      aria-label={`Select Excel file to import ${config.displayName}`}
+                      aria-describedby={`import-file-${entityName}-help`}
                     />
+                    <span id={`import-file-${entityName}-help`} className="sr-only">
+                      Upload an Excel file containing {config.displayName} data to import
+                    </span>
                     {file && (
                       <p className="mt-2 text-sm text-gray-600">
                         Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)

@@ -971,7 +971,7 @@ export default function WarehouseShipPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 w-28">
-                        <label htmlFor={`${idPrefix}-shipping-pallets`} className={getSrOnlyClass()}>
+                        <label htmlFor={`${idPrefix}-shippingPalletsOut`} className={getSrOnlyClass()}>
                           Item {rowNumber} Shipping Pallets Out
                         </label>
                         <input

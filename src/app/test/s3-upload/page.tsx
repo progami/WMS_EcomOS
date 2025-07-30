@@ -47,14 +47,21 @@ export default function S3UploadTestPage() {
         
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="s3-test-file" className="block text-sm font-medium text-gray-700 mb-2">
               Select a file to test S3 upload
             </label>
             <input
+              id="s3-test-file"
+              name="testFile"
               type="file"
               onChange={handleFileSelect}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              aria-label="Select a file to test S3 upload functionality"
+              aria-describedby="s3-test-file-help"
             />
+            <span id="s3-test-file-help" className="sr-only">
+              Upload any file to test the S3 integration. Files under 5MB are recommended for testing.
+            </span>
           </div>
 
           {selectedFile && (
