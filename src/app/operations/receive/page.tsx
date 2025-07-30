@@ -7,6 +7,14 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
+import { 
+  generateFieldId, 
+  generateDynamicFieldProps, 
+  generateFileUploadProps,
+  generateErrorProps,
+  generateHelpProps,
+  getSrOnlyClass 
+} from '@/lib/utils/accessibility'
 
 interface Sku {
   id: string
@@ -578,46 +586,68 @@ export default function WarehouseReceivePage() {
             <h3 className="text-lg font-semibold mb-4">Shipment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receive-ci-number" className="block text-sm font-medium text-gray-700 mb-1">
                   Commercial Invoice #
                 </label>
                 <input
+                  id="receive-ci-number"
+                  name="ciNumber"
                   type="text"
                   value={ciNumber}
                   onChange={(e) => setCiNumber(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., CI-2024-456"
-                  title="Enter Commercial Invoice number"
+                  aria-label="Commercial Invoice Number"
+                  aria-describedby="receive-ci-number-help"
                   required
+                  aria-required="true"
                 />
+                <span id="receive-ci-number-help" className={getSrOnlyClass()}>
+                  Enter the commercial invoice number for this receipt
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receive-packing-list" className="block text-sm font-medium text-gray-700 mb-1">
                   Packing List #
                 </label>
                 <input
+                  id="receive-packing-list"
+                  name="packingListNumber"
                   type="text"
                   value={packingListNumber}
                   onChange={(e) => setPackingListNumber(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., PL-2024-456"
-                  title="Enter Packing List number"
+                  aria-label="Packing List Number"
+                  aria-describedby="receive-packing-list-help"
                   required
+                  aria-required="true"
                 />
+                <span id="receive-packing-list-help" className={getSrOnlyClass()}>
+                  Enter the packing list number for this receipt
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receive-supplier" className="block text-sm font-medium text-gray-700 mb-1">
                   Supplier
                 </label>
                 <input
+                  id="receive-supplier"
+                  name="supplier"
                   type="text"
                   value={selectedSupplier}
                   onChange={(e) => setSelectedSupplier(e.target.value)}
                   list="supplier-options"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter or select supplier"
+                  aria-label="Supplier Name"
+                  aria-describedby="receive-supplier-help"
                   required
+                  aria-required="true"
                 />
+                <span id="receive-supplier-help" className={getSrOnlyClass()}>
+                  Enter or select the supplier for this receipt
+                </span>
                 <datalist id="supplier-options">
                   {suppliers.map(supplier => (
                     <option key={supplier} value={supplier} />
@@ -625,27 +655,38 @@ export default function WarehouseReceivePage() {
                 </datalist>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receive-tc-number" className="block text-sm font-medium text-gray-700 mb-1">
                   TC # GRS
                 </label>
                 <input
+                  id="receive-tc-number"
+                  name="tcNumber"
                   type="text"
                   value={tcNumber}
                   onChange={(e) => setTcNumber(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., TC-2024-123"
-                  title="Enter Transaction Certificate number GRS"
+                  aria-label="Transaction Certificate Number GRS"
+                  aria-describedby="receive-tc-number-help"
                 />
+                <span id="receive-tc-number-help" className={getSrOnlyClass()}>
+                  Enter the Transaction Certificate number GRS (optional)
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receive-warehouse" className="block text-sm font-medium text-gray-700 mb-1">
                   Warehouse
                 </label>
                 <select
+                  id="receive-warehouse"
+                  name="warehouseId"
                   value={selectedWarehouseId}
                   onChange={(e) => setSelectedWarehouseId(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Warehouse"
+                  aria-describedby="receive-warehouse-help"
                   required
+                  aria-required="true"
                 >
                   <option value="">Select Warehouse...</option>
                   {warehouses.map(warehouse => (
@@ -654,9 +695,12 @@ export default function WarehouseReceivePage() {
                     </option>
                   ))}
                 </select>
+                <span id="receive-warehouse-help" className={getSrOnlyClass()}>
+                  Select the warehouse where items will be received
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="receiptDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Receipt Date
                 </label>
                 <input
@@ -667,6 +711,10 @@ export default function WarehouseReceivePage() {
                   value={receiptDate}
                   max={new Date().toISOString().slice(0, 10)}
                   min={new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().slice(0, 10)}
+                  aria-label="Receipt Date"
+                  aria-describedby="receipt-date-help"
+                  required
+                  aria-required="true"
                   onChange={(e) => {
                     setReceiptDate(e.target.value)
                     // Update min date for dropoff date when receipt date changes
@@ -681,9 +729,12 @@ export default function WarehouseReceivePage() {
                   }}
                   required
                 />
+                <span id="receipt-date-help" className={getSrOnlyClass()}>
+                  Select the date when items were received
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="dropOffDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Drop off Date
                 </label>
                 <input
@@ -697,19 +748,26 @@ export default function WarehouseReceivePage() {
                 />
               </div>
               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="receive-ship-name" className="block text-sm font-medium text-gray-700 mb-1">
                     Ship Name
                   </label>
                   <input
+                    id="receive-ship-name"
+                    name="shipName"
                     type="text"
                     value={shipName}
                     onChange={(e) => setShipName(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="e.g., MV Ocean Star"
+                    aria-label="Ship Name"
+                    aria-describedby="receive-ship-name-help"
                   />
+                  <span id="receive-ship-name-help" className={getSrOnlyClass()}>
+                    Enter the name of the ship (optional)
+                  </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="receive-container-number" className="block text-sm font-medium text-gray-700 mb-1">
                     <div className="flex items-center gap-1">
                       Container Number
                       <Tooltip 
@@ -719,12 +777,19 @@ export default function WarehouseReceivePage() {
                     </div>
                   </label>
                   <input
+                    id="receive-container-number"
+                    name="containerNumber"
                     type="text"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="e.g., MSKU1234567"
+                    aria-label="Container Number"
+                    aria-describedby="receive-container-number-help"
                   />
+                  <span id="receive-container-number-help" className={getSrOnlyClass()}>
+                    Enter the container number (optional)
+                  </span>
               </div>
             </div>
           </div>
@@ -747,16 +812,16 @@ export default function WarehouseReceivePage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       SKU Code
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Batch/Lot
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cartons
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <div className="flex items-center justify-end gap-1">
                         Units/Carton
                         <Tooltip 
@@ -765,26 +830,36 @@ export default function WarehouseReceivePage() {
                         />
                       </div>
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Storage Config
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Storage Pallets
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Shipping Config
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Units
                     </th>
-                    <th className="px-4 py-3"></th>
+                    <th scope="col" className="px-4 py-3">
+                      <span className={getSrOnlyClass()}>Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id}>
+                  {items.map((item, index) => {
+                    const rowNumber = index + 1
+                    const idPrefix = `receive-item-${rowNumber}`
+                    
+                    return (
+                    <tr key={item.id} role="row">
                       <td className="px-4 py-3 w-48">
+                        <label htmlFor={`${idPrefix}-sku`} className={getSrOnlyClass()}>
+                          Item {rowNumber} SKU Code
+                        </label>
                         <select
+                          {...generateDynamicFieldProps('receive', index, 'sku', 'SKU Code', true)}
                           value={item.skuCode}
                           onChange={(e) => updateItem(item.id, 'skuCode', e.target.value)}
                           className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
@@ -801,14 +876,18 @@ export default function WarehouseReceivePage() {
                       </td>
                       <td className="px-4 py-3 w-40">
                         <div className="relative">
+                          <label htmlFor={`${idPrefix}-batch`} className={getSrOnlyClass()}>
+                            Item {rowNumber} Batch/Lot Number
+                          </label>
                           <input
+                            {...generateDynamicFieldProps('receive', index, 'batch', 'Batch/Lot Number', true)}
                             type="text"
                             value={item.batchLot}
                             onChange={(e) => updateItem(item.id, 'batchLot', e.target.value)}
                             className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder={item.loadingBatch ? "Loading..." : "Enter batch/lot"}
                             required
-                            title="Enter or modify the batch/lot number"
+                            aria-busy={item.loadingBatch ? "true" : "false"}
                           />
                           {item.loadingBatch && (
                             <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -818,7 +897,11 @@ export default function WarehouseReceivePage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-cartons`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Number of Cartons
+                        </label>
                         <input
+                          {...generateDynamicFieldProps('receive', index, 'cartons', 'Number of Cartons', true)}
                           type="number"
                           value={item.cartons === 0 ? '' : item.cartons}
                           onChange={(e) => {
@@ -934,12 +1017,14 @@ export default function WarehouseReceivePage() {
                           onClick={() => removeItem(item.id)}
                           className="text-red-600 hover:text-red-800"
                           disabled={items.length === 1}
+                          aria-label={`Remove item ${rowNumber}`}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4" aria-hidden="true" />
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )
+                  })}
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
@@ -1003,18 +1088,35 @@ export default function WarehouseReceivePage() {
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="commercial-invoice-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Commercial Invoice (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('commercial-invoice-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('commercial-invoice', 'Commercial Invoice')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'commercial_invoice')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="commercial-invoice-upload-help" className={getSrOnlyClass()}>
+                      Invoice with pricing information. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
