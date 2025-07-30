@@ -72,4 +72,4 @@ Development mode includes quick-fill authentication. Production requires environ
 
 ## License
 
-Proprietary software. All rights reserved.# Test
+Proprietary software. All rights reserved.
