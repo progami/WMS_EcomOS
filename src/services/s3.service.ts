@@ -259,7 +259,7 @@ export class S3Service {
   async getPresignedUrl(
     key: string,
     operation: 'get' | 'put' = 'get',
-    options: S3DownloadOptions = {}
+    options: S3DownloadOptions & { contentType?: string } = {}
   ): Promise<string> {
     try {
       const command = operation === 'get'
@@ -272,6 +272,8 @@ export class S3Service {
         : new PutObjectCommand({
             Bucket: this.bucket,
             Key: key,
+            ContentType: options.contentType,
+            ServerSideEncryption: 'AES256',
           });
 
       const url = await getSignedUrl(this.client, command, {

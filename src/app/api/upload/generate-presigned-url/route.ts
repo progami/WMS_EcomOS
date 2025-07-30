@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     // Generate presigned URL for upload
     const uploadUrl = await s3Service.getPresignedUrl(s3Key, 'put', {
-      expiresIn: 300 // 5 minutes for upload
+      expiresIn: 300, // 5 minutes for upload
+      contentType: fileType
     })
 
     // Generate presigned URL for viewing (after upload)

@@ -1,0 +1,48 @@
+---
+# S3 CORS Configuration Task
+- name: Configure S3 bucket CORS
+  amazon.aws.s3_bucket:
+    name: "{{ s3_bucket_name }}"
+    state: present
+    cors:
+      - allowed_headers: ["*"]
+        allowed_methods: ["GET", "PUT", "POST", "DELETE", "HEAD"]
+        allowed_origins:
+          - "https://wms.targonglobal.com"
+          - "https://targonglobal.com"
+          - "https://{{ domain_name }}"
+          - "https://{{ server_name }}"
+          - "https://{{ domain_name }}{{ base_path | default('') }}"
+          - "http://localhost:3000"
+          - "http://localhost:3001"
+          - "http://localhost:3002"
+        expose_headers:
+          - "ETag"
+          - "x-amz-server-side-encryption"
+          - "x-amz-request-id"
+          - "x-amz-id-2"
+        max_age_seconds: 3000
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - s3
+    - cors
+
+- name: Verify S3 bucket CORS configuration
+  amazon.aws.s3_bucket:
+    name: "{{ s3_bucket_name }}"
+    state: present
+  register: s3_bucket_info
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - s3
+    - cors
+
+- name: Display S3 CORS configuration
+  debug:
+    msg: "S3 bucket {{ s3_bucket_name }} CORS configured successfully"
+  when: s3_bucket_info is succeeded
+  tags:
+    - s3
+    - cors
