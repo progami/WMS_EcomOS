@@ -8,6 +8,8 @@
       - allowed_headers: ["*"]
         allowed_methods: ["GET", "PUT", "POST", "DELETE", "HEAD"]
         allowed_origins:
+          - "https://wms.targonglobal.com"
+          - "https://targonglobal.com"
           - "https://{{ domain_name }}"
           - "https://{{ server_name }}"
           - "https://{{ domain_name }}{{ base_path | default('') }}"
