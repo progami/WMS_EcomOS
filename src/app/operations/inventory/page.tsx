@@ -656,16 +656,33 @@ export default function UnifiedInventoryPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <label htmlFor="inventory-search" className="sr-only">
+                  {activeTab === 'balances' 
+                    ? "Search inventory by SKU, description, batch, or warehouse"
+                    : "Search transactions by SKU, description, batch, reference, warehouse, ship, or container"}
+                </label>
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
                 <input
-                  type="text"
+                  id="inventory-search"
+                  name="search"
+                  type="search"
                   placeholder={activeTab === 'balances' 
                     ? "Search by SKU, description, batch, or warehouse..."
                     : "Search by SKU, description, batch, reference, warehouse, ship, or container..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label={activeTab === 'balances' 
+                    ? "Search inventory by SKU, description, batch, or warehouse"
+                    : "Search transactions by SKU, description, batch, reference, warehouse, ship, or container"}
+                  aria-describedby="inventory-search-help"
+                  aria-controls={activeTab === 'balances' ? 'inventory-table' : 'transactions-table'}
                 />
+                <span id="inventory-search-help" className="sr-only">
+                  {activeTab === 'balances' 
+                    ? "Filter the inventory table below by entering search terms"
+                    : "Filter the transactions table below by entering search terms"}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-2">

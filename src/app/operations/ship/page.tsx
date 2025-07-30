@@ -2,11 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check, Send } from '@/lib/lucide-icons'
+import { Truck, Plus, Save, X, AlertTriangle, Upload, FileText, Mail, Check, Send, Loader2 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tooltip } from '@/components/ui/tooltip'
 import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
+import { 
+  generateFieldId, 
+  generateFieldName, 
+  generateAriaLabel, 
+  generateDynamicFieldProps,
+  generateFileUploadProps,
+  generateSearchInputProps,
+  getSrOnlyClass,
+  generateErrorProps,
+  generateHelpProps
+} from '@/lib/utils/accessibility'
 
 interface Sku {
   id: string
@@ -582,23 +593,31 @@ export default function WarehouseShipPage() {
             <h3 className="text-lg font-semibold mb-4">Shipment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="ship-order-number" className="block text-sm font-medium text-gray-700 mb-1">
                   Reference ID
                   <span className="ml-1 text-xs text-gray-500">(Order Number)</span>
                 </label>
                 <input
+                  id="ship-order-number"
                   type="text"
                   name="orderNumber"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., SO-2024-001"
+                  aria-label="Reference ID (Order Number)"
+                  aria-describedby="ship-order-number-help"
                   required
+                  aria-required="true"
                 />
+                <span id="ship-order-number-help" className={getSrOnlyClass()}>
+                  Enter the order number or reference ID for this shipment
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="ship-warehouse" className="block text-sm font-medium text-gray-700 mb-1">
                   Source Warehouse
                 </label>
                 <select
+                  id="ship-warehouse"
                   name="sourceWarehouse"
                   value={selectedWarehouseId}
                   onChange={(e) => {
@@ -612,7 +631,10 @@ export default function WarehouseShipPage() {
                     })))
                   }}
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Source Warehouse"
+                  aria-describedby="ship-warehouse-help"
                   required
+                  aria-required="true"
                 >
                   <option value="">Select Warehouse...</option>
                   {warehouses.map(warehouse => (
@@ -621,9 +643,12 @@ export default function WarehouseShipPage() {
                     </option>
                   ))}
                 </select>
+                <span id="ship-warehouse-help" className={getSrOnlyClass()}>
+                  Select the warehouse from which goods will be shipped
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="shipDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Ship Date
                 </label>
                 <input
@@ -646,11 +671,17 @@ export default function WarehouseShipPage() {
                       }
                     }
                   }}
+                  aria-label="Ship Date"
+                  aria-describedby="ship-date-help"
                   required
+                  aria-required="true"
                 />
+                <span id="ship-date-help" className={getSrOnlyClass()}>
+                  Date when goods will be shipped from the warehouse
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="pickupDate" className="block text-sm font-medium text-gray-700 mb-1">
                   Pickup Date
                 </label>
                 <input
@@ -660,18 +691,28 @@ export default function WarehouseShipPage() {
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   defaultValue={shipDate}
                   min={shipDate}
+                  aria-label="Pickup Date"
+                  aria-describedby="pickup-date-help"
                   required
+                  aria-required="true"
                 />
+                <span id="pickup-date-help" className={getSrOnlyClass()}>
+                  Date when carrier will pick up the shipment
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="ship-carrier" className="block text-sm font-medium text-gray-700 mb-1">
                   Carrier
                 </label>
                 <select
+                  id="ship-carrier"
                   name="carrier"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                   defaultValue={lastCarrier}
+                  aria-label="Carrier"
+                  aria-describedby="ship-carrier-help"
+                  aria-required="true"
                 >
                   <option value="">Select Carrier...</option>
                   <option value="Amazon Partnered Carrier UPS">Amazon Partnered Carrier UPS</option>
@@ -682,24 +723,34 @@ export default function WarehouseShipPage() {
                   <option value="USPS">USPS</option>
                   <option value="Other">Other</option>
                 </select>
+                <span id="ship-carrier-help" className={getSrOnlyClass()}>
+                  Select the shipping carrier for this shipment
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="ship-mode" className="block text-sm font-medium text-gray-700 mb-1">
                   Mode of Transportation
                 </label>
                 <select
+                  id="ship-mode"
                   name="modeOfTransportation"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   required
+                  aria-label="Mode of Transportation"
+                  aria-describedby="ship-mode-help"
+                  aria-required="true"
                 >
                   <option value="">Select Mode...</option>
                   <option value="SPD">SPD - Small Parcel Delivery</option>
                   <option value="LTL">LTL - Less Than Truckload</option>
                   <option value="FTL">FTL - Full Truckload</option>
                 </select>
+                <span id="ship-mode-help" className={getSrOnlyClass()}>
+                  Select the transportation mode based on shipment size
+                </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="ship-tracking" className="block text-sm font-medium text-gray-700 mb-1">
                   <div className="flex items-center gap-1">
                     Tracking Number
                     <Tooltip 
@@ -709,12 +760,19 @@ export default function WarehouseShipPage() {
                   </div>
                 </label>
                 <input
+                  id="ship-tracking"
                   type="text"
                   name="trackingNumber"
                   className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., FBA15K7TRCBF"
+                  aria-label="Tracking Number (FBA shipment ID for Amazon shipments)"
+                  aria-describedby="ship-tracking-help"
                   required
+                  aria-required="true"
                 />
+                <span id="ship-tracking-help" className={getSrOnlyClass()}>
+                  Enter the tracking number or FBA shipment ID for Amazon shipments
+                </span>
               </div>
             </div>
           </div>
@@ -737,19 +795,19 @@ export default function WarehouseShipPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       SKU Code
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Batch/Lot
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Available
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cartons to Ship
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <div className="flex items-center justify-end gap-1">
                         Units/Carton
                         <Tooltip 
@@ -758,23 +816,33 @@ export default function WarehouseShipPage() {
                         />
                       </div>
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Shipping Config
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Shipping Pallets
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Units
                     </th>
-                    <th className="px-4 py-3"></th>
+                    <th scope="col" className="px-4 py-3">
+                      <span className={getSrOnlyClass()}>Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id}>
+                  {items.map((item, index) => {
+                    const rowNumber = index + 1
+                    const idPrefix = `ship-item-${rowNumber}`
+                    
+                    return (
+                    <tr key={item.id} role="row">
                       <td className="px-4 py-3 w-48">
+                        <label htmlFor={`${idPrefix}-sku`} className={getSrOnlyClass()}>
+                          Item {rowNumber} SKU Code
+                        </label>
                         <select
+                          {...generateDynamicFieldProps('ship', index, 'sku', 'SKU Code', true)}
                           value={item.skuCode}
                           onChange={(e) => updateItem(item.id, 'skuCode', e.target.value)}
                           className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
@@ -790,7 +858,11 @@ export default function WarehouseShipPage() {
                         </select>
                       </td>
                       <td className="px-4 py-3 w-40">
+                        <label htmlFor={`${idPrefix}-batch`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Batch/Lot Number
+                        </label>
                         <select
+                          {...generateDynamicFieldProps('ship', index, 'batch', 'Batch/Lot Number', true)}
                           value={item.batchLot}
                           onChange={(e) => updateItem(item.id, 'batchLot', e.target.value)}
                           className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
@@ -841,7 +913,11 @@ export default function WarehouseShipPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-cartons`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Cartons to Ship
+                        </label>
                         <input
+                          {...generateDynamicFieldProps('ship', index, 'cartons', 'Cartons to Ship', true)}
                           type="number"
                           value={item.cartons}
                           onChange={(e) => updateItem(item.id, 'cartons', parseInt(e.target.value) || 0)}
@@ -858,19 +934,31 @@ export default function WarehouseShipPage() {
                           max={item.available}
                           step="1"
                           required
+                          aria-invalid={item.cartons > item.available ? "true" : "false"}
                         />
                         {item.cartons > item.available && (
-                          <p className="text-xs text-red-600 mt-1">Exceeds available</p>
+                          <p className="text-xs text-red-600 mt-1" id={`ship-item-${rowNumber}-cartons-error`}>Exceeds available</p>
                         )}
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-units-per-carton`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Units per Carton (read-only)
+                        </label>
                         <input
+                          id={`${idPrefix}-units-per-carton`}
+                          name={generateFieldName('items', index, 'unitsPerCarton')}
                           type="number"
                           value={item.unitsPerCarton || ''}
                           className="w-full px-2 py-1 border rounded text-right bg-gray-100 cursor-not-allowed"
                           readOnly
                           title="Units per carton is defined by the SKU master data"
+                          aria-label={`Item ${rowNumber} Units per Carton`}
+                          aria-readonly="true"
+                          aria-describedby={`${idPrefix}-units-per-carton-help`}
                         />
+                        <span id={`${idPrefix}-units-per-carton-help`} className={getSrOnlyClass()}>
+                          This value is automatically loaded from the SKU master data
+                        </span>
                       </td>
                       <td className="px-4 py-3 w-32 text-center">
                         {item.shippingCartonsPerPallet ? (
@@ -883,7 +971,11 @@ export default function WarehouseShipPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-shipping-pallets`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Shipping Pallets Out
+                        </label>
                         <input
+                          {...generateDynamicFieldProps('ship', index, 'shippingPalletsOut', 'Shipping Pallets Out')}
                           type="number"
                           value={item.shippingPalletsOut}
                           onChange={(e) => {
@@ -904,14 +996,25 @@ export default function WarehouseShipPage() {
                         />
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-units`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Total Units (read-only)
+                        </label>
                         <input
+                          id={`${idPrefix}-units`}
+                          name={generateFieldName('items', index, 'units')}
                           type="number"
                           value={item.units}
                           className="w-full px-2 py-1 border rounded text-right bg-gray-100"
                           min="0"
                           readOnly
                           title="Units are calculated based on cartons × units per carton"
+                          aria-label={`Item ${rowNumber} Total Units`}
+                          aria-readonly="true"
+                          aria-describedby={`${idPrefix}-units-help`}
                         />
+                        <span id={`${idPrefix}-units-help`} className={getSrOnlyClass()}>
+                          Automatically calculated as cartons times units per carton
+                        </span>
                       </td>
                       <td className="px-4 py-3 w-12">
                         <button
@@ -919,12 +1022,14 @@ export default function WarehouseShipPage() {
                           onClick={() => removeItem(item.id)}
                           className="text-red-600 hover:text-red-800"
                           disabled={items.length === 1}
+                          aria-label={`Remove item ${rowNumber}`}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4" aria-hidden="true" />
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )
+                  })}
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
@@ -982,23 +1087,41 @@ export default function WarehouseShipPage() {
                       type="button"
                       onClick={removeProofOfPickupAttachment}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${proofOfPickupAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="proof-of-pickup-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Proof of Pickup (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('proof-of-pickup-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('proof-of-pickup', 'Proof of Pickup')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'proof_of_pickup')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="proof-of-pickup-upload-help" className={getSrOnlyClass()}>
+                      Bill of Lading or pickup receipt document. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1010,15 +1133,32 @@ export default function WarehouseShipPage() {
                     <p className="text-xs text-gray-600 mt-0.5">Optional files</p>
                   </div>
                 </div>
-                <label className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                    <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                    <p className="text-xs text-gray-600 mt-1">Upload</p>
-                  </div>
+                <div className="upload-container">
+                  <label htmlFor="ship-additional-docs-upload" className="cursor-pointer block">
+                    <span className={getSrOnlyClass()}>Upload Additional Documents (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB each, multiple files allowed)</span>
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          document.getElementById('ship-additional-docs-upload')?.click()
+                        }
+                      }}
+                    >
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                      <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                    </div>
+                  </label>
                   <input
+                    id="ship-additional-docs-upload"
+                    name="additionalDocs"
                     type="file"
                     multiple
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                    aria-label="Upload Additional Documents (Accepted formats: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, Max 5MB each, multiple files allowed)"
+                    aria-describedby="ship-additional-docs-upload-help ship-additional-docs-upload-error"
                     onChange={(e) => {
                       const files = e.target.files
                       if (files) {
@@ -1029,23 +1169,27 @@ export default function WarehouseShipPage() {
                         })
                       }
                     }}
-                    className="hidden"
+                    className={getSrOnlyClass()}
                   />
-                </label>
+                  <span id="ship-additional-docs-upload-help" className={getSrOnlyClass()}>
+                    Optional supporting documents. You can select multiple files. Maximum file size 5MB per file.
+                  </span>
+                </div>
                 {attachments.length > 0 && (
-                  <div className="space-y-1 mt-2">
+                  <div className="space-y-1 mt-2" role="list" aria-label="Uploaded additional documents">
                     {attachments.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs" role="listitem">
                         <div className="flex items-center gap-1 truncate">
-                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" aria-hidden="true" />
                           <span className="text-gray-700 truncate">{file.name}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeAttachment(index)}
                           className="text-red-600 hover:text-red-800 ml-1"
+                          aria-label={`Remove ${file.name}`}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3 w-3" aria-hidden="true" />
                         </button>
                       </div>
                     ))}
@@ -1058,12 +1202,21 @@ export default function WarehouseShipPage() {
           {/* Notes */}
           <div className="border rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Notes</h3>
+            <label htmlFor="ship-notes" className={getSrOnlyClass()}>
+              Additional notes or comments about this shipment
+            </label>
             <textarea
+              id="ship-notes"
               name="notes"
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
               placeholder="Any additional notes or comments..."
+              aria-label="Additional notes or comments about this shipment"
+              aria-describedby="ship-notes-help"
             />
+            <span id="ship-notes-help" className={getSrOnlyClass()}>
+              Optional field for any additional information about this shipment
+            </span>
           </div>
 
         </form>

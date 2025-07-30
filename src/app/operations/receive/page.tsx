@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
 import { 
   generateFieldId, 
+  generateFieldName,
   generateDynamicFieldProps, 
   generateFileUploadProps,
   generateErrorProps,
@@ -727,7 +728,6 @@ export default function WarehouseReceivePage() {
                       }
                     }
                   }}
-                  required
                 />
                 <span id="receipt-date-help" className={getSrOnlyClass()}>
                   Select the date when items were received
@@ -932,17 +932,32 @@ export default function WarehouseReceivePage() {
                         />
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-units-per-carton`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Units per Carton (read-only)
+                        </label>
                         <input
+                          id={`${idPrefix}-units-per-carton`}
+                          name={generateFieldName('items', index, 'unitsPerCarton')}
                           type="number"
                           value={item.unitsPerCarton}
                           className="w-full px-2 py-1 border rounded text-right bg-gray-100 cursor-not-allowed"
                           readOnly
                           title="Units per carton is defined by the SKU master data"
+                          aria-label={`Item ${rowNumber} Units per Carton`}
+                          aria-readonly="true"
+                          aria-describedby={`${idPrefix}-units-per-carton-help`}
                         />
+                        <span id={`${idPrefix}-units-per-carton-help`} className={getSrOnlyClass()}>
+                          This value is automatically loaded from the SKU master data
+                        </span>
                       </td>
                       <td className="px-4 py-3 w-32">
                         <div className="flex items-center justify-center gap-1">
+                          <label htmlFor={`${idPrefix}-storage-config`} className={getSrOnlyClass()}>
+                            Item {rowNumber} Storage Cartons per Pallet
+                          </label>
                           <input
+                            {...generateDynamicFieldProps('receive', index, 'storageCartonsPerPallet', 'Storage Cartons per Pallet', true)}
                             type="number"
                             value={item.storageCartonsPerPallet === 0 ? '' : item.storageCartonsPerPallet}
                             onChange={(e) => {
@@ -963,11 +978,15 @@ export default function WarehouseReceivePage() {
                             title={!item.skuCode ? 'Select SKU first' : item.configLoaded && item.storageCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
                             required
                           />
-                          <span className="text-xs text-gray-500">c/p</span>
+                          <span className="text-xs text-gray-500" aria-hidden="true">c/p</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-storage-pallets`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Storage Pallets In
+                        </label>
                         <input
+                          {...generateDynamicFieldProps('receive', index, 'storagePalletsIn', 'Storage Pallets In')}
                           type="number"
                           value={item.storagePalletsIn === 0 ? '' : item.storagePalletsIn}
                           onChange={(e) => {
@@ -983,7 +1002,11 @@ export default function WarehouseReceivePage() {
                       </td>
                       <td className="px-4 py-3 w-32">
                         <div className="flex items-center justify-center gap-1">
+                          <label htmlFor={`${idPrefix}-shipping-config`} className={getSrOnlyClass()}>
+                            Item {rowNumber} Shipping Cartons per Pallet
+                          </label>
                           <input
+                            {...generateDynamicFieldProps('receive', index, 'shippingCartonsPerPallet', 'Shipping Cartons per Pallet', true)}
                             type="number"
                             value={item.shippingCartonsPerPallet === 0 ? '' : item.shippingCartonsPerPallet}
                             onChange={(e) => {
@@ -998,18 +1021,29 @@ export default function WarehouseReceivePage() {
                             title={!item.skuCode ? 'Select SKU first' : item.configLoaded && item.shippingCartonsPerPallet > 0 ? 'Loaded from warehouse config (editable)' : 'Enter value'}
                             required
                           />
-                          <span className="text-xs text-gray-500">c/p</span>
+                          <span className="text-xs text-gray-500" aria-hidden="true">c/p</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 w-28">
+                        <label htmlFor={`${idPrefix}-units`} className={getSrOnlyClass()}>
+                          Item {rowNumber} Total Units (read-only)
+                        </label>
                         <input
+                          id={`${idPrefix}-units`}
+                          name={generateFieldName('items', index, 'units')}
                           type="number"
                           value={item.units}
                           className="w-full px-2 py-1 border rounded text-right bg-gray-100"
                           min="0"
                           readOnly
                           title="Units are calculated based on cartons × units per carton"
+                          aria-label={`Item ${rowNumber} Total Units`}
+                          aria-readonly="true"
+                          aria-describedby={`${idPrefix}-units-help`}
                         />
+                        <span id={`${idPrefix}-units-help`} className={getSrOnlyClass()}>
+                          Automatically calculated as cartons times units per carton
+                        </span>
                       </td>
                       <td className="px-4 py-3 w-12">
                         <button
@@ -1143,23 +1177,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('bill_of_lading')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${billOfLadingAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="bill-of-lading-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Bill of Lading (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('bill-of-lading-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('bill-of-lading', 'Bill of Lading')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'bill_of_lading')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="bill-of-lading-upload-help" className={getSrOnlyClass()}>
+                      Carrier document with shipping details. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1186,23 +1238,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('packing_list')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${packingListAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="packing-list-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Packing List (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('packing-list-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('packing-list', 'Packing List')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'packing_list')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="packing-list-upload-help" className={getSrOnlyClass()}>
+                      Document listing all items and quantities. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1229,23 +1299,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('delivery_note')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${deliveryNoteAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="delivery-note-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Delivery Note (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('delivery-note-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('delivery-note', 'Delivery Note')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'delivery_note')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="delivery-note-upload-help" className={getSrOnlyClass()}>
+                      Proof of delivery document. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1272,23 +1360,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('cube_master')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${cubeMasterAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="cube-master-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Cube Master (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('cube-master-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('cube-master', 'Cube Master')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'cube_master')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="cube-master-upload-help" className={getSrOnlyClass()}>
+                      Pallet stacking configuration document. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1315,23 +1421,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('transaction_certificate')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${transactionCertificateAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="tc-grs-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Transaction Certificate for GRS (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('tc-grs-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('tc-grs', 'Transaction Certificate for GRS')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'transaction_certificate')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="tc-grs-upload-help" className={getSrOnlyClass()}>
+                      Goods Receipt Slip transaction certificate. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1358,23 +1482,41 @@ export default function WarehouseReceivePage() {
                       type="button"
                       onClick={() => removeSpecificAttachment('custom_declaration')}
                       className="text-red-600 hover:text-red-800 ml-1"
+                      aria-label={`Remove ${customDeclarationAttachment.name}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                      <p className="text-xs text-gray-600 mt-1">Upload</p>
-                    </div>
+                  <div className="upload-container">
+                    <label htmlFor="cds-upload" className="cursor-pointer block">
+                      <span className={getSrOnlyClass()}>Upload Custom Declaration Document (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB)</span>
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            document.getElementById('cds-upload')?.click()
+                          }
+                        }}
+                      >
+                        <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                        <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                      </div>
+                    </label>
                     <input
+                      {...generateFileUploadProps('cds', 'Custom Declaration Document')}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                       onChange={(e) => handleFileUpload(e, 'custom_declaration')}
-                      className="hidden"
+                      className={getSrOnlyClass()}
                     />
-                  </label>
+                    <span id="cds-upload-help" className={getSrOnlyClass()}>
+                      Customs clearance documentation. Maximum file size 5MB.
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -1386,15 +1528,32 @@ export default function WarehouseReceivePage() {
                     <p className="text-xs text-gray-600 mt-0.5">Optional files</p>
                   </div>
                 </div>
-                <label className="cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
-                    <Upload className="h-4 w-4 text-gray-400 mx-auto" />
-                    <p className="text-xs text-gray-600 mt-1">Upload</p>
-                  </div>
+                <div className="upload-container">
+                  <label htmlFor="additional-docs-upload" className="cursor-pointer block">
+                    <span className={getSrOnlyClass()}>Upload Additional Documents (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX - Max 5MB each, multiple files allowed)</span>
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          document.getElementById('additional-docs-upload')?.click()
+                        }
+                      }}
+                    >
+                      <Upload className="h-4 w-4 text-gray-400 mx-auto" aria-hidden="true" />
+                      <p className="text-xs text-gray-600 mt-1" aria-hidden="true">Upload</p>
+                    </div>
+                  </label>
                   <input
+                    id="additional-docs-upload"
+                    name="additionalDocs"
                     type="file"
                     multiple
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                    aria-label="Upload Additional Documents (Accepted formats: PDF, JPG, JPEG, PNG, DOC, DOCX, XLS, XLSX, Max 5MB each, multiple files allowed)"
+                    aria-describedby="additional-docs-upload-help additional-docs-upload-error"
                     onChange={(e) => {
                       const files = e.target.files
                       if (files) {
@@ -1405,23 +1564,27 @@ export default function WarehouseReceivePage() {
                         })
                       }
                     }}
-                    className="hidden"
+                    className={getSrOnlyClass()}
                   />
-                </label>
+                  <span id="additional-docs-upload-help" className={getSrOnlyClass()}>
+                    Optional supporting documents. You can select multiple files. Maximum file size 5MB per file.
+                  </span>
+                </div>
                 {attachments.length > 0 && (
-                  <div className="space-y-1 mt-2">
+                  <div className="space-y-1 mt-2" role="list" aria-label="Uploaded additional documents">
                     {attachments.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs">
+                      <div key={index} className="flex items-center justify-between bg-white p-1.5 rounded border text-xs" role="listitem">
                         <div className="flex items-center gap-1 truncate">
-                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                          <FileText className="h-3 w-3 text-gray-500 flex-shrink-0" aria-hidden="true" />
                           <span className="text-gray-700 truncate">{file.name}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeAttachment(index)}
                           className="text-red-600 hover:text-red-800 ml-1"
+                          aria-label={`Remove ${file.name}`}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3 w-3" aria-hidden="true" />
                         </button>
                       </div>
                     ))}
@@ -1434,13 +1597,22 @@ export default function WarehouseReceivePage() {
           {/* Notes */}
           <div className="border rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">Notes</h3>
+            <label htmlFor="receive-notes" className={getSrOnlyClass()}>
+              Additional notes or comments about this receipt
+            </label>
             <textarea
+              id="receive-notes"
               name="notes"
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
               placeholder="Any additional notes or comments..."
+              aria-label="Additional notes or comments about this receipt"
+              aria-describedby="receive-notes-help"
               defaultValue={''}  
             />
+            <span id="receive-notes-help" className={getSrOnlyClass()}>
+              Optional field for any additional information about this goods receipt
+            </span>
           </div>
 
         </form>

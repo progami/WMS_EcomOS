@@ -289,7 +289,7 @@ function QuickAction({ title, description, icon: Icon, onClick, loading, danger 
 
 interface InfoItemProps {
   label: string
-  value: string
+  value: React.ReactNode
 }
 
 function InfoItem({ label, value }: InfoItemProps) {
