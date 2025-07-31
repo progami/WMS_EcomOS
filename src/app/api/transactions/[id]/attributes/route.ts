@@ -24,7 +24,9 @@ export async function PATCH(
       trackingNumber, 
       modeOfTransportation,
       pickupDate,
-      supplier
+      supplier,
+      notes,
+      attachments
     } = body
 
     // Sanitize inputs
@@ -44,6 +46,33 @@ export async function PATCH(
     }
     if (supplier !== undefined) {
       sanitizedData.supplier = supplier ? sanitizeForDisplay(supplier) : null
+    }
+    
+    // Handle attachments with notes
+    if (attachments !== undefined || notes !== undefined) {
+      // Get existing transaction to preserve other attachments
+      const existingTx = await prisma.inventoryTransaction.findUnique({
+        where: { id },
+        select: { attachments: true }
+      })
+      
+      let updatedAttachments = existingTx?.attachments || []
+      if (Array.isArray(updatedAttachments)) {
+        // Remove existing notes attachment
+        updatedAttachments = updatedAttachments.filter((att: any) => att.type !== 'notes')
+        
+        // Add new notes if provided
+        if (notes) {
+          updatedAttachments.push({ type: 'notes', content: sanitizeForDisplay(notes) })
+        }
+        
+        // Merge with new attachments if provided
+        if (attachments) {
+          updatedAttachments = [...updatedAttachments, ...attachments]
+        }
+      }
+      
+      sanitizedData.attachments = updatedAttachments.length > 0 ? updatedAttachments : null
     }
 
     // Update transaction

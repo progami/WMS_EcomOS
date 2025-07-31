@@ -152,19 +152,31 @@ export default function TransactionDetailPage() {
       
       // Parse additional fields from transaction data
       const supplierMatch = data.supplier || ''
-      const ciMatch = null
-      const plMatch = null
-      const tcMatch = null
-      const carrierMatch = null
-      const fbaMatch = null
-      const trackingMatch = null
-      const shipMatch = null
+      
+      // Extract notes content from attachments
+      let notesContent = ''
+      if (data.attachments && Array.isArray(data.attachments)) {
+        const notesAttachment = data.attachments.find((att: any) => att.type === 'notes')
+        if (notesAttachment) {
+          notesContent = notesAttachment.content || ''
+        }
+      }
+      
+      // Parse fields from notes
+      const parseFieldFromNotes = (fieldName: string): string => {
+        const regex = new RegExp(`${fieldName}:\\s*([^.]+)(?:\\.|$)`)
+        const match = notesContent.match(regex)
+        return match ? match[1].trim() : ''
+      }
+      
+      const plMatch = parseFieldFromNotes('Packing List #')
+      const tcMatch = parseFieldFromNotes('TC #')
       
       // Set form data
       setFormData({
         ciNumber: data.referenceId || '',
-        packingListNumber: '',
-        tcNumber: '',
+        packingListNumber: plMatch || '',
+        tcNumber: tcMatch || '',
         supplier: supplierMatch,
         shipName: data.shipName || '',
         trackingNumber: data.trackingNumber || '',
@@ -289,8 +301,13 @@ export default function TransactionDetailPage() {
     setSaving(true)
     
     try {
-      // Build empty notes
+      // Build notes from form fields
       let fullNotes = ''
+      if (formData.supplier) fullNotes += `Supplier: ${formData.supplier}. `
+      if (formData.packingListNumber) fullNotes += `Packing List #: ${formData.packingListNumber}. `
+      if (formData.tcNumber) fullNotes += `TC #: ${formData.tcNumber}. `
+      if (formData.shipName) fullNotes += `Ship: ${formData.shipName}. `
+      if (formData.trackingNumber) fullNotes += `Tracking: ${formData.trackingNumber}. `
       
       // Prepare attachment array
       const attachmentArray = Object.entries(attachments)
