@@ -18,7 +18,7 @@ export const apiRateLimit = {
 
 export const uploadRateLimit = {
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // 10 uploads per 5 minutes
+  max: 20, // 20 uploads per 5 minutes
   message: 'Too many file uploads. Please wait before uploading more files.',
 }
 
