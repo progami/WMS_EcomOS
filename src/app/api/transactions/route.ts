@@ -152,14 +152,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate date is not too far in the past (e.g., 1 year)
-    const oneYearAgo = new Date()
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-    if (transactionDateObj < oneYearAgo) {
-      return NextResponse.json({ 
-        error: 'Transaction date is too far in the past (max 1 year)' 
-      }, { status: 400 })
-    }
+    // Historical date validation removed - businesses may need to enter old data for migration or corrections
 
     // Validate warehouse assignment for staff
     if (session.user.role === 'staff' && !session.user.warehouseId) {
