@@ -94,7 +94,7 @@ const nextConfig = {
   // Environment variables validation
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    NEXT_PUBLIC_BUILD_TIME: process.env.BUILD_TIME || new Date().toISOString(),
     NEXT_PUBLIC_VERSION: version,
   },
   
