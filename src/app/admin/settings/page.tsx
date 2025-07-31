@@ -179,7 +179,7 @@ export default function AdminSettingsPage() {
               value={
                 <span 
                   className="cursor-help"
-                  title={`Last updated: ${new Date().toLocaleDateString('en-US', { 
+                  title={`Last deployed: ${new Date(process.env.NEXT_PUBLIC_BUILD_TIME || new Date()).toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric',
@@ -187,7 +187,7 @@ export default function AdminSettingsPage() {
                     minute: '2-digit'
                   })}`}
                 >
-                  0.2.2
+                  v{process.env.NEXT_PUBLIC_VERSION || '0.2.2'}
                 </span>
               } 
             />
