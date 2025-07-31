@@ -183,7 +183,9 @@ export async function POST(request: NextRequest) {
       }, { status: 409 })
     }
 
-    // Check for backdated transactions - prevent inserting transactions before the last transaction
+    // Backdating check temporarily disabled - businesses need flexibility for corrections
+    // TODO: Re-enable with override capability for admins
+    /*
     const lastTransaction = await prisma.inventoryTransaction.findFirst({
       where: { warehouseId },
       orderBy: { transactionDate: 'desc' },
@@ -200,6 +202,7 @@ export async function POST(request: NextRequest) {
         }
       }, { status: 400 })
     }
+    */
 
     // Validate all items before processing
     for (const item of itemsArray) {
@@ -218,17 +221,17 @@ export async function POST(request: NextRequest) {
       }
       
       // Validate maximum cartons (prevent unrealistic values)
-      if (item.cartons > 99999) {
+      if (item.cartons > 10000) {
         return NextResponse.json({ 
-          error: `Cartons value too large for SKU ${item.skuCode}. Maximum allowed: 99,999` 
+          error: `Cartons value too large for SKU ${item.skuCode}. Maximum allowed: 10,000` 
         }, { status: 400 })
       }
       
       // Validate pallets if provided
       if (item.pallets !== undefined && item.pallets !== null) {
-        if (!Number.isInteger(item.pallets) || item.pallets < 0 || item.pallets > 9999) {
+        if (!Number.isInteger(item.pallets) || item.pallets < 0 || item.pallets > 5000) {
           return NextResponse.json({ 
-            error: `Pallets must be integers between 0 and 9,999. Invalid value for SKU ${item.skuCode}` 
+            error: `Pallets must be integers between 0 and 5,000. Invalid value for SKU ${item.skuCode}` 
           }, { status: 400 })
         }
       }
