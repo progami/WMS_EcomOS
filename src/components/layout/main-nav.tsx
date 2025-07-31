@@ -139,7 +139,7 @@ export function MainNav() {
               {/* Version */}
               <span 
                 className={cn("text-xs text-gray-500 transition-all duration-300 cursor-help", isTabletCollapsed && "md:hidden lg:inline")}
-                title={`Last updated: ${new Date().toLocaleDateString('en-US', { 
+                title={`Last deployed: ${new Date(process.env.NEXT_PUBLIC_BUILD_TIME || new Date()).toLocaleDateString('en-US', { 
                   year: 'numeric', 
                   month: 'short', 
                   day: 'numeric',
@@ -147,7 +147,7 @@ export function MainNav() {
                   minute: '2-digit'
                 })}`}
               >
-                v0.2.2
+                v{process.env.NEXT_PUBLIC_VERSION || '0.3.1'}
               </span>
             </div>
             
