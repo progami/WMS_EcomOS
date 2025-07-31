@@ -6,6 +6,9 @@
 //   console.error('Failed to set up logging:', error);
 // }
 
+// Get version from package.json
+const { version } = require('./package.json')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Note: This config supports both Webpack (for production builds) and Turbopack (for development).
@@ -91,6 +94,8 @@ const nextConfig = {
   // Environment variables validation
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    NEXT_PUBLIC_VERSION: version,
   },
   
   // Webpack configuration (for production builds)
