@@ -103,7 +103,9 @@ jobs:
           npx prisma migrate deploy || echo "No pending migrations"
           
           echo "🔨 Building application..."
-          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") npm run build
+          export BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "Build time: $BUILD_TIME"
+          npm run build
           
           echo "♻️ Restarting application..."
           pm2 restart wms-app || pm2 start ecosystem.config.js
