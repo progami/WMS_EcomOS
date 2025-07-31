@@ -461,46 +461,78 @@ export default function UnifiedInventoryPage() {
     setActiveTab(tab)
   }
 
+  // Document requirements configuration - can be modified based on business needs
+  const DOCUMENT_REQUIREMENTS = {
+    RECEIVE: {
+      documents: [
+        { key: ['packingList', 'packing_list'], label: 'Packing List', required: true },
+        { key: ['commercialInvoice', 'commercial_invoice'], label: 'Commercial Invoice', required: true },
+        { key: ['billOfLading', 'bill_of_lading'], label: 'Bill of Lading', required: false },
+        { key: ['deliveryNote', 'delivery_note'], label: 'Delivery Note', required: false }
+      ],
+      fields: [
+        { 
+          check: (tx: Transaction) => !tx.shipName && (tx.referenceId?.includes('OOCL') || tx.referenceId?.includes('MSC')),
+          label: 'Ship Name'
+        },
+        {
+          check: (tx: Transaction) => !tx.trackingNumber,
+          label: 'Tracking #'
+        }
+      ]
+    },
+    SHIP: {
+      documents: [
+        { key: ['packingList', 'packing_list'], label: 'Packing List', required: true },
+        { key: ['deliveryNote', 'delivery_note'], label: 'Delivery Note', required: true }
+      ],
+      fields: [
+        {
+          check: (tx: Transaction) => !tx.modeOfTransportation,
+          label: 'Mode of Transport'
+        },
+        {
+          check: (tx: Transaction) => !tx.trackingNumber && tx.referenceId?.includes('FBA'),
+          label: 'FBA Tracking #'
+        }
+      ]
+    },
+    ADJUST_IN: {
+      documents: [
+        { key: ['proofOfPickup', 'proof_of_pickup'], label: 'Proof Document', required: true }
+      ],
+      fields: []
+    },
+    ADJUST_OUT: {
+      documents: [
+        { key: ['proofOfPickup', 'proof_of_pickup'], label: 'Proof Document', required: true }
+      ],
+      fields: []
+    }
+  }
+
   // Check if transaction has missing required attributes
   const getMissingAttributes = (transaction: Transaction) => {
     const missing: string[] = []
     const attachments = transaction.attachments || {}
     
-    // Check for missing documents based on transaction type
-    if (transaction.transactionType === 'RECEIVE') {
-      // Check documents
-      if (!attachments.packingList && !attachments.packing_list) missing.push('Packing List')
-      if (!attachments.commercialInvoice && !attachments.commercial_invoice) missing.push('Commercial Invoice')
-      if (!attachments.billOfLading && !attachments.bill_of_lading) missing.push('Bill of Lading')
-      if (!attachments.deliveryNote && !attachments.delivery_note) missing.push('Delivery Note')
-      
-      // Check fields
-      if (!transaction.shipName && (transaction.referenceId?.includes('OOCL') || transaction.referenceId?.includes('MSC'))) {
-        missing.push('Ship Name')
-      }
-      if (!transaction.trackingNumber) {
-        missing.push('Tracking #')
-      }
-    }
+    const requirements = DOCUMENT_REQUIREMENTS[transaction.transactionType as keyof typeof DOCUMENT_REQUIREMENTS]
+    if (!requirements) return missing
     
-    if (transaction.transactionType === 'SHIP') {
-      // Check documents
-      if (!attachments.packingList && !attachments.packing_list) missing.push('Packing List')
-      if (!attachments.deliveryNote && !attachments.delivery_note) missing.push('Delivery Note')
-      
-      // Check fields
-      if (!transaction.modeOfTransportation) {
-        missing.push('Mode of Transport')
+    // Check required documents
+    requirements.documents?.forEach(doc => {
+      if (doc.required) {
+        const hasDocument = doc.key.some(k => attachments[k as keyof typeof attachments])
+        if (!hasDocument) missing.push(doc.label)
       }
-      if (!transaction.trackingNumber && transaction.referenceId?.includes('FBA')) {
-        missing.push('FBA Tracking #')
-      }
-    }
+    })
     
-    if (transaction.transactionType === 'ADJUST_IN' || transaction.transactionType === 'ADJUST_OUT') {
-      // Check for proof of adjustment
-      if (!attachments.proofOfPickup && !attachments.proof_of_pickup) missing.push('Proof Document')
-    }
+    // Check required fields
+    requirements.fields?.forEach(field => {
+      if (field.check(transaction)) {
+        missing.push(field.label)
+      }
+    })
     
     return missing
   }

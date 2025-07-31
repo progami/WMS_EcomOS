@@ -46,6 +46,7 @@ interface Transaction {
   trackingNumber?: string | null
   pickupDate?: string | null
   attachments?: any
+  supplier?: string | null
   
   // Pallet configs
   storageCartonsPerPallet?: number | null
@@ -149,8 +150,8 @@ export default function TransactionDetailPage() {
       const data = await response.json()
       setTransaction(data)
       
-      // Parse additional fields
-      const supplierMatch = null
+      // Parse additional fields from transaction data
+      const supplierMatch = data.supplier || ''
       const ciMatch = null
       const plMatch = null
       const tcMatch = null
@@ -164,7 +165,7 @@ export default function TransactionDetailPage() {
         ciNumber: data.referenceId || '',
         packingListNumber: '',
         tcNumber: '',
-        supplier: '',
+        supplier: supplierMatch,
         shipName: data.shipName || '',
         trackingNumber: data.trackingNumber || '',
         carrier: '',
@@ -314,6 +315,7 @@ export default function TransactionDetailPage() {
           trackingNumber: formData.trackingNumber || null,
           pickupDate: formData.pickupDate || null,
           referenceId: formData.ciNumber || transaction.referenceId,
+          supplier: formData.supplier || null,
           attachments: attachmentArray.length > 0 ? attachmentArray : null,
           
           // Quantity updates (if changed)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { parseLocalDate } from '@/lib/utils/date-helpers'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Date filtering
     if (date) {
       // Point-in-time view - get all transactions up to this date
-      const pointInTime = new Date(date)
+      const pointInTime = parseLocalDate(date)
       pointInTime.setHours(23, 59, 59, 999)
       where.transactionDate = { lte: pointInTime }
     } else {
@@ -44,10 +45,10 @@ export async function GET(request: NextRequest) {
       if (startDate || endDate) {
         where.transactionDate = {}
         if (startDate) {
-          where.transactionDate.gte = new Date(startDate)
+          where.transactionDate.gte = parseLocalDate(startDate)
         }
         if (endDate) {
-          const endDateTime = new Date(endDate)
+          const endDateTime = parseLocalDate(endDate)
           endDateTime.setHours(23, 59, 59, 999)
           where.transactionDate.lte = endDateTime
         }

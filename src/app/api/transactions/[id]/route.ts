@@ -18,7 +18,27 @@ export async function GET(
 
     const transaction = await prisma.inventoryTransaction.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        transactionId: true,
+        transactionDate: true,
+        transactionType: true,
+        batchLot: true,
+        referenceId: true,
+        cartonsIn: true,
+        cartonsOut: true,
+        storagePalletsIn: true,
+        shippingPalletsOut: true,
+        createdAt: true,
+        updatedAt: true,
+        shipName: true,
+        trackingNumber: true,
+        pickupDate: true,
+        attachments: true,
+        storageCartonsPerPallet: true,
+        shippingCartonsPerPallet: true,
+        unitsPerCarton: true,
+        supplier: true,
         warehouse: {
           select: { id: true, name: true, code: true }
         },
