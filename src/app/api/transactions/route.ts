@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
         storagePalletsIn: true,
         shippingPalletsOut: true,
         createdAt: true,
-        updatedAt: true,
         shipName: true,
         trackingNumber: true,
         pickupDate: true,

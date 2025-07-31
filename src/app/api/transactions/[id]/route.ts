@@ -30,7 +30,6 @@ export async function GET(
         storagePalletsIn: true,
         shippingPalletsOut: true,
         createdAt: true,
-        updatedAt: true,
         shipName: true,
         trackingNumber: true,
         pickupDate: true,

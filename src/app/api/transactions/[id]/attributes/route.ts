@@ -49,18 +49,14 @@ export async function PATCH(
     // Update transaction
     const updatedTransaction = await prisma.inventoryTransaction.update({
       where: { id },
-      data: {
-        ...sanitizedData,
-        updatedAt: new Date()
-      },
+      data: sanitizedData,
       select: {
         id: true,
         shipName: true,
         trackingNumber: true,
         modeOfTransportation: true,
         pickupDate: true,
-        supplier: true,
-        updatedAt: true
+        supplier: true
       }
     })
 
