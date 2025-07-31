@@ -7,7 +7,7 @@
     "dev:turbo": "node scripts/dev/dev-with-port.js --turbo",
     "dev:port": "node scripts/dev/dev-with-port.js",
     "dev:logged": "node server.js",
-    "build": "BUILD_TIME=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\") next build",
+    "build": "next build",
     "build:prod": "NODE_ENV=production npm run clean && npm run build && npm run post-build",
     "build:analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next out dist",
