@@ -84,12 +84,11 @@ jobs:
         script: |
           echo "🚀 Starting deployment..."
           
-          # Run deployment as wms user
-          sudo -u wms bash << 'EOF'
+          # Run deployment as ubuntu user
           set -e
           
           echo "📁 Navigating to application directory..."
-          cd /home/wms/app
+          cd /home/ubuntu/wms-ecomos
           
           echo "🔄 Pulling latest changes from main branch..."
           git fetch origin main
@@ -106,7 +105,7 @@ jobs:
           npm run build
           
           echo "♻️ Restarting application..."
-          pm2 restart wms-app || pm2 start ecosystem.config.js
+          pm2 restart wms-app-ubuntu || pm2 start ecosystem.config.js --env production
           
           echo "💾 Saving PM2 configuration..."
           pm2 save
@@ -114,7 +113,6 @@ jobs:
           echo "✅ Deployment completed successfully!"
           echo "📊 Application status:"
           pm2 list
-          EOF
     
     - name: Health check
       id: health_check
@@ -133,7 +131,7 @@ jobs:
             echo "✅ Health check passed!"
           else
             echo "❌ Health check failed!"
-            sudo -u wms pm2 logs wms-app --lines 50
+            pm2 logs wms-app-ubuntu --lines 50
             exit 1
           fi
     
