@@ -358,8 +358,7 @@ export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, use
     
     // Get billing period for the week
     const billingPeriod = getBillingPeriod(weekEnd)
-    const year = billingPeriod.year || 2025
-    const month = billingPeriod.month || 1
+    // Year and month can be derived from billingPeriod dates if needed
     
     // Get warehouses to process
     const warehouseCondition = warehouseId ? { id: warehouseId } : {}

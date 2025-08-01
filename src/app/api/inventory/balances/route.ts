@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
           currentCartons: balance.currentCartons,
           currentUnits: balance.currentUnits,
           currentPallets: balance.currentPallets,
-          lastTransactionDate: hasLastTransaction ? balance.lastTransaction.transactionDate : null,
+          lastTransactionDate: hasLastTransaction ? (balance.lastTransaction as any).transactionDate : null,
           lastUpdated: balance.lastUpdated,
           receiveTransaction: hasLastTransaction && (balance.lastTransaction as any).createdBy ? {
             createdBy: (balance.lastTransaction as any).createdBy,
@@ -234,10 +234,10 @@ export async function GET(req: NextRequest) {
       
       // Store pallet configuration from transaction if available
       if (transaction.storageCartonsPerPallet) {
-        current.storageCartonsPerPallet = transaction.storageCartonsPerPallet
+        (current as any).storageCartonsPerPallet = transaction.storageCartonsPerPallet
       }
       if (transaction.shippingCartonsPerPallet) {
-        current.shippingCartonsPerPallet = transaction.shippingCartonsPerPallet
+        (current as any).shippingCartonsPerPallet = transaction.shippingCartonsPerPallet
       }
       
         balanceMap.set(key, current)
