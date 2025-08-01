@@ -433,8 +433,8 @@ export async function POST(request: NextRequest) {
               supplier: txType === 'RECEIVE' ? sanitizedSupplier : null,
               attachments: (() => {
                 const combinedAttachments = attachments || [];
-                // For SHIP and adjustment transactions, add notes as a special attachment entry
-                if (['SHIP', 'ADJUST_IN', 'ADJUST_OUT'].includes(txType) && sanitizedNotes) {
+                // Add notes as a special attachment entry for all transaction types
+                if (sanitizedNotes) {
                   return [...combinedAttachments, { type: 'notes', content: sanitizedNotes }];
                 }
                 return combinedAttachments.length > 0 ? combinedAttachments : null;

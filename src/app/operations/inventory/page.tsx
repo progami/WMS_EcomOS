@@ -465,19 +465,19 @@ export default function UnifiedInventoryPage() {
   const DOCUMENT_REQUIREMENTS = {
     RECEIVE: {
       documents: [
-        { key: ['packingList', 'packing_list'], label: 'Packing List', required: true },
-        { key: ['commercialInvoice', 'commercial_invoice'], label: 'Commercial Invoice', required: true },
-        { key: ['billOfLading', 'bill_of_lading'], label: 'Bill of Lading', required: false },
-        { key: ['deliveryNote', 'delivery_note'], label: 'Delivery Note', required: false }
+        { key: ['commercialInvoice'], label: 'Commercial Invoice', required: true },
+        { key: ['billOfLading'], label: 'Bill of Lading', required: true },
+        { key: ['packingList'], label: 'Packing List', required: true },
+        { key: ['deliveryNote'], label: 'Delivery Note', required: true },
+        { key: ['cubeMaster'], label: 'Cube Master', required: true },
+        { key: ['transactionCertificate'], label: 'TC GRS', required: true },
+        { key: ['customDeclaration'], label: 'CDS', required: true },
+        { key: ['additionalDocs'], label: 'Additional Docs', required: false }
       ],
       fields: [
         { 
           check: (tx: Transaction) => !tx.shipName && (tx.referenceId?.includes('OOCL') || tx.referenceId?.includes('MSC')),
           label: 'Ship Name'
-        },
-        {
-          check: (tx: Transaction) => !tx.trackingNumber,
-          label: 'Tracking #'
         }
       ]
     },

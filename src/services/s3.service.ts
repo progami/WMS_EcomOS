@@ -55,12 +55,20 @@ export class S3Service {
 
   constructor() {
     this.region = process.env.AWS_REGION || process.env.S3_BUCKET_REGION || 'us-east-1';
-    this.bucket = process.env.S3_BUCKET_NAME!;
+    
+    // Use different buckets for different environments
+    const environment = process.env.NODE_ENV || 'development';
+    const bucketPrefix = environment === 'production' ? 'wms-production' : 'wms-development';
+    const accountId = '459288913318'; // Your AWS account ID
+    
+    this.bucket = process.env.S3_BUCKET_NAME || `${bucketPrefix}-${accountId}`;
     this.urlExpiry = parseInt(process.env.S3_PRESIGNED_URL_EXPIRY || '3600', 10);
 
     if (!this.bucket) {
       throw new Error('S3_BUCKET_NAME environment variable is required');
     }
+    
+    console.log(`S3 Service: Using bucket ${this.bucket} for ${environment} environment`);
 
     // Initialize S3 client
     // In production with EC2, this will use IAM role
@@ -273,7 +281,6 @@ export class S3Service {
             Bucket: this.bucket,
             Key: key,
             ContentType: options.contentType,
-            ServerSideEncryption: 'AES256',
           });
 
       const url = await getSignedUrl(this.client, command, {
