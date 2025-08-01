@@ -54,16 +54,18 @@ const createPrismaClient = () => {
 
   // Log errors
   client.$on('error', (e) => {
-    logger.error('Prisma Error', {
+    logger.log('Prisma Error', {
       target: e.target,
       message: e.message,
+      level: 'error'
     })
   })
 
   // Log warnings
   client.$on('warn', (e) => {
-    logger.warn('Prisma Warning', {
+    logger.log('Prisma Warning', {
       message: e.message,
+      level: 'warn'
     })
   })
 

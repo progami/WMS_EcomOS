@@ -194,7 +194,20 @@ export async function GET(req: NextRequest) {
     
     // Calculate balances from transactions
     const balances = await perf.measure('calculate_balances', async () => {
-      const balanceMap = new Map<string, any>()
+      const balanceMap = new Map<string, {
+        id: string
+        warehouseId: string
+        skuId: string
+        warehouse: any
+        sku: any
+        batchLot: string
+        currentCartons: number
+        currentPallets: number
+        currentUnits: number
+        lastTransactionDate: Date | null
+        lastTransactionId: string | null
+        lastTransaction: any
+      }>()
       
       for (const transaction of transactions) {
         const key = `${transaction.warehouseId}-${transaction.skuId}-${transaction.batchLot}`
@@ -270,11 +283,11 @@ export async function GET(req: NextRequest) {
     let results = Array.from(balances.values())
     
     if (!showZeroStock) {
-      results = results.filter(b => b.currentCartons > 0)
+      results = results.filter((b: any) => b.currentCartons > 0)
     }
     
     // Sort results
-    results.sort((a, b) => {
+    results.sort((a: any, b: any) => {
       if (a.sku.skuCode !== b.sku.skuCode) return a.sku.skuCode.localeCompare(b.sku.skuCode)
       return a.batchLot.localeCompare(b.batchLot)
     })

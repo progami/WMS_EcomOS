@@ -19,6 +19,8 @@ interface CalculatedCost {
   unitRate: number
   unit: string
   amount: number
+  transactionId?: string
+  costRateId?: string
   details?: {
     skuId?: string
     skuCode?: string
