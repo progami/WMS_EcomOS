@@ -147,7 +147,7 @@ export function MainNav() {
                   minute: '2-digit'
                 })}`}
               >
-                v{process.env.NEXT_PUBLIC_VERSION || '0.3.1'}
+                v{process.env.NEXT_PUBLIC_VERSION || '0.3.2'}
               </span>
             </div>
             
