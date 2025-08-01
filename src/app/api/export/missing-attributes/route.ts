@@ -43,14 +43,34 @@ export async function GET(_request: NextRequest) {
       const hasCustomDeclaration = attachments.customDeclaration || attachments.custom_declaration ? 'Yes' : 'No'
       const hasProofOfPickup = attachments.proofOfPickup || attachments.proof_of_pickup ? 'Yes' : 'No'
       
-      // Check for missing documents based on transaction type
+      // Configurable document requirements based on transaction type
+      const REQUIRED_DOCUMENTS = {
+        RECEIVE: [
+          { check: hasPackingList === 'No', label: 'Packing List' },
+          { check: hasCommercialInvoice === 'No', label: 'Commercial Invoice' }
+        ],
+        SHIP: [
+          { check: hasPackingList === 'No', label: 'Packing List' },
+          { check: hasDeliveryNote === 'No', label: 'Delivery Note' }
+        ],
+        ADJUST_IN: [
+          { check: hasProofOfPickup === 'No', label: 'Proof of Pickup' }
+        ],
+        ADJUST_OUT: [
+          { check: hasProofOfPickup === 'No', label: 'Proof of Pickup' }
+        ]
+      }
+
+      // Check for missing documents
+      const requiredDocs = REQUIRED_DOCUMENTS[transaction.transactionType as keyof typeof REQUIRED_DOCUMENTS]
+      if (requiredDocs) {
+        requiredDocs.forEach(doc => {
+          if (doc.check) missingDocs.push(doc.label)
+        })
+      }
+
+      // Check for missing fields based on transaction type and context
       if (transaction.transactionType === 'RECEIVE') {
-        if (hasPackingList === 'No') missingDocs.push('Packing List')
-        if (hasCommercialInvoice === 'No') missingDocs.push('Commercial Invoice')
-        if (hasDeliveryNote === 'No') missingDocs.push('Delivery Note')
-        if (hasCubeMaster === 'No') missingDocs.push('Cube Master')
-        
-        // Check for missing fields with context-aware logic
         if (!transaction.shipName && (transaction.referenceId?.includes('OOCL') || transaction.referenceId?.includes('MSC'))) {
           missingFields.push('Ship Name')
         }
@@ -60,21 +80,12 @@ export async function GET(_request: NextRequest) {
       }
       
       if (transaction.transactionType === 'SHIP') {
-        if (hasPackingList === 'No') missingDocs.push('Packing List')
-        if (hasDeliveryNote === 'No') missingDocs.push('Delivery Note')
-        
-        // Check for missing fields
         if (!transaction.modeOfTransportation) {
           missingFields.push('Mode of Transport')
         }
         if (!transaction.trackingNumber && transaction.referenceId?.includes('FBA')) {
           missingFields.push('FBA Tracking Number')
         }
-      }
-      
-      if (transaction.transactionType === 'ADJUST_IN' || transaction.transactionType === 'ADJUST_OUT') {
-        // Adjustments might need proof of pickup or other documentation
-        if (hasProofOfPickup === 'No') missingDocs.push('Proof of Pickup')
       }
       
       const totalMissing = missingFields.length + missingDocs.length

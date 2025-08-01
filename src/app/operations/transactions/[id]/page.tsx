@@ -13,7 +13,8 @@ import {
   Edit2,
   History,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Download
 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
@@ -46,6 +47,7 @@ interface Transaction {
   trackingNumber?: string | null
   pickupDate?: string | null
   attachments?: any
+  supplier?: string | null
   
   // Pallet configs
   storageCartonsPerPallet?: number | null
@@ -98,6 +100,7 @@ export default function TransactionDetailPage() {
     
     // Ship specific
     carrier: '',
+    modeOfTransportation: '',
     pickupDate: '',
     
     // Quantities (editable)
@@ -111,6 +114,18 @@ export default function TransactionDetailPage() {
   
   // Attachment states
   const [attachments, setAttachments] = useState<{ [key: string]: Attachment | null }>({
+    packingList: null,
+    commercialInvoice: null,
+    billOfLading: null,
+    deliveryNote: null,
+    cubeMaster: null,
+    transactionCertificate: null,
+    customDeclaration: null,
+    proofOfPickup: null
+  })
+  
+  // Pending files that haven't been uploaded to S3 yet
+  const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File | null }>({
     packingList: null,
     commercialInvoice: null,
     billOfLading: null,
@@ -149,25 +164,40 @@ export default function TransactionDetailPage() {
       const data = await response.json()
       setTransaction(data)
       
-      // Parse additional fields
-      const supplierMatch = null
-      const ciMatch = null
-      const plMatch = null
-      const tcMatch = null
-      const carrierMatch = null
-      const fbaMatch = null
-      const trackingMatch = null
-      const shipMatch = null
+      // Parse additional fields from transaction data
+      const supplierMatch = data.supplier || ''
       
-      // Set form data
+      // Extract notes content from attachments
+      let notesContent = ''
+      if (data.attachments && Array.isArray(data.attachments)) {
+        const notesAttachment = data.attachments.find((att: any) => att.type === 'notes')
+        if (notesAttachment) {
+          notesContent = notesAttachment.content || ''
+        }
+      }
+      
+      // Parse fields from notes
+      const parseFieldFromNotes = (fieldName: string): string => {
+        const regex = new RegExp(`${fieldName}:\\s*([^.]+)(?:\\.|$)`)
+        const match = notesContent.match(regex)
+        return match ? match[1].trim() : ''
+      }
+      
+      const plMatch = parseFieldFromNotes('Packing List #')
+      const tcMatch = parseFieldFromNotes('TC #')
+      const carrierMatch = parseFieldFromNotes('Carrier')
+      const modeMatch = parseFieldFromNotes('Mode')
+      
+      // Set form data - ensure no null values
       setFormData({
         ciNumber: data.referenceId || '',
-        packingListNumber: '',
-        tcNumber: '',
-        supplier: '',
+        packingListNumber: plMatch || '',
+        tcNumber: tcMatch || '',
+        supplier: supplierMatch || '',
         shipName: data.shipName || '',
         trackingNumber: data.trackingNumber || '',
-        carrier: '',
+        carrier: carrierMatch || '',
+        modeOfTransportation: modeMatch || data.modeOfTransportation || '',
         pickupDate: data.pickupDate || '',
         cartons: data.transactionType === 'RECEIVE' ? data.cartonsIn : data.cartonsOut,
         pallets: data.transactionType === 'RECEIVE' ? data.storagePalletsIn : data.shippingPalletsOut,
@@ -225,47 +255,112 @@ export default function TransactionDetailPage() {
   }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, category: string) => {
+    console.log('handleFileUpload called for category:', category)
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      console.log('No file selected')
+      return
+    }
+    console.log('File selected:', { name: file.name, size: file.size, type: file.type })
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(`${file.name} is too large. Maximum size is 5MB.`)
       return
     }
     
-    // Show upload progress for this category
-    setUploadProgress(prev => ({ ...prev, [category]: 0 }))
-    setCurrentUploadCategory(category)
+    // Store the file locally without uploading to S3
+    setPendingFiles(prev => ({ ...prev, [category]: file }))
     
-    try {
-      // Upload to S3
-      const result = await uploadToS3(file, {
-        type: 'transaction',
-        transactionId: params.id as string,
-        documentType: category
-      })
+    // Create a preview attachment object
+    const previewAttachment: Attachment = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'pending', // Mark as pending
+      s3Key: '', // No S3 key yet
+      s3Url: '', // No S3 URL yet
+      category
+    }
+    
+    setAttachments(prev => ({ ...prev, [category]: previewAttachment }))
+    toast.info(`${getCategoryLabel(category)} selected. Will upload when you save.`)
+    
+    // Clear any existing upload progress for this category
+    setUploadProgress(prev => {
+      const newProgress = { ...prev }
+      delete newProgress[category]
+      return newProgress
+    })
+  }
+
+  // New function to upload all pending files
+  const uploadPendingFiles = async (): Promise<boolean> => {
+    const filesToUpload = Object.entries(pendingFiles).filter(([_, file]) => file !== null)
+    
+    if (filesToUpload.length === 0) {
+      return true // No files to upload
+    }
+    
+    let allSuccessful = true
+    
+    for (const [category, file] of filesToUpload) {
+      if (!file) continue
       
-      if (result) {
-        const attachment: Attachment = {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          s3Key: result.s3Key,
-          s3Url: result.viewUrl,
-          category
+      try {
+        // Clean up old documents for this category first
+        const cleanupResponse = await fetch(`/api/transactions/${params.id}/documents/cleanup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentCategory: category })
+        })
+        
+        if (cleanupResponse.ok) {
+          const cleanupResult = await cleanupResponse.json()
+          console.log('Cleanup result:', cleanupResult)
         }
         
-        setAttachments(prev => ({ ...prev, [category]: attachment }))
-        toast.success(`${getCategoryLabel(category)} uploaded`)
+        // Upload to S3
+        const result = await uploadToS3(file, {
+          type: 'transaction',
+          transactionId: params.id as string,
+          documentType: category
+        })
+        
+        if (result) {
+          const attachment: Attachment = {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            s3Key: result.s3Key,
+            s3Url: result.viewUrl,
+            category,
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: 'user' // Replace with actual user info
+          }
+          
+          setAttachments(prev => ({ ...prev, [category]: attachment }))
+          // Remove from pending files after successful upload
+          setPendingFiles(prev => ({ ...prev, [category]: null }))
+        } else {
+          // Upload failed
+          allSuccessful = false
+          console.error(`Failed to upload ${category}`)
+        }
+      } catch (error) {
+        allSuccessful = false
+        console.error(`Error uploading ${category}:`, error)
+      } finally {
+        // Clear progress
+        setUploadProgress(prev => {
+          const newProgress = { ...prev }
+          delete newProgress[category]
+          return newProgress
+        })
       }
-    } finally {
-      // Clear progress
-      setUploadProgress(prev => {
-        const newProgress = { ...prev }
-        delete newProgress[category]
-        return newProgress
-      })
     }
+    
+    return allSuccessful
   }
 
   const getCategoryLabel = (category: string): string => {
@@ -288,12 +383,27 @@ export default function TransactionDetailPage() {
     setSaving(true)
     
     try {
-      // Build empty notes
+      // Upload any pending files first
+      const uploadSuccess = await uploadPendingFiles()
+      if (!uploadSuccess) {
+        toast.error('Some files failed to upload. Please try again.')
+        setSaving(false)
+        return
+      }
+      
+      // Build notes from form fields
       let fullNotes = ''
+      if (formData.supplier) fullNotes += `Supplier: ${formData.supplier}. `
+      if (formData.packingListNumber) fullNotes += `Packing List #: ${formData.packingListNumber}. `
+      if (formData.tcNumber) fullNotes += `TC #: ${formData.tcNumber}. `
+      if (formData.carrier) fullNotes += `Carrier: ${formData.carrier}. `
+      if (formData.modeOfTransportation) fullNotes += `Mode: ${formData.modeOfTransportation}. `
+      if (formData.shipName) fullNotes += `Ship: ${formData.shipName}. `
+      if (formData.trackingNumber) fullNotes += `Tracking: ${formData.trackingNumber}. `
       
       // Prepare attachment array
       const attachmentArray = Object.entries(attachments)
-        .filter(([_, att]) => att !== null)
+        .filter(([_, att]) => att !== null && att.s3Key) // Only include uploaded files
         .map(([category, att]) => ({
           ...att!,
           category: category.replace(/([A-Z])/g, '_$1').toLowerCase() // Convert camelCase to snake_case
@@ -312,8 +422,10 @@ export default function TransactionDetailPage() {
           notes: fullNotes,
           shipName: formData.shipName || null,
           trackingNumber: formData.trackingNumber || null,
+          modeOfTransportation: formData.modeOfTransportation || null,
           pickupDate: formData.pickupDate || null,
           referenceId: formData.ciNumber || transaction.referenceId,
+          supplier: formData.supplier || null,
           attachments: attachmentArray.length > 0 ? attachmentArray : null,
           
           // Quantity updates (if changed)
@@ -337,6 +449,17 @@ export default function TransactionDetailPage() {
       
       toast.success('Transaction updated successfully')
       setEditMode(false)
+      // Clear pending files after successful save
+      setPendingFiles({
+        packingList: null,
+        commercialInvoice: null,
+        billOfLading: null,
+        deliveryNote: null,
+        cubeMaster: null,
+        transactionCertificate: null,
+        customDeclaration: null,
+        proofOfPickup: null
+      })
       await fetchTransaction() // Refresh data
     } catch (error) {
       // console.error('Error updating transaction:', error)
@@ -371,17 +494,17 @@ export default function TransactionDetailPage() {
                 {transaction.transactionId} • {new Date(transaction.transactionDate).toLocaleDateString()}
               </p>
             </div>
-            <button
-              onClick={() => router.push('/operations/inventory')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Inventory
-            </button>
           </div>
           <div className="flex items-center gap-2">
             {!editMode ? (
               <>
+                <button
+                  onClick={() => router.push('/operations/inventory')}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Inventory
+                </button>
                 <button
                   onClick={() => setShowAuditLog(!showAuditLog)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
@@ -402,6 +525,17 @@ export default function TransactionDetailPage() {
                 <button
                   onClick={() => {
                     setEditMode(false)
+                    // Clear any pending files
+                    setPendingFiles({
+                      packingList: null,
+                      commercialInvoice: null,
+                      billOfLading: null,
+                      deliveryNote: null,
+                      cubeMaster: null,
+                      transactionCertificate: null,
+                      customDeclaration: null,
+                      proofOfPickup: null
+                    })
                     fetchTransaction() // Reset form
                   }}
                   disabled={saving}
@@ -519,7 +653,7 @@ export default function TransactionDetailPage() {
               </label>
               <input
                 type="text"
-                value={formData.ciNumber || transaction.referenceId}
+                value={formData.ciNumber || transaction.referenceId || ''}
                 onChange={(e) => setFormData({ ...formData, ciNumber: e.target.value })}
                 className={`w-full px-3 py-2 border rounded-md ${
                   editMode ? 'focus:outline-none focus:ring-2 focus:ring-primary' : 'bg-gray-100'
@@ -602,7 +736,7 @@ export default function TransactionDetailPage() {
                     </label>
                     <input
                       type="text"
-                      value={transaction.referenceId}
+                      value={transaction.referenceId || ''}
                       className="w-full px-3 py-2 border rounded-md bg-gray-100"
                       readOnly
                     />
@@ -627,6 +761,24 @@ export default function TransactionDetailPage() {
                       <option value="DHL">DHL</option>
                       <option value="USPS">USPS</option>
                       <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mode of Transportation
+                    </label>
+                    <select
+                      value={formData.modeOfTransportation}
+                      onChange={(e) => setFormData({ ...formData, modeOfTransportation: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                        !editMode ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
+                      disabled={!editMode}
+                    >
+                      <option value="">Select Mode...</option>
+                      <option value="SPD">SPD - Small Parcel Delivery</option>
+                      <option value="LTL">LTL - Less Than Truckload</option>
+                      <option value="FTL">FTL - Full Truckload</option>
                     </select>
                   </div>
                   <div>
@@ -812,7 +964,10 @@ export default function TransactionDetailPage() {
                     category="commercialInvoice"
                     attachment={attachments.commercialInvoice}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, commercialInvoice: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, commercialInvoice: null }))
+                      setPendingFiles(prev => ({ ...prev, commercialInvoice: null }))
+                    }}
                     disabled={!editMode}
                     uploadProgress={uploadProgress.commercialInvoice}
                   />
@@ -821,7 +976,10 @@ export default function TransactionDetailPage() {
                     category="billOfLading"
                     attachment={attachments.billOfLading}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, billOfLading: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, billOfLading: null }))
+                      setPendingFiles(prev => ({ ...prev, billOfLading: null }))
+                    }}
                     disabled={!editMode}
                     uploadProgress={uploadProgress.billOfLading}
                   />
@@ -830,7 +988,10 @@ export default function TransactionDetailPage() {
                     category="packingList"
                     attachment={attachments.packingList}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, packingList: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, packingList: null }))
+                      setPendingFiles(prev => ({ ...prev, packingList: null }))
+                    }}
                     disabled={!editMode}
                     uploadProgress={uploadProgress.packingList}
                   />
@@ -839,7 +1000,10 @@ export default function TransactionDetailPage() {
                     category="deliveryNote"
                     attachment={attachments.deliveryNote}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, deliveryNote: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, deliveryNote: null }))
+                      setPendingFiles(prev => ({ ...prev, deliveryNote: null }))
+                    }}
                     disabled={!editMode}
                     uploadProgress={uploadProgress.deliveryNote}
                   />
@@ -848,7 +1012,10 @@ export default function TransactionDetailPage() {
                     category="cubeMaster"
                     attachment={attachments.cubeMaster}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, cubeMaster: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, cubeMaster: null }))
+                      setPendingFiles(prev => ({ ...prev, cubeMaster: null }))
+                    }}
                     disabled={!editMode}
                     bgColor="bg-blue-50"
                     uploadProgress={uploadProgress.cubeMaster}
@@ -858,7 +1025,10 @@ export default function TransactionDetailPage() {
                     category="transactionCertificate"
                     attachment={attachments.transactionCertificate}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, transactionCertificate: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, transactionCertificate: null }))
+                      setPendingFiles(prev => ({ ...prev, transactionCertificate: null }))
+                    }}
                     disabled={!editMode}
                     bgColor="bg-green-50"
                     uploadProgress={uploadProgress.transactionCertificate}
@@ -868,7 +1038,10 @@ export default function TransactionDetailPage() {
                     category="customDeclaration"
                     attachment={attachments.customDeclaration}
                     onUpload={handleFileUpload}
-                    onRemove={() => setAttachments(prev => ({ ...prev, customDeclaration: null }))}
+                    onRemove={() => {
+                      setAttachments(prev => ({ ...prev, customDeclaration: null }))
+                      setPendingFiles(prev => ({ ...prev, customDeclaration: null }))
+                    }}
                     disabled={!editMode}
                     bgColor="bg-yellow-50"
                     uploadProgress={uploadProgress.customDeclaration}
@@ -882,7 +1055,10 @@ export default function TransactionDetailPage() {
                   category="proofOfPickup"
                   attachment={attachments.proofOfPickup}
                   onUpload={handleFileUpload}
-                  onRemove={() => setAttachments(prev => ({ ...prev, proofOfPickup: null }))}
+                  onRemove={() => {
+                      setAttachments(prev => ({ ...prev, proofOfPickup: null }))
+                      setPendingFiles(prev => ({ ...prev, proofOfPickup: null }))
+                    }}
                   disabled={!editMode}
                   uploadProgress={uploadProgress.proofOfPickup}
                 />
@@ -906,12 +1082,14 @@ export default function TransactionDetailPage() {
                 {new Date(transaction.createdAt).toLocaleString()}
               </span>
             </div>
-            <div>
-              <span className="text-gray-600">Last updated:</span>
-              <span className="ml-2 font-medium">
-                {new Date(transaction.updatedAt).toLocaleString()}
-              </span>
-            </div>
+            {auditLogs.length > 0 && (
+              <div>
+                <span className="text-gray-600">Last updated:</span>
+                <span className="ml-2 font-medium">
+                  {new Date(auditLogs[0].createdAt).toLocaleString()} by {auditLogs[0].userName}
+                </span>
+              </div>
+            )}
             <div>
               <span className="text-gray-600">Transaction ID:</span>
               <span className="ml-2 font-medium font-mono">{transaction.transactionId}</span>
@@ -989,20 +1167,34 @@ function AttachmentField({
       </div>
       {attachment ? (
         <div className="flex items-center justify-between bg-white p-2 rounded border">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <FileText className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-700">{attachment.name}</span>
             <span className="text-xs text-gray-500">({(attachment.size / 1024).toFixed(1)} KB)</span>
           </div>
-          {!disabled && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="text-red-600 hover:text-red-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {attachment.s3Url && (
+              <a
+                href={attachment.s3Url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800"
+                title="View/Download"
+              >
+                <Download className="h-4 w-4" />
+              </a>
+            )}
+            {!disabled && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="text-red-600 hover:text-red-800"
+                title="Remove"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         !disabled && (
@@ -1020,15 +1212,19 @@ function AttachmentField({
               </div>
             </div>
           ) : (
-            <label className="cursor-pointer">
+            <label htmlFor={`file-upload-${category}`} className="cursor-pointer">
               <div className="border-2 border-dashed border-gray-300 rounded p-2 text-center hover:border-gray-400 transition-colors">
                 <Upload className="h-5 w-5 text-gray-400 mx-auto mb-1" />
                 <p className="text-xs text-gray-600">Click to upload</p>
               </div>
               <input
+                id={`file-upload-${category}`}
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                onChange={(e) => onUpload(e, category)}
+                onChange={(e) => {
+                  console.log('File input onChange triggered for:', category)
+                  onUpload(e, category)
+                }}
                 className="hidden"
               />
             </label>

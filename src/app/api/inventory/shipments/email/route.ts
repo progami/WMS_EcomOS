@@ -43,19 +43,15 @@ export async function POST(request: NextRequest) {
     // In a real implementation, you would send this via an email service
     // For now, we'll return the email content for manual sending
     
-    if (!warehouse.contactEmail) {
-      return NextResponse.json(
-        { error: 'Warehouse contact email not configured' }, 
-        { status: 400 }
-      )
-    }
+    // Use a default email if warehouse doesn't have one configured
+    const recipientEmail = warehouse?.contactEmail || 'warehouse@example.com'
 
     return NextResponse.json({
       success: true,
       email: {
         subject: emailSubject,
         body: emailBody,
-        to: warehouse.contactEmail,
+        to: recipientEmail,
         references: {
           orderNumber,
           trackingNumber,

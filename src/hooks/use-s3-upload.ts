@@ -51,10 +51,18 @@ export function useS3Upload(options: UseS3UploadOptions = {}) {
 
       if (!presignedResponse.ok) {
         const error = await presignedResponse.json()
+        console.error('Presigned URL generation failed:', error)
         throw new Error(error.error || 'Failed to get upload URL')
       }
 
       const { uploadUrl, viewUrl, s3Key } = await presignedResponse.json()
+      
+      console.log('S3 Upload Debug:', {
+        uploadUrl: uploadUrl.substring(0, 100) + '...',
+        s3Key,
+        fileType: file.type,
+        fileSize: file.size
+      })
 
       // Step 2: Upload directly to S3
       const xhr = new XMLHttpRequest()
@@ -75,18 +83,31 @@ export function useS3Upload(options: UseS3UploadOptions = {}) {
       // Create a promise for the upload
       const uploadPromise = new Promise<void>((resolve, reject) => {
         xhr.onload = () => {
+          console.log('S3 Upload Response:', {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            responseHeaders: xhr.getAllResponseHeaders(),
+            responseText: xhr.responseText
+          })
           if (xhr.status === 200 || xhr.status === 204) {
             resolve()
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`))
+            console.error('S3 Upload Failed:', xhr.responseText)
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`))
           }
         }
-        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.onerror = () => {
+          console.error('Network error during S3 upload')
+          reject(new Error('Network error during upload'))
+        }
       })
 
       // Perform the upload
       xhr.open('PUT', uploadUrl)
       xhr.setRequestHeader('Content-Type', file.type)
+      
+      // Note: Do not add additional headers as they must match the presigned URL signature
+      
       xhr.send(file)
 
       await uploadPromise

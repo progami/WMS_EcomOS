@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { parseLocalDate } from '@/lib/utils/date-helpers'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Date filtering
     if (date) {
       // Point-in-time view - get all transactions up to this date
-      const pointInTime = new Date(date)
+      const pointInTime = parseLocalDate(date)
       pointInTime.setHours(23, 59, 59, 999)
       where.transactionDate = { lte: pointInTime }
     } else {
@@ -44,10 +45,10 @@ export async function GET(request: NextRequest) {
       if (startDate || endDate) {
         where.transactionDate = {}
         if (startDate) {
-          where.transactionDate.gte = new Date(startDate)
+          where.transactionDate.gte = parseLocalDate(startDate)
         }
         if (endDate) {
-          const endDateTime = new Date(endDate)
+          const endDateTime = parseLocalDate(endDate)
           endDateTime.setHours(23, 59, 59, 999)
           where.transactionDate.lte = endDateTime
         }
@@ -99,13 +100,24 @@ export async function GET(request: NextRequest) {
           batchLot: transaction.batchLot
         })
         
-        // Extract notes from attachments if present
+        // Extract notes and process attachments
         let notes = null;
+        let attachmentsDocs = {};
+        
         if (transaction.attachments && Array.isArray(transaction.attachments)) {
           const notesAttachment = (transaction.attachments as any[]).find(att => att.type === 'notes');
           if (notesAttachment) {
             notes = notesAttachment.content;
           }
+          
+          // Convert attachments array to object for inventory page
+          (transaction.attachments as any[]).forEach(att => {
+            if (att.category && att.category !== 'notes') {
+              // Convert snake_case to camelCase for keys
+              const camelKey = att.category.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+              attachmentsDocs[camelKey] = att;
+            }
+          });
         }
         
         return {
@@ -113,7 +125,8 @@ export async function GET(request: NextRequest) {
           pickupDate: transaction.pickupDate,
           isReconciled: transaction.isReconciled,
           runningBalance: newBalance,
-          notes
+          notes,
+          attachments: attachmentsDocs // Override with processed attachments
         }
       })
 
@@ -176,25 +189,37 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Live view - just return transactions with notes extracted
-    const transactionsWithNotes = transactions.map(transaction => {
+    // Live view - return transactions with attachments processed
+    const transactionsWithAttachments = transactions.map(transaction => {
       // Extract notes from attachments if present
       let notes = null;
+      let attachmentsDocs = {};
+      
       if (transaction.attachments && Array.isArray(transaction.attachments)) {
         const notesAttachment = (transaction.attachments as any[]).find(att => att.type === 'notes');
         if (notesAttachment) {
           notes = notesAttachment.content;
         }
+        
+        // Convert attachments array to object for inventory page
+        (transaction.attachments as any[]).forEach(att => {
+          if (att.category && att.category !== 'notes') {
+            // Convert snake_case to camelCase for keys
+            const camelKey = att.category.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+            attachmentsDocs[camelKey] = att;
+          }
+        });
       }
       
       return {
         ...transaction,
-        notes
+        notes,
+        attachments: attachmentsDocs // Override with processed attachments
       };
     });
     
     return NextResponse.json({
-      transactions: transactionsWithNotes
+      transactions: transactionsWithAttachments
     })
   } catch (error) {
     // console.error('Ledger error:', error)
