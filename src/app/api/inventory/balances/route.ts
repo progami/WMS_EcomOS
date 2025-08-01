@@ -224,7 +224,8 @@ export async function GET(req: NextRequest) {
         currentPallets: 0,
         currentUnits: 0,
         lastTransactionDate: null,
-        lastUpdated: new Date()
+        lastTransactionId: null,
+        lastTransaction: null
       }
       
       current.currentCartons += transaction.cartonsIn - transaction.cartonsOut
@@ -240,8 +241,8 @@ export async function GET(req: NextRequest) {
         (current as any).shippingCartonsPerPallet = transaction.shippingCartonsPerPallet
       }
       
-        balanceMap.set(key, current)
-      }
+      balanceMap.set(key, current)
+    }
       
       return balanceMap
     })
