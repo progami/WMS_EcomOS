@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: [
-        { transactionDate: 'desc' as const },
-        { createdAt: 'desc' as const }
-      ] as const,
+        { transactionDate: 'desc' },
+        { createdAt: 'desc' }
+      ],
       // Add pagination - default to 50 if not specified
       take: limit ? parseInt(limit) : 50,
       ...(offset && { skip: parseInt(offset) })
