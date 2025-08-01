@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch transactions with pagination support
-    const transactionQuery = {
+    const transactions = await prisma.inventoryTransaction.findMany({
       where,
       include: {
         warehouse: true,
@@ -74,12 +74,9 @@ export async function GET(request: NextRequest) {
         { transactionDate: 'desc' },
         { createdAt: 'desc' }
       ],
-      // Add pagination - default to 50 if not specified
       take: limit ? parseInt(limit) : 50,
-      ...(offset && { skip: parseInt(offset) })
-    }
-
-    const transactions = await prisma.inventoryTransaction.findMany(transactionQuery)
+      skip: offset ? parseInt(offset) : 0
+    })
 
     // If point-in-time view, calculate running balances and inventory summary
     if (date) {
