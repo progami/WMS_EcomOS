@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRedisClient } from './redis'
 
-// Store for rate limit tracking (in production, use Redis)
+// Store for rate limit tracking (fallback when Redis unavailable)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
 // Rate limit configurations
@@ -41,15 +42,52 @@ function getClientId(request: NextRequest): string {
   return ip
 }
 
-// Check rate limit
-export function checkRateLimit(
+// Check rate limit with Redis (falls back to in-memory if Redis unavailable)
+export async function checkRateLimit(
   request: NextRequest,
   limit: { windowMs: number; max: number; message: string }
-): { allowed: boolean; message?: string; retryAfter?: number } {
+): Promise<{ allowed: boolean; message?: string; retryAfter?: number }> {
   const clientId = getClientId(request)
   const now = Date.now()
+  const redis = getRedisClient()
   
-  // Get or create client record
+  // Use Redis if available
+  if (redis) {
+    try {
+      const key = `rate_limit:${clientId}`
+      const windowStart = now - limit.windowMs
+      
+      // Remove old entries and count recent ones
+      await redis.zremrangebyscore(key, '-inf', windowStart)
+      
+      // Get current count
+      const count = await redis.zcard(key)
+      
+      if (count >= limit.max) {
+        // Get oldest entry to calculate retry time
+        const oldestEntries = await redis.zrange(key, 0, 0, 'WITHSCORES')
+        const oldestTime = oldestEntries.length > 1 ? parseInt(oldestEntries[1]) : now
+        const retryAfter = Math.ceil((oldestTime + limit.windowMs - now) / 1000)
+        
+        return {
+          allowed: false,
+          message: limit.message,
+          retryAfter: Math.max(1, retryAfter),
+        }
+      }
+      
+      // Add current request
+      await redis.zadd(key, now, `${now}-${Math.random()}`)
+      await redis.expire(key, Math.ceil(limit.windowMs / 1000))
+      
+      return { allowed: true }
+    } catch (error) {
+      console.error('Redis rate limit error, falling back to in-memory:', error)
+      // Fall through to in-memory implementation
+    }
+  }
+  
+  // Fallback to in-memory rate limiting
   let clientRecord = rateLimitStore.get(clientId)
   
   // Clean up expired records periodically
@@ -92,7 +130,7 @@ export async function withRateLimit(
   handler: () => Promise<NextResponse>,
   limit = apiRateLimit
 ): Promise<NextResponse> {
-  const rateLimitCheck = checkRateLimit(request, limit)
+  const rateLimitCheck = await checkRateLimit(request, limit)
   
   if (!rateLimitCheck.allowed) {
     return NextResponse.json(

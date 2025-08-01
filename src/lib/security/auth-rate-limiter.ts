@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authLogger, securityLogger } from '@/lib/logger';
+import { getRedisClient } from '@/lib/redis';
 
 interface AuthRateLimitConfig {
   windowMs: number;
@@ -24,7 +25,7 @@ class AuthRateLimiter {
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-    // Clean up expired entries every 5 minutes
+    // Clean up expired entries every 5 minutes (only for in-memory fallback)
     this.cleanupInterval = setInterval(() => {
       const now = Date.now();
       
@@ -56,8 +57,58 @@ class AuthRateLimiter {
   }> {
     const ip = this.getClientIp(req);
     const now = Date.now();
+    const redis = getRedisClient();
     
-    // Check IP-based limits
+    // Try Redis first
+    if (redis) {
+      try {
+        // Check IP-based limits
+        const ipKey = `auth_rate_limit:ip:${ip}`;
+        const ipResult = await this.checkRedisLimit(redis, ipKey, now, config);
+        if (!ipResult.allowed) {
+          securityLogger.warn('IP rate limit exceeded (Redis)', {
+            ip,
+            attempts: ipResult.attempts,
+            lockoutUntil: ipResult.lockoutUntil
+          });
+          return {
+            allowed: false,
+            retryAfter: ipResult.retryAfter,
+            reason: 'ip_rate_limit'
+          };
+        }
+        
+        // Check username-based limits if username provided
+        if (username) {
+          const userKey = `auth_rate_limit:user:${username.toLowerCase()}`;
+          const userResult = await this.checkRedisLimit(redis, userKey, now, config);
+          if (!userResult.allowed) {
+            securityLogger.warn('User rate limit exceeded (Redis)', {
+              username,
+              attempts: userResult.attempts,
+              lockoutUntil: userResult.lockoutUntil
+            });
+            
+            // Check if we should lock the account
+            const shouldLockAccount = userResult.attempts >= config.lockoutThreshold;
+            
+            return {
+              allowed: false,
+              retryAfter: userResult.retryAfter,
+              reason: 'user_rate_limit',
+              shouldLockAccount
+            };
+          }
+        }
+        
+        return { allowed: true };
+      } catch (error) {
+        console.error('Redis auth rate limit error, falling back to in-memory:', error);
+        // Fall through to in-memory implementation
+      }
+    }
+    
+    // Fallback to in-memory
     const ipResult = this.checkLimit(this.ipAttempts, ip, now, config);
     if (!ipResult.allowed) {
       securityLogger.warn('IP rate limit exceeded', {
@@ -72,7 +123,6 @@ class AuthRateLimiter {
       };
     }
     
-    // Check username-based limits if username provided
     if (username) {
       const userResult = this.checkLimit(this.userAttempts, username.toLowerCase(), now, config);
       if (!userResult.allowed) {
@@ -82,7 +132,6 @@ class AuthRateLimiter {
           lockoutUntil: userResult.lockoutUntil
         });
         
-        // Check if we should lock the account
         const shouldLockAccount = userResult.attempts >= config.lockoutThreshold;
         
         return {
@@ -97,30 +146,63 @@ class AuthRateLimiter {
     return { allowed: true };
   }
 
-  recordFailedAttempt(
+  async recordFailedAttempt(
     req: NextRequest,
     username: string | null,
     config: AuthRateLimitConfig
-  ): void {
+  ): Promise<void> {
     const ip = this.getClientIp(req);
     const now = Date.now();
+    const redis = getRedisClient();
     
-    // Record IP attempt
+    if (redis) {
+      try {
+        // Record IP attempt
+        const ipKey = `auth_rate_limit:ip:${ip}`;
+        await this.recordRedisAttempt(redis, ipKey, now, config);
+        
+        // Record username attempt if provided
+        if (username) {
+          const userKey = `auth_rate_limit:user:${username.toLowerCase()}`;
+          await this.recordRedisAttempt(redis, userKey, now, config);
+        }
+        return;
+      } catch (error) {
+        console.error('Redis record attempt error, falling back to in-memory:', error);
+      }
+    }
+    
+    // Fallback to in-memory
     this.recordAttempt(this.ipAttempts, ip, now, config);
-    
-    // Record username attempt if provided
     if (username) {
       this.recordAttempt(this.userAttempts, username.toLowerCase(), now, config);
     }
   }
 
-  recordSuccessfulLogin(
+  async recordSuccessfulLogin(
     req: NextRequest,
     username: string
-  ): void {
+  ): Promise<void> {
     const ip = this.getClientIp(req);
+    const redis = getRedisClient();
     
-    // Clear attempts for this IP and username
+    if (redis) {
+      try {
+        // Clear attempts for this IP and username
+        await redis.del(`auth_rate_limit:ip:${ip}`);
+        await redis.del(`auth_rate_limit:user:${username.toLowerCase()}`);
+        
+        authLogger.info('Successful login - clearing rate limit counters (Redis)', {
+          ip,
+          username
+        });
+        return;
+      } catch (error) {
+        console.error('Redis clear attempts error:', error);
+      }
+    }
+    
+    // Fallback to in-memory
     this.ipAttempts.delete(ip);
     this.userAttempts.delete(username.toLowerCase());
     
@@ -136,6 +218,109 @@ class AuthRateLimiter {
     if (entry) {
       entry.shouldLockAccount = true;
     }
+  }
+
+  private async checkRedisLimit(
+    redis: any,
+    key: string,
+    now: number,
+    config: AuthRateLimitConfig
+  ): Promise<{ 
+    allowed: boolean; 
+    retryAfter?: number; 
+    attempts: number;
+    lockoutUntil?: number;
+  }> {
+    // Get entry from Redis
+    const entryStr = await redis.get(key);
+    
+    if (!entryStr) {
+      return { allowed: true, attempts: 0 };
+    }
+    
+    const entry: AuthAttemptEntry = JSON.parse(entryStr);
+    
+    // Check if currently locked out
+    if (entry.lockoutUntil && entry.lockoutUntil > now) {
+      const retryAfter = Math.ceil((entry.lockoutUntil - now) / 1000);
+      return { 
+        allowed: false, 
+        retryAfter, 
+        attempts: entry.count,
+        lockoutUntil: entry.lockoutUntil
+      };
+    }
+    
+    // Check if window has expired
+    if (entry.firstAttemptTime + config.windowMs < now) {
+      // Reset the entry
+      await redis.del(key);
+      return { allowed: true, attempts: 0 };
+    }
+    
+    // Check if max attempts reached
+    if (entry.count >= config.maxAttempts) {
+      // Apply lockout
+      const lockoutDuration = config.exponentialBackoff
+        ? config.lockoutDuration * entry.backoffMultiplier
+        : config.lockoutDuration;
+        
+      entry.lockoutUntil = now + lockoutDuration;
+      entry.backoffMultiplier = Math.min(entry.backoffMultiplier * 2, 32); // Cap at 32x
+      
+      // Update in Redis with new lockout
+      await redis.set(key, JSON.stringify(entry), 'EX', 86400); // 24 hour expiry
+      
+      const retryAfter = Math.ceil(lockoutDuration / 1000);
+      return { 
+        allowed: false, 
+        retryAfter, 
+        attempts: entry.count,
+        lockoutUntil: entry.lockoutUntil
+      };
+    }
+    
+    return { allowed: true, attempts: entry.count };
+  }
+
+  private async recordRedisAttempt(
+    redis: any,
+    key: string,
+    now: number,
+    config: AuthRateLimitConfig
+  ): Promise<void> {
+    const entryStr = await redis.get(key);
+    let entry: AuthAttemptEntry;
+    
+    if (!entryStr) {
+      // Create new entry
+      entry = {
+        count: 1,
+        firstAttemptTime: now,
+        lastAttemptTime: now,
+        backoffMultiplier: 1
+      };
+    } else {
+      entry = JSON.parse(entryStr);
+      
+      // Check if window expired
+      if (entry.firstAttemptTime + config.windowMs < now) {
+        // Reset entry
+        entry = {
+          count: 1,
+          firstAttemptTime: now,
+          lastAttemptTime: now,
+          backoffMultiplier: 1
+        };
+      } else {
+        // Update existing entry
+        entry.count++;
+        entry.lastAttemptTime = now;
+      }
+    }
+    
+    // Save to Redis with 24 hour expiry
+    await redis.set(key, JSON.stringify(entry), 'EX', 86400);
   }
 
   private checkLimit(
@@ -297,13 +482,13 @@ export async function checkAuthRateLimit(
 }
 
 // Export function to record failed attempts
-export function recordFailedLoginAttempt(req: NextRequest, username?: string): void {
+export async function recordFailedLoginAttempt(req: NextRequest, username?: string): Promise<void> {
   const limiter = getAuthRateLimiter();
-  limiter.recordFailedAttempt(req, username || null, authRateLimitConfig);
+  await limiter.recordFailedAttempt(req, username || null, authRateLimitConfig);
 }
 
 // Export function to record successful login
-export function recordSuccessfulLogin(req: NextRequest, username: string): void {
+export async function recordSuccessfulLogin(req: NextRequest, username: string): Promise<void> {
   const limiter = getAuthRateLimiter();
-  limiter.recordSuccessfulLogin(req, username);
+  await limiter.recordSuccessfulLogin(req, username);
 }

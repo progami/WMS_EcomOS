@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { isRedisHealthy } from '@/lib/redis';
 
 // Health check endpoint for monitoring and CI
 export async function GET() {
@@ -28,11 +29,14 @@ export async function GET() {
     }
   }
 
-  // Check Redis connection (if needed)
+  // Check Redis connection
   if (process.env.REDIS_URL) {
-    // For now, just check if URL is set
-    // In production, you would actually test the connection
-    health.checks.redis = true;
+    try {
+      health.checks.redis = await isRedisHealthy();
+    } catch (error) {
+      console.error('Redis health check failed:', error);
+      health.checks.redis = false;
+    }
   }
 
   // Determine overall health status

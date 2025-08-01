@@ -4,8 +4,7 @@ export async function loginAsAdmin(page: Page) {
   // Navigate to login page
   await page.goto('/auth/login', { waitUntil: 'networkidle' })
   
-  // In test mode (USE_TEST_AUTH=true), any credentials work
-  // Use consistent test credentials - use name attribute selectors for better reliability
+  // Use test credentials from seed-test.ts - use name attribute selectors for better reliability
   const emailInput = page.locator('input[name="emailOrUsername"]')
   const passwordInput = page.locator('input[name="password"]')
   const loginButton = page.locator('button[type="submit"]')
@@ -74,7 +73,7 @@ export async function loginWithQuickFill(page: Page, userType: 'Admin' | 'Financ
 
 export async function setupDemoAndLogin(page: Page) {
   // In test mode, we don't need demo setup - just login directly
-  if (process.env.USE_TEST_AUTH === 'true') {
+  if (process.env.NODE_ENV === 'test') {
     await loginAsAdmin(page)
     return
   }

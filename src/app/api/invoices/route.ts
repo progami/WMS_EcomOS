@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { businessLogger, apiLogger, perfLogger } from '@/lib/logger'
 import { sanitizeForDisplay, sanitizeSearchQuery, escapeRegex, validatePositiveInteger } from '@/lib/security/input-sanitization'
+import { withIdempotency } from '@/lib/idempotency'
 export const dynamic = 'force-dynamic'
 
 // Validation schemas with sanitization
@@ -144,21 +145,22 @@ export async function GET(req: NextRequest) {
 
 // POST /api/invoices - Create new invoice
 export async function POST(req: NextRequest) {
-  const startTime = Date.now();
-  let session: any = null;
-  
-  try {
-    session = await getServerSession(authOptions)
-    if (!session) {
-      apiLogger.warn('Unauthorized invoice creation attempt', {
-        path: '/api/invoices',
-        method: 'POST'
-      });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  return withIdempotency(req, async () => {
+    const startTime = Date.now();
+    let session: any = null;
+    
+    try {
+      session = await getServerSession(authOptions)
+      if (!session) {
+        apiLogger.warn('Unauthorized invoice creation attempt', {
+          path: '/api/invoices',
+          method: 'POST'
+        });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
 
-    const body = await req.json()
-    const validatedData = createInvoiceSchema.parse(body)
+      const body = await req.json()
+      const validatedData = createInvoiceSchema.parse(body)
 
     // Validate warehouse access
     const warehouseFilter = getWarehouseFilter(session, validatedData.warehouseId)
@@ -311,7 +313,11 @@ export async function POST(req: NextRequest) {
       { error: 'Failed to create invoice' },
       { status: 500 }
     )
-  }
+    }
+  }, {
+    operation: 'create_invoice',
+    ttlSeconds: 24 * 60 * 60 // 24 hours
+  })
 }
 
 // PATCH /api/invoices - Update invoice status

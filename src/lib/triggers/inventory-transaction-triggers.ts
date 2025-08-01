@@ -3,7 +3,7 @@ import { CostCategory, TransactionType } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
 import { getBillingPeriod } from '@/lib/calculations/cost-aggregation'
 
-interface TransactionItem {
+export interface TransactionItem {
   skuId: string
   batchLot: string
   quantityReceived?: number
@@ -13,7 +13,7 @@ interface TransactionItem {
   palletCount?: number
 }
 
-interface Transaction {
+export interface Transaction {
   transactionId: string
   transactionType: TransactionType
   warehouseId: string
@@ -327,18 +327,23 @@ export async function getPendingCostCalculations() {
   // Find transactions without calculated costs
   const transactions = await prisma.inventoryTransaction.findMany({
     where: {
-      transactionType: { in: ['RECEIVE', 'SHIP'] },
-      calculatedCosts: {
-        none: {}
-      }
-    },
-    include: {
-      items: true
+      transactionType: { in: ['RECEIVE', 'SHIP'] }
     },
     take: 100
   })
 
-  return transactions
+  // Filter to only include transactions without calculated costs
+  const transactionsWithoutCosts = []
+  for (const transaction of transactions) {
+    const costsCount = await prisma.calculatedCost.count({
+      where: { transactionId: transaction.transactionId }
+    })
+    if (costsCount === 0) {
+      transactionsWithoutCosts.push(transaction)
+    }
+  }
+
+  return transactionsWithoutCosts
 }
 
 export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, userId?: string, warehouseId?: string) {
@@ -353,7 +358,9 @@ export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, use
     weekStart.setHours(0, 0, 0, 0)
     
     // Get billing period for the week
-    const { year, month } = getBillingPeriod(weekEnd)
+    const billingPeriod = getBillingPeriod(weekEnd)
+    const year = billingPeriod.yearDisplay || 2025
+    const month = billingPeriod.monthDisplay || 'January'
     
     // Get warehouses to process
     const warehouseCondition = warehouseId ? { id: warehouseId } : {}
@@ -366,7 +373,7 @@ export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, use
       const storageCostRate = await prisma.costRate.findFirst({
         where: {
           warehouseId: warehouse.id,
-          costCategory: 'STORAGE',
+          costCategory: 'Storage',
           isActive: true,
           effectiveDate: { lte: weekEnd },
           OR: [
@@ -382,27 +389,51 @@ export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, use
       }
       
       // Get inventory balances at week end
-      const inventoryBalances = await prisma.inventoryBalance.findMany({
+      const inventoryLedger = await prisma.inventoryLedger.groupBy({
+        by: ['warehouseId', 'skuId', 'batchLot'],
         where: {
           warehouseId: warehouse.id,
-          quantity: { gt: 0 }
+          transactionDate: { lte: weekEnd }
         },
-        include: {
-          sku: true
+        _sum: {
+          cartonsIn: true,
+          cartonsOut: true
         }
       })
+      
+      const inventoryBalances = await Promise.all(
+        inventoryLedger.map(async (item) => {
+          const quantity = (item._sum.cartonsIn || 0) - (item._sum.cartonsOut || 0)
+          if (quantity <= 0) return null
+          
+          const sku = await prisma.sku.findUnique({
+            where: { id: item.skuId }
+          })
+          
+          return {
+            warehouseId: item.warehouseId,
+            skuId: item.skuId,
+            batchLot: item.batchLot,
+            quantity,
+            sku
+          }
+        })
+      ).then(results => results.filter(r => r !== null))
       
       // Calculate storage costs for each SKU
       for (const balance of inventoryBalances) {
         if (balance.quantity === 0) continue
         
         // Get cartons per pallet for this SKU/warehouse
-        const config = await prisma.warehouseSkuConfig.findUnique({
+        const config = await prisma.warehouseSkuConfig.findFirst({
           where: {
-            warehouseId_skuId: {
-              warehouseId: warehouse.id,
-              skuId: balance.skuId
-            }
+            warehouseId: warehouse.id,
+            skuId: balance.skuId,
+            effectiveDate: { lte: weekEnd },
+            OR: [
+              { endDate: null },
+              { endDate: { gte: weekStart } }
+            ]
           }
         })
         
@@ -423,7 +454,7 @@ export async function triggerWeeklyStorageCalculation(weekEndingDate?: Date, use
               costRateId: storageCostRate.id,
               warehouseId: warehouse.id,
               skuId: balance.skuId,
-              costCategory: 'STORAGE',
+              costCategory: 'Storage',
               costName: 'Storage per Week',
               calculationType: 'WEEKLY_STORAGE',
               units: new Decimal(palletCount),

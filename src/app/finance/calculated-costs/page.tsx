@@ -305,7 +305,7 @@ export default function CalculatedCostsPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {transactionCosts.map((cost) => (
-                        <tr key={cost.id} className="hover:bg-gray-50">
+                        <tr key={`${cost.transactionId}-${cost.costName}-${cost.costRateId}`} className="hover:bg-gray-50">
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {cost.costName}
                           </td>

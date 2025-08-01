@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getServerSession } from '@/lib/get-session'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { sanitizeForDisplay, validateAlphanumeric } from '@/lib/security/input-sanitization'
@@ -36,7 +35,7 @@ const updateWarehouseSchema = z.object({
 // GET /api/warehouses - List warehouses
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -84,7 +83,7 @@ export async function GET(req: NextRequest) {
 // POST /api/warehouses - Create warehouse
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session || !['admin', 'staff'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -157,7 +156,7 @@ export async function POST(req: NextRequest) {
 // PATCH /api/warehouses - Update warehouse
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session || !['admin', 'staff'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -245,7 +244,7 @@ export async function PATCH(req: NextRequest) {
 // DELETE /api/warehouses - Delete warehouse
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session || session.user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

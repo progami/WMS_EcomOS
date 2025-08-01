@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { UserRole } from '@prisma/client'
 
+// Check if we should bypass auth in development
+const BYPASS_AUTH_IN_DEV = process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true'
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
@@ -19,6 +22,30 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        // In development mode with BYPASS_AUTH=true, auto-login as demo admin
+        if (BYPASS_AUTH_IN_DEV) {
+          const demoAdmin = await prisma.user.findFirst({
+            where: {
+              email: 'demo-admin@warehouse.com',
+              isActive: true
+            },
+            include: {
+              warehouse: true,
+            },
+          })
+
+          if (demoAdmin) {
+            return {
+              id: demoAdmin.id,
+              email: demoAdmin.email,
+              name: demoAdmin.fullName,
+              role: demoAdmin.role,
+              warehouseId: demoAdmin.warehouseId || undefined,
+              isDemo: demoAdmin.isDemo,
+            }
+          }
+        }
+
         if (!credentials?.emailOrUsername || !credentials?.password) {
           throw new Error('Invalid credentials')
         }

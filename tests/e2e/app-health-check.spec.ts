@@ -119,8 +119,7 @@ test.describe('Application Health Check', () => {
     await expect(passwordInput).toBeVisible();
     await expect(loginButton).toBeVisible();
     
-    // In test mode with USE_TEST_AUTH=true, we can login with any credentials
-    // Fill in test credentials
+    // Fill in test credentials from seed-test.ts
     await emailInput.fill('demo-admin');
     await passwordInput.fill('SecureWarehouse2024!');
     

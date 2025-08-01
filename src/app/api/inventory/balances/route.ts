@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getServerSession } from '@/lib/get-session'
 import { prisma } from '@/lib/prisma'
 import { getPaginationParams, getPaginationSkipTake, createPaginatedResponse } from '@/lib/database/pagination'
 import { sanitizeSearchQuery } from '@/lib/security/input-sanitization'
 import { calculateUnits } from '@/lib/utils/unit-calculations'
+import { createPerformanceLogger } from '@/lib/monitoring/performance'
+import { isFeatureEnabled } from '@/lib/feature-flags'
+
 export const dynamic = 'force-dynamic'
 
+const perf = createPerformanceLogger('api.inventory.balances')
+
 export async function GET(req: NextRequest) {
+  const startTime = performance.now()
+  
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -23,7 +29,115 @@ export async function GET(req: NextRequest) {
     // Get pagination params
     const paginationParams = getPaginationParams(req)
 
-    // Always calculate balances from transactions (runtime calculation)
+    // Check if we should use the new InventoryBalance table
+    if (isFeatureEnabled('USE_INVENTORY_BALANCE_TABLE') && !date) {
+      // Use the fast path: direct query from InventoryBalance table
+      const balanceWhere: any = {}
+      
+      if (session.user.role === 'staff' && session.user.warehouseId) {
+        balanceWhere.warehouseId = session.user.warehouseId
+      } else if (warehouseId) {
+        balanceWhere.warehouseId = warehouseId
+      } else {
+        // Exclude Amazon warehouses
+        balanceWhere.warehouse = {
+          NOT: {
+            OR: [
+              { code: 'AMZN' },
+              { code: 'AMZN-UK' }
+            ]
+          }
+        }
+      }
+      
+      if (skuCode) {
+        balanceWhere.sku = {
+          skuCode: {
+            contains: sanitizeSearchQuery(skuCode),
+            mode: 'insensitive'
+          }
+        }
+      }
+      
+      if (!showZeroStock) {
+        balanceWhere.currentCartons = { gt: 0 }
+      }
+      
+      // Fast path: Query from InventoryBalance table
+      const balances = await perf.measure('fetch_balances_direct', async () => {
+        try {
+          const results = await prisma.inventoryBalance.findMany({
+            where: balanceWhere,
+            include: {
+              warehouse: true,
+              sku: true,
+              lastTransaction: {
+                include: {
+                  createdBy: {
+                    select: { fullName: true }
+                  }
+                }
+              }
+            },
+            orderBy: [
+              { sku: { skuCode: 'asc' } },
+              { batchLot: 'asc' }
+            ]
+          })
+          return results
+        } catch (dbError) {
+          console.error('Database query error:', dbError)
+          // Fallback: Query without lastTransaction relation
+          return await prisma.inventoryBalance.findMany({
+            where: balanceWhere,
+            include: {
+              warehouse: true,
+              sku: true
+            },
+            orderBy: [
+              { sku: { skuCode: 'asc' } },
+              { batchLot: 'asc' }
+            ]
+          })
+        }
+      })
+      
+      // Transform to match expected format
+      const results = balances.map(balance => {
+        const hasLastTransaction = 'lastTransaction' in balance && balance.lastTransaction
+        return {
+          id: `${balance.warehouseId}-${balance.skuId}-${balance.batchLot}`,
+          warehouseId: balance.warehouseId,
+          skuId: balance.skuId,
+          warehouse: balance.warehouse,
+          sku: balance.sku,
+          batchLot: balance.batchLot,
+          currentCartons: balance.currentCartons,
+          currentUnits: balance.currentUnits,
+          currentPallets: balance.currentPallets,
+          lastTransactionDate: hasLastTransaction ? balance.lastTransaction.transactionDate : null,
+          lastUpdated: balance.lastUpdated,
+          receiveTransaction: hasLastTransaction && balance.lastTransaction.createdBy ? {
+            createdBy: balance.lastTransaction.createdBy,
+            transactionDate: balance.lastTransaction.transactionDate
+          } : undefined
+        }
+      })
+      
+      // Apply pagination
+      const { skip, take } = getPaginationSkipTake(paginationParams)
+      const paginatedResults = results.slice(skip, skip + take)
+      
+      const duration = performance.now() - startTime
+      perf.log('inventory_balance_api', duration, {
+        method: 'direct_query',
+        resultCount: results.length
+      })
+      
+      return NextResponse.json(createPaginatedResponse(paginatedResults, results.length, paginationParams))
+    }
+
+    // Legacy path: calculate balances from transactions (runtime calculation)
     const pointInTime = date ? new Date(date) : new Date()
     if (date) {
       pointInTime.setHours(23, 59, 59, 999)
@@ -61,24 +175,30 @@ export async function GET(req: NextRequest) {
     }
     
     // Fetch all transactions up to the date
-    const transactions = await prisma.inventoryTransaction.findMany({
-      where: transactionWhere,
-      include: {
-        warehouse: true,
-        sku: true
-      },
-      orderBy: [
-        { transactionDate: 'asc' },
-        { createdAt: 'asc' }
-      ]
+    const transactions = await perf.measure('fetch_transactions', async () => {
+      return await prisma.inventoryTransaction.findMany({
+        where: transactionWhere,
+        include: {
+          warehouse: true,
+          sku: true
+        },
+        orderBy: [
+          { transactionDate: 'asc' },
+          { createdAt: 'asc' }
+        ]
+      })
+    }, {
+      warehouseId: warehouseId || 'all',
+      dateFilter: date || 'current'
     })
     
     // Calculate balances from transactions
-    const balances = new Map<string, any>()
-    
-    for (const transaction of transactions) {
-      const key = `${transaction.warehouseId}-${transaction.skuId}-${transaction.batchLot}`
-      const current = balances.get(key) || {
+    const balances = await perf.measure('calculate_balances', async () => {
+      const balanceMap = new Map<string, any>()
+      
+      for (const transaction of transactions) {
+        const key = `${transaction.warehouseId}-${transaction.skuId}-${transaction.batchLot}`
+        const current = balanceMap.get(key) || {
         id: key,
         warehouseId: transaction.warehouseId,
         skuId: transaction.skuId,
@@ -105,8 +225,11 @@ export async function GET(req: NextRequest) {
         current.shippingCartonsPerPallet = transaction.shippingCartonsPerPallet
       }
       
-      balances.set(key, current)
-    }
+        balanceMap.set(key, current)
+      }
+      
+      return balanceMap
+    })
     
     // Calculate pallets for each balance
     for (const [, balance] of balances.entries()) {
@@ -196,8 +319,22 @@ export async function GET(req: NextRequest) {
     }
     
     // For date queries, return all results without pagination
-    return NextResponse.json(results)
+    const totalDuration = performance.now() - startTime
+    perf.log('total_request', totalDuration, {
+      transactionCount: transactions.length,
+      resultCount: results.length,
+      hasDateFilter: !!date
+    })
+    
+    const response = NextResponse.json(results)
+    response.headers.set('X-Response-Time', `${totalDuration.toFixed(2)}ms`)
+    return response
   } catch (error) {
+    const totalDuration = performance.now() - startTime
+    perf.log('total_request_error', totalDuration, {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
     console.error('Error fetching inventory balances:', error)
     return NextResponse.json(
       { error: 'Failed to fetch inventory balances', details: error instanceof Error ? error.message : 'Unknown error' },

@@ -45,7 +45,7 @@ export default defineConfig({
     stderr: 'pipe',
     env: {
       ...process.env,
-      USE_TEST_AUTH: process.env.USE_TEST_AUTH || 'true',
+      // USE_TEST_AUTH removed for security - use test-login endpoint instead
       NODE_ENV: process.env.NODE_ENV || 'test',
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'test-secret-for-e2e-tests',

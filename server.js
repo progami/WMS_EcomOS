@@ -20,7 +20,7 @@ if (process.env.CI) {
   console.log('Running in CI mode');
   console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
   console.log('REDIS_URL:', process.env.REDIS_URL ? 'Set' : 'Not set');
-  console.log('USE_TEST_AUTH:', process.env.USE_TEST_AUTH);
+  // USE_TEST_AUTH removed for security
 }
 
 // Create the Next.js app

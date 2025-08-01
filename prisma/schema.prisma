@@ -59,6 +59,8 @@ model Warehouse {
   users                 User[]
   notifications         WarehouseNotification[]
   warehouseSkuConfigs   WarehouseSkuConfig[]
+  inventoryBalances     InventoryBalance[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
 
   @@map("warehouses")
 }
@@ -84,8 +86,10 @@ model Sku {
   calculatedCosts       CalculatedCost[]
   inventoryTransactions InventoryTransaction[]
   versions              SkuVersion[]
+  inventoryBalances     InventoryBalance[]
   storageLedgerEntries  StorageLedger[]
   warehouseConfigs      WarehouseSkuConfig[]
+  reconciliationDiscrepancies ReconciliationDiscrepancy[]
 
   @@index([skuCode])
   @@map("skus")
@@ -180,6 +184,7 @@ model InventoryTransaction {
   createdBy                User            @relation("TransactionCreator", fields: [createdById], references: [id])
   sku                      Sku             @relation(fields: [skuId], references: [id])
   warehouse                Warehouse       @relation(fields: [warehouseId], references: [id])
+  balanceRecords           InventoryBalance[] @relation("lastTransaction")
 
   @@index([transactionDate])
   @@index([warehouseId, skuId, batchLot])
@@ -188,6 +193,30 @@ model InventoryTransaction {
   @@map("inventory_transactions")
 }
 
+model InventoryBalance {
+  id                String    @id @default(uuid())
+  warehouseId       String    @map("warehouse_id")
+  skuId             String    @map("sku_id")
+  batchLot          String    @map("batch_lot")
+  currentCartons    Int       @default(0) @map("current_cartons")
+  currentUnits      Int       @default(0) @map("current_units")
+  currentPallets    Int       @default(0) @map("current_pallets")
+  lastTransactionId String?   @map("last_transaction_id")
+  lastUpdated       DateTime  @updatedAt @map("last_updated")
+  version           Int       @default(0) // For optimistic locking
+  createdAt         DateTime  @default(now()) @map("created_at")
+  
+  // Relations
+  warehouse         Warehouse @relation(fields: [warehouseId], references: [id])
+  sku               Sku       @relation(fields: [skuId], references: [id])
+  lastTransaction   InventoryTransaction? @relation("lastTransaction", fields: [lastTransactionId], references: [id])
+  
+  @@unique([warehouseId, skuId, batchLot])
+  @@index([warehouseId, skuId])
+  @@index([currentCartons])
+  @@index([lastUpdated])
+  @@map("inventory_balances")
+}
 
 model StorageLedger {
   id                    String    @id @default(uuid())
@@ -463,6 +492,58 @@ model Payment {
   @@map("payments")
 }
 
+model ReconciliationLog {
+  id                    String                    @id @default(uuid())
+  runId                 String                    @unique @map("run_id")
+  status                ReconciliationRunStatus   @default(IN_PROGRESS)
+  startedAt             DateTime                  @default(now()) @map("started_at")
+  completedAt           DateTime?                 @map("completed_at")
+  totalBalancesChecked  Int                       @default(0) @map("total_balances_checked")
+  totalDiscrepancies    Int                       @default(0) @map("total_discrepancies")
+  criticalDiscrepancies Int                       @default(0) @map("critical_discrepancies")
+  errorMessage          String?                   @map("error_message")
+  alertsSent            Boolean                   @default(false) @map("alerts_sent")
+  jobTriggeredBy        String                    @default("SYSTEM") @map("job_triggered_by")
+  executionTimeMs       Int?                      @map("execution_time_ms")
+  metadataJson          Json?                     @map("metadata_json")
+  createdAt             DateTime                  @default(now()) @map("created_at")
+  discrepancies         ReconciliationDiscrepancy[]
+
+  @@index([startedAt])
+  @@index([status])
+  @@index([criticalDiscrepancies])
+  @@map("reconciliation_logs")
+}
+
+model ReconciliationDiscrepancy {
+  id                  String            @id @default(uuid())
+  reconciliationRunId String            @map("reconciliation_run_id")
+  warehouseId         String            @map("warehouse_id")
+  skuId               String            @map("sku_id")
+  batchLot            String            @map("batch_lot")
+  recordedCartons     Int               @map("recorded_cartons")
+  calculatedCartons   Int               @map("calculated_cartons")
+  cartonDifference    Int               @map("carton_difference")
+  recordedPallets     Int               @map("recorded_pallets")
+  calculatedPallets   Int               @map("calculated_pallets")
+  palletDifference    Int               @map("pallet_difference")
+  severity            DiscrepancySeverity
+  resolvedAt          DateTime?         @map("resolved_at")
+  resolutionNotes     String?           @map("resolution_notes")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  
+  // Relations
+  reconciliationRun   ReconciliationLog @relation(fields: [reconciliationRunId], references: [id], onDelete: Cascade)
+  warehouse           Warehouse         @relation(fields: [warehouseId], references: [id])
+  sku                 Sku               @relation(fields: [skuId], references: [id])
+
+  @@index([reconciliationRunId])
+  @@index([warehouseId, skuId, batchLot])
+  @@index([severity])
+  @@index([resolvedAt])
+  @@map("reconciliation_discrepancies")
+}
+
 enum UserRole {
   admin
   staff
@@ -526,4 +607,29 @@ enum ResolutionType {
   REJECTED
   PARTIAL_ACCEPT
   ESCALATED
+}
+
+enum ReconciliationRunStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum DiscrepancySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model IdempotencyKey {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  operation  String
+  response   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+  
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

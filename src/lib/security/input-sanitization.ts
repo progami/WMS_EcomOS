@@ -60,17 +60,9 @@ export function sanitizeFilename(filename: string): string {
   return safe;
 }
 
-export function sanitizeSqlInput(input: string): string {
-  // Basic SQL injection prevention - should use parameterized queries instead
-  return input
-    .replace(/'/g, "''")
-    .replace(/;/g, '')
-    .replace(/--/g, '')
-    .replace(/\/\*/g, '')
-    .replace(/\*\//g, '')
-    .replace(/xp_/gi, '')
-    .replace(/union\s+select/gi, '');
-}
+// SQL sanitization removed - always use Prisma parameterized queries instead
+// If you need to build dynamic queries, use Prisma's query builder or
+// parameterized raw queries with $queryRaw`SELECT * FROM table WHERE id = ${value}`
 
 export function sanitizeSearchQuery(query: string): string {
   // Remove special characters that could break searches

@@ -94,7 +94,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: 'true'
+          # USE_TEST_AUTH removed for security
         run: npm run build
         
       - name: Upload build
@@ -157,7 +157,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: 'true'
+          # USE_TEST_AUTH removed for security
         run: npm run test:unit
         
       - name: Run Integration Tests
@@ -166,7 +166,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: 'true'
+          # USE_TEST_AUTH removed for security
         run: npm run test:integration
         
       - name: Upload test results
@@ -245,7 +245,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: true
+          # USE_TEST_AUTH removed for security
           NODE_ENV: production
           CI: true
         run: |
@@ -269,7 +269,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: true
+          # USE_TEST_AUTH removed for security
           CI: true
           BASE_URL: http://localhost:3000
         run: |
@@ -336,7 +336,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: 'true'
+          # USE_TEST_AUTH removed for security
         run: npm run test:security
         
       - name: Dependency Audit
@@ -419,7 +419,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: test-secret
-          USE_TEST_AUTH: 'true'
+          # USE_TEST_AUTH removed for security
         run: npm run test:performance
         
       - name: Upload performance results

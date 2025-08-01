@@ -121,5 +121,5 @@ process.env.NODE_ENV = 'test'
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 process.env.NEXTAUTH_URL = 'http://localhost:3000'
 process.env.NEXTAUTH_SECRET = 'test-secret'
-process.env.USE_TEST_AUTH = 'true'
+// USE_TEST_AUTH removed for security - use test-login endpoint instead
 process.env.AMAZON_MARKETPLACE_ID = 'TEST_MARKETPLACE_ID'

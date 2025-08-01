@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getServerSession } from '@/lib/get-session'
 import { prisma } from '@/lib/prisma'
 import { TransactionType } from '@prisma/client'
 import { businessLogger, perfLogger } from '@/lib/logger/index'
 import { sanitizeForDisplay, validateAlphanumeric, validatePositiveInteger } from '@/lib/security/input-sanitization'
-import { triggerCostCalculation, shouldCalculateCosts, validateTransactionForCostCalculation } from '@/lib/triggers/inventory-transaction-triggers'
+import { triggerCostCalculation, shouldCalculateCosts, validateTransactionForCostCalculation, type Transaction } from '@/lib/triggers/inventory-transaction-triggers'
 import { parseLocalDate } from '@/lib/utils/date-helpers'
+import { InventoryBalanceService } from '@/services/inventory-balance.service'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -447,10 +448,16 @@ export async function POST(request: NextRequest) {
           })
 
           transactions.push(transaction)
+          
+          // Update inventory balance if feature is enabled
+          if (isFeatureEnabled('USE_INVENTORY_BALANCE_TABLE')) {
+            const balanceService = new InventoryBalanceService(tx as any)
+            await balanceService.updateBalanceWithTransaction(
+              tx as any, 
+              { ...transaction, sku }
+            )
+          }
         }
-
-        // Inventory balances are now calculated at runtime from transactions
-        // No need to update a separate balance table
         
         return transactions;
     });
@@ -480,19 +487,23 @@ export async function POST(request: NextRequest) {
     // Trigger cost calculations for all created transactions
     for (const transaction of result) {
       if (shouldCalculateCosts(transaction.transactionType)) {
-        const transactionData = {
+        const transactionData: Transaction = {
           transactionId: transaction.transactionId,
-          warehouseId: transaction.warehouseId,
-          skuId: transaction.skuId,
-          batchLot: transaction.batchLot,
           transactionType: transaction.transactionType,
+          warehouseId: transaction.warehouseId,
           transactionDate: transaction.transactionDate,
-          cartonsIn: transaction.cartonsIn,
-          cartonsOut: transaction.cartonsOut,
-          storagePalletsIn: transaction.storagePalletsIn,
-          shippingPalletsOut: transaction.shippingPalletsOut,
-          storageCartonsPerPallet: transaction.storageCartonsPerPallet || undefined,
-          shippingCartonsPerPallet: transaction.shippingCartonsPerPallet || undefined,
+          trackingNumber: transaction.trackingNumber,
+          createdById: session.user.id,
+          items: [{
+            skuId: transaction.skuId,
+            batchLot: transaction.batchLot,
+            quantityReceived: transaction.cartonsIn || 0,
+            quantityShipped: transaction.cartonsOut || 0,
+            unitsPerCarton: transaction.unitsPerCarton || 1,
+            cartonsPerPallet: transaction.storageCartonsPerPallet || 1,
+            palletCount: transaction.transactionType === 'RECEIVE' ? 
+              transaction.storagePalletsIn : transaction.shippingPalletsOut
+          }]
         };
 
         if (validateTransactionForCostCalculation(transactionData)) {

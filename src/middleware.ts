@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
+// Check if auth is bypassed in development
+// Note: In middleware, we need to check this differently
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
@@ -10,6 +14,12 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/operations/inventory'
     return NextResponse.redirect(url)
+  }
+  
+  // In development with BYPASS_AUTH=true, skip all auth checks
+  // Check the environment variable from the request
+  if (isDevelopment && process.env.BYPASS_AUTH === 'true') {
+    return NextResponse.next()
   }
   
   // Public routes that don't require authentication

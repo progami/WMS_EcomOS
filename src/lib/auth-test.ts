@@ -56,13 +56,11 @@ export const testAuthOptions: NextAuthOptions = {
   }
 }
 
-// Helper to get auth options based on environment
+// DEPRECATED: This function is being removed for security reasons
+// USE_TEST_AUTH environment variable should not be used as it creates a security backdoor
+// For test authentication, use the /api/auth/test-login endpoint in test environment only
 export function getAuthOptions(): NextAuthOptions {
-  // Use test auth if USE_TEST_AUTH is explicitly set to 'true'
-  // This works in both test and production environments for CI/CD
-  if (process.env.USE_TEST_AUTH === 'true') {
-    return testAuthOptions
-  }
-  
+  // Always return production auth options
+  // Test authentication should be handled through proper test endpoints
   return productionAuthOptions
 }

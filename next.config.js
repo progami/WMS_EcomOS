@@ -135,11 +135,6 @@ const nextConfig = {
   },
   
   
-  // Enable experimental features for production optimization
-  experimental: {
-    // optimizeCss: true, // Disabled to avoid critters dependency issue
-    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', '@radix-ui/react-icons', '@radix-ui/react-dialog', '@radix-ui/react-select'],
-  },
   
   // Server external packages (moved from experimental in Next.js 15)
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
@@ -149,6 +144,12 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
     } : false,
+  },
+  
+  // Experimental features
+  experimental: {
+    // Keep existing experimental features
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', '@radix-ui/react-icons', '@radix-ui/react-dialog', '@radix-ui/react-select'],
   },
   
   // Removed standalone output - incompatible with custom server.js
