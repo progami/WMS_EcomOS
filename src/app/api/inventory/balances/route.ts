@@ -117,9 +117,9 @@ export async function GET(req: NextRequest) {
           currentPallets: balance.currentPallets,
           lastTransactionDate: hasLastTransaction ? balance.lastTransaction.transactionDate : null,
           lastUpdated: balance.lastUpdated,
-          receiveTransaction: hasLastTransaction && balance.lastTransaction.createdBy ? {
-            createdBy: balance.lastTransaction.createdBy,
-            transactionDate: balance.lastTransaction.transactionDate
+          receiveTransaction: hasLastTransaction && (balance.lastTransaction as any).createdBy ? {
+            createdBy: (balance.lastTransaction as any).createdBy,
+            transactionDate: (balance.lastTransaction as any).transactionDate
           } : undefined
         }
       })
@@ -207,6 +207,8 @@ export async function GET(req: NextRequest) {
         lastTransactionDate: Date | null
         lastTransactionId: string | null
         lastTransaction: any
+        storageCartonsPerPallet?: number
+        shippingCartonsPerPallet?: number
       }>()
       
       for (const transaction of transactions) {

@@ -1,7 +1,9 @@
 #!/usr/bin/env tsx
 
 // Set NODE_ENV to ensure we're in server context
-process.env.NODE_ENV = process.env.NODE_ENV || 'development'
+if (!process.env.NODE_ENV) {
+  (process.env as any).NODE_ENV = 'development'
+}
 
 // Direct winston import to avoid server-only module issue
 import winston from 'winston'
