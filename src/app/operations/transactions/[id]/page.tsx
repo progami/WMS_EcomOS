@@ -63,6 +63,8 @@ interface Attachment {
   s3Key?: string // S3 key for new uploads
   s3Url?: string // Presigned URL for viewing
   category: string
+  uploadedAt?: string
+  uploadedBy?: string
 }
 
 interface AuditLog {
@@ -284,7 +286,7 @@ export default function TransactionDetailPage() {
     }
     
     setAttachments(prev => ({ ...prev, [category]: previewAttachment }))
-    toast.info(`${getCategoryLabel(category)} selected. Will upload when you save.`)
+    toast(`${getCategoryLabel(category)} selected. Will upload when you save.`)
     
     // Clear any existing upload progress for this category
     setUploadProgress(prev => {
@@ -1086,7 +1088,7 @@ export default function TransactionDetailPage() {
               <div>
                 <span className="text-gray-600">Last updated:</span>
                 <span className="ml-2 font-medium">
-                  {new Date(auditLogs[0].createdAt).toLocaleString()} by {auditLogs[0].userName}
+                  {new Date(auditLogs[0].createdAt).toLocaleString()} by {auditLogs[0].changedBy.fullName}
                 </span>
               </div>
             )}
