@@ -13,7 +13,8 @@ import {
   Edit2,
   History,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Download
 } from '@/lib/lucide-icons'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { toast } from 'react-hot-toast'
@@ -99,6 +100,7 @@ export default function TransactionDetailPage() {
     
     // Ship specific
     carrier: '',
+    modeOfTransportation: '',
     pickupDate: '',
     
     // Quantities (editable)
@@ -183,6 +185,8 @@ export default function TransactionDetailPage() {
       
       const plMatch = parseFieldFromNotes('Packing List #')
       const tcMatch = parseFieldFromNotes('TC #')
+      const carrierMatch = parseFieldFromNotes('Carrier')
+      const modeMatch = parseFieldFromNotes('Mode')
       
       // Set form data - ensure no null values
       setFormData({
@@ -192,7 +196,8 @@ export default function TransactionDetailPage() {
         supplier: supplierMatch || '',
         shipName: data.shipName || '',
         trackingNumber: data.trackingNumber || '',
-        carrier: '',
+        carrier: carrierMatch || '',
+        modeOfTransportation: modeMatch || data.modeOfTransportation || '',
         pickupDate: data.pickupDate || '',
         cartons: data.transactionType === 'RECEIVE' ? data.cartonsIn : data.cartonsOut,
         pallets: data.transactionType === 'RECEIVE' ? data.storagePalletsIn : data.shippingPalletsOut,
@@ -391,6 +396,8 @@ export default function TransactionDetailPage() {
       if (formData.supplier) fullNotes += `Supplier: ${formData.supplier}. `
       if (formData.packingListNumber) fullNotes += `Packing List #: ${formData.packingListNumber}. `
       if (formData.tcNumber) fullNotes += `TC #: ${formData.tcNumber}. `
+      if (formData.carrier) fullNotes += `Carrier: ${formData.carrier}. `
+      if (formData.modeOfTransportation) fullNotes += `Mode: ${formData.modeOfTransportation}. `
       if (formData.shipName) fullNotes += `Ship: ${formData.shipName}. `
       if (formData.trackingNumber) fullNotes += `Tracking: ${formData.trackingNumber}. `
       
@@ -415,6 +422,7 @@ export default function TransactionDetailPage() {
           notes: fullNotes,
           shipName: formData.shipName || null,
           trackingNumber: formData.trackingNumber || null,
+          modeOfTransportation: formData.modeOfTransportation || null,
           pickupDate: formData.pickupDate || null,
           referenceId: formData.ciNumber || transaction.referenceId,
           supplier: formData.supplier || null,
@@ -753,6 +761,24 @@ export default function TransactionDetailPage() {
                       <option value="DHL">DHL</option>
                       <option value="USPS">USPS</option>
                       <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mode of Transportation
+                    </label>
+                    <select
+                      value={formData.modeOfTransportation}
+                      onChange={(e) => setFormData({ ...formData, modeOfTransportation: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${
+                        !editMode ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
+                      disabled={!editMode}
+                    >
+                      <option value="">Select Mode...</option>
+                      <option value="SPD">SPD - Small Parcel Delivery</option>
+                      <option value="LTL">LTL - Less Than Truckload</option>
+                      <option value="FTL">FTL - Full Truckload</option>
                     </select>
                   </div>
                   <div>
@@ -1141,20 +1167,34 @@ function AttachmentField({
       </div>
       {attachment ? (
         <div className="flex items-center justify-between bg-white p-2 rounded border">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <FileText className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-700">{attachment.name}</span>
             <span className="text-xs text-gray-500">({(attachment.size / 1024).toFixed(1)} KB)</span>
           </div>
-          {!disabled && (
-            <button
-              type="button"
-              onClick={onRemove}
-              className="text-red-600 hover:text-red-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {attachment.s3Url && (
+              <a
+                href={attachment.s3Url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800"
+                title="View/Download"
+              >
+                <Download className="h-4 w-4" />
+              </a>
+            )}
+            {!disabled && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="text-red-600 hover:text-red-800"
+                title="Remove"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         !disabled && (
