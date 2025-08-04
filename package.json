@@ -94,7 +94,7 @@
     "bullmq": "^5.4.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
-    "csv-parse": "^5.6.0",
+    "csv-parse": "^6.1.0",
     "csv-stringify": "^6.5.2",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
